@@ -7,7 +7,7 @@ from nonebot.adapters.onebot.v11 import Bot as QQBot
 from nonebot.typing import T_State
 
 from .db_sqlite import get_or_set_user, get_user
-from .utils import INTERVAL, bot_send, check_user_login
+from .utils import INTERVAL, bot_send, check_session_handler
 from .sp3bot import push_latest_battle
 from .sp3msg import get_statics
 
@@ -18,10 +18,8 @@ __all__ = ['start_push', 'stop_push', 'scheduler']
 
 
 @on_command("start_push", block=True).handle()
+@check_session_handler
 async def start_push(bot: Bot, event: Event, state: T_State):
-    if not await check_user_login(bot, event):
-        return
-
     user_id = event.get_user_id()
     user = get_user(user_id=user_id)
     if user and user.push or scheduler.get_job(f'{user_id}_push'):

@@ -1,4 +1,6 @@
 
+import functools
+
 from nonebot import logger
 from nonebot.adapters import Bot, Event
 from nonebot.adapters.telegram import Bot as TGBot
@@ -32,12 +34,33 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
     return r
 
 
-async def check_user_login(bot: Bot, event: Event) -> bool:
-    user = get_user(user_id=event.get_user_id())
-    if not user or not user.session_token:
-        if isinstance(bot, TGBot):
-            await bot.send(event, message="Permission denied. /login first.")
-        elif isinstance(bot, QQBot):
-            await bot.send(event, message="无权限查看，请先 /login 登录")
-        return False
-    return True
+def check_session_handler(func):
+    """Check if user has logged in."""
+
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        # logger.info(f'check_session_handler: {args}, {kwargs.keys()}, {func.__name__}')
+        bot = kwargs.get('bot')
+        if not isinstance(bot, Bot):
+            logger.error(f'wrapper: {args[0]} is not Bot')
+            return
+
+        event = kwargs.get('event')
+        user = get_user(user_id=event.get_user_id())
+        if not user or not user.session_token:
+            _msg = "Permission denied. /login first."
+            if isinstance(bot, QQBot):
+                _msg = '无权限查看，请先 /login 登录'
+
+            matcher = kwargs.get('matcher')
+            if matcher:
+                await matcher.finish(_msg)
+                return False
+
+            await bot.send(event, message=_msg)
+            return False
+
+        result = await func(*args, **kwargs)
+        return result
+
+    return wrapper

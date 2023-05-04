@@ -13,7 +13,7 @@ from .db_sqlite import set_db_info, get_user, get_or_set_user
 from .sp3iksm import log_in, login_2, A_VERSION
 from .splat import Splatoon
 from .sp3bot import get_last_battle_or_coop
-from .utils import bot_send
+from .utils import bot_send, check_session_handler
 
 __all__ = ['login', 'login_id', 'clear_db_info', 'set_db_info', 'get_set_battle_info']
 
@@ -131,10 +131,12 @@ matcher_set_battle_info = on_command("set_battle_info", block=True)
 
 
 @matcher_set_battle_info.handle()
-async def set_battle_info(bot: Bot, event: Event):
+@check_session_handler
+async def set_battle_info(bot: Bot, event: Event, matcher: matcher_set_battle_info):
     if isinstance(bot, QQBot) and 'group' in event.get_event_name():
         await matcher_set_battle_info.finish("请私聊机器人完成设置操作")
         return
+
     msg = '''
 set battle info, default 1): show name
 1 - name

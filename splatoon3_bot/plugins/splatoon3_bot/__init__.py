@@ -7,7 +7,7 @@ from nonebot.adapters.onebot.v11 import Bot as QQBot
 from .db_sqlite import set_db_info, get_user, get_or_set_user
 from .sp3bot import get_user_db_info, get_last_battle_or_coop, get_me, push_latest_battle
 from .sp3msg import MSG_HELP, MSG_HELP_QQ, get_statics
-from .utils import INTERVAL, bot_send, check_user_login
+from .utils import INTERVAL, bot_send
 
 from .cmd_get import *
 from .cmd_push import *
