@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+from collections import defaultdict
 from datetime import datetime as dt, timedelta
 from nonebot import logger
 from .s3s import utils
@@ -57,6 +58,7 @@ MSG_HELP_QQ = '''机器人使用说明
 /start_push - 开启推送模式
 /set_battle_info - 设置对战显示信息
 /me - 显示你的喷喷信息
+/friends - 显示在线的喷喷好友
 '''
 
 
@@ -495,4 +497,50 @@ WIN_RATE: {data['WIN'] / data['TOTAL']:.2%}
 {my_str}
 ```
 """
+    return msg
+
+
+def get_friends(splt, lang='zh-CN'):
+    data = utils.gen_graphql_body(utils.translate_rid['FriendsList'])
+    res = splt._request(data)
+    if not res:
+        return 'No friends found!'
+
+    msg = ''
+    _dict = defaultdict(int)
+    for f in res['data']['friends']['nodes']:
+        _state = f.get('onlineState')
+        if _state == 'OFFLINE':
+            continue
+        if _state == 'VS_MODE_FIGHTING':
+            _state = f'VS_MODE ({f["vsMode"]["mode"]})'
+            if f['vsMode']['mode'] == 'BANKARA':
+                if f['vsMode']['id'] == 'VnNNb2RlLTUx':
+                    _state += 'O'
+                else:
+                    _state += 'C'
+
+            elif f['vsMode']['mode'] == 'FEST':
+                mod_id = f['vsMode']['id']
+                if mod_id == 'VnNNb2RlLTY=':
+                    _state += 'O'
+                elif mod_id == 'VnNNb2RlLTg=':
+                    _state += '3'
+                else:
+                    _state += 'C'
+
+        elif _state == 'COOP_MODE_FIGHTING':
+            _state = f'COOP_MODE'
+            if f.get('coopRule') != 'REGULAR':
+                _state += f" ({f.get('coopRule')})"
+
+        _dict[_state] += 1
+        n = f['playerName'] or f.get('nickname')
+        if f['playerName'] and f['playerName'] != f['nickname']:
+            n = f'{f["playerName"]}({f["nickname"]})'
+        msg += f'''{n}\t\t {_state}\n'''
+    msg = f'```\n{msg}\n```'
+    _dict['TOTAL'] = sum(_dict.values())
+    for k, v in _dict.items():
+        msg += f'`{k:>20}: {v}`\n'
     return msg

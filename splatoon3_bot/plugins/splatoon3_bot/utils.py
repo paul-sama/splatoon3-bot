@@ -8,7 +8,7 @@ from nonebot.adapters.onebot.v11 import Bot as QQBot, Message
 from .db_sqlite import get_user
 
 INTERVAL = 10
-BOT_VERSION = '0.0.1'
+BOT_VERSION = '0.0.2'
 
 
 async def bot_send(bot: Bot, event: Event, message: str, **kwargs):

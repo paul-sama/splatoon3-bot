@@ -10,7 +10,7 @@ from nonebot.adapters.onebot.v11 import Bot as QQBot
 
 from .db_sqlite import get_user, get_or_set_user
 from .splat import Splatoon
-from .sp3msg import get_battle_msg, get_coop_msg, get_summary, get_statics
+from .sp3msg import get_battle_msg, get_coop_msg, get_summary, get_statics, get_friends
 from .utils import bot_send, INTERVAL
 
 
@@ -103,6 +103,7 @@ def get_me(user_id):
     all_res = splt.get_all_res()
     coop = splt.get_coop_summary()
     msg = get_summary(res, all_res, coop, lang=user.acc_loc)
+    logger.debug(msg)
     return msg
 
 
@@ -172,3 +173,11 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
             # if data.get('last_group_msg_id'):
             #    await bot.call_api('delete_message', message_id=data['last_group_msg_id'], chat_id=r.chat.id)
         data['last_group_msg_id'] = message_id
+
+
+def get_friends_msg(user_id):
+    user = get_or_set_user(user_id=user_id)
+    splt = Splatoon(user_id, user.session_token)
+    msg = get_friends(splt, lang=user.acc_loc)
+    logger.debug(msg)
+    return msg

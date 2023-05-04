@@ -96,6 +96,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
         msg = f"""
 登录成功！机器人现在可以从App获取你的数据。
 /me - 显示你的信息
+/friends - 显示在线的喷喷好友
 /last - 显示最近一场对战或打工
 /start_push - 开启推送模式
 """
