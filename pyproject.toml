@@ -1,0 +1,15 @@
+[project]
+name = "splatoon3-bot"
+version = "0.1.0"
+description = "splatoon3-bot"
+readme = "README.md"
+requires-python = ">=3.8, <4.0"
+
+[tool.nonebot]
+adapters = [
+    { name = "OneBot V11", module_name = "nonebot.adapters.onebot.v11" },
+    { name = "Telegram", module_name = "nonebot.adapters.telegram" }
+]
+plugins = []
+plugin_dirs = ["splatoon3_bot/plugins"]
+builtin_plugins = ["echo"]

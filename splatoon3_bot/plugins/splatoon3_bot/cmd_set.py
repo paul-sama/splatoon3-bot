@@ -1,0 +1,171 @@
+import os
+import json
+from collections import defaultdict
+
+from nonebot import on_command, logger
+from nonebot.adapters import Event, Bot
+from nonebot.adapters.telegram import Bot as TGBot
+from nonebot.adapters.telegram.message import File
+from nonebot.adapters.onebot.v11 import Bot as QQBot
+from nonebot.typing import T_State
+
+from .db_sqlite import set_db_info, get_user, get_or_set_user
+from .sp3iksm import log_in, login_2, A_VERSION
+from .splat import Splatoon
+from .sp3bot import get_last_battle_or_coop
+from .utils import bot_send
+
+__all__ = ['login', 'login_id', 'clear_db_info', 'set_db_info', 'get_set_battle_info']
+
+
+matcher_login = on_command("login", block=True)
+
+
+@matcher_login.handle()
+async def login(bot: Bot, event: Event, state: T_State):
+    if 'group' in event.get_event_name():
+        await matcher_login.finish("请私聊机器人完成登录操作")
+        return
+
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    img_path = f'{dir_path}/resource/sp3bot-login.gif'
+    if isinstance(bot, TGBot):
+        try:
+            logger.info(f'img_path: {img_path}')
+            await bot.send(event, File.animation(img_path))
+        except Exception as e:
+            logger.error(f'login error: {e}')
+
+    url, auth_code_verifier = log_in(A_VERSION)
+    state['auth_code_verifier'] = auth_code_verifier
+    logger.info(f'get login url: {url}')
+    logger.info(f'auth_code_verifier: {auth_code_verifier}')
+    if url:
+        msg = ''
+        if isinstance(bot, TGBot):
+            msg = f'''
+Navigate to this URL in your browser:
+{url}
+Log in, right click the "Select this account" button, copy the link address, and paste below.
+            '''
+        elif isinstance(bot, QQBot):
+            msg = f'''在浏览器中打开下面链接
+{url}
+登陆后，右键账号后面的红色按钮，复制链接后发送给机器人
+'''
+        if msg:
+            await bot.send(event, message=msg)
+
+
+@matcher_login.receive('id')
+async def login_id(bot: Bot, event: Event, state: T_State):
+    text = event.get_plaintext()
+
+    auth_code_verifier = state.get('auth_code_verifier')
+
+    err_msg = '登录失败，请 /login 重试'
+    if not text or len(text) < 500 or not text.startswith('npf') or not auth_code_verifier:
+        logger.info(err_msg)
+        await bot.send(event, message=err_msg)
+        return
+
+    session_token = login_2(use_account_url=text, auth_code_verifier=auth_code_verifier)
+    if session_token == 'skip':
+        logger.info(err_msg)
+        await bot.send(event, message=err_msg)
+        return
+    logger.info(f'session_token: {session_token}')
+    user_id = event.get_user_id()
+    data = {
+        'session_token': session_token,
+        'user_id': user_id,
+        'id_type': 'tg' if isinstance(bot, TGBot) else 'qq',
+    }
+    set_db_info(**data)
+    '''
+/set_lang - set language, default(zh-CN) 默认中文
+/set_api_key - set stat.ink api_key, bot will sync your data to stat.ink
+'''
+    msg = f"""
+Login success! Bot now can get your splatoon3 data from SplatNet.
+/me - show your info
+/last - show the latest battle or coop
+/start_push - start push mode
+"""
+    if isinstance(bot, QQBot):
+        msg = f"""
+登录成功！机器人现在可以从App获取你的数据。
+/me - 显示你的信息
+/last - 显示最近一场对战或打工
+/start_push - 开启推送模式
+"""
+    await bot.send(event, message=msg)
+
+    user = get_user(user_id=user_id)
+    Splatoon(user.id, user.session_token).set_gtoken_and_bullettoken()
+
+
+@on_command("clear_db_info", block=True).handle()
+async def clear_db_info(bot: Bot, event: Event):
+    user_id = event.get_user_id()
+
+    get_or_set_user(
+        user_id=user_id,
+        gtoken=None,
+        bullettoken=None,
+        session_token=None,
+        session_token_2=None,
+        push=False,
+        push_cnt=0,
+        api_key=None,
+        acc_loc=None,
+        user_info=None,
+    )
+
+    msg = "All your data cleared!"
+    logger.info(msg)
+    await bot.send(event, message=msg)
+
+
+matcher_set_battle_info = on_command("set_battle_info", block=True)
+
+
+@matcher_set_battle_info.handle()
+async def set_battle_info(bot: Bot, event: Event):
+    if isinstance(bot, QQBot) and 'group' in event.get_event_name():
+        await matcher_set_battle_info.finish("请私聊机器人完成设置操作")
+        return
+    msg = '''
+set battle info, default 1): show name
+1 - name
+2 - weapon
+3 - name (weapon)
+4 - weapon (name)
+5 - weapon (name) byname
+6 - weapon (name)#nameId byname
+'''
+    if isinstance(bot, QQBot):
+        msg = '设置对战显示信息， 默认为 1): 名字' + msg.split('show name')[-1]
+    await bot_send(bot, event, message=msg)
+
+
+@matcher_set_battle_info.receive('id')
+async def get_set_battle_info(bot: Bot, event: Event):
+    try:
+        text = int(event.get_plaintext())
+        if not text or text not in range(1, 7):
+            raise ValueError()
+    except:
+        text = 1
+
+    await bot.send(event, message=f'set type: {text}')
+
+    user_id = event.get_user_id()
+    user = get_or_set_user(user_id=user_id)
+    db_user_info = defaultdict(str)
+    if user and user.user_info:
+        db_user_info = json.loads(user.user_info)
+    db_user_info['battle_show_type'] = str(text)
+    get_or_set_user(user_id=user_id, user_info=json.dumps(db_user_info))
+    msg = await get_last_battle_or_coop(user_id, get_battle=True)
+    await bot_send(bot, event, message=msg, parse_mode='Markdown')
