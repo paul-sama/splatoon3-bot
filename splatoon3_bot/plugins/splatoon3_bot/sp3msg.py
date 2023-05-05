@@ -58,7 +58,10 @@ MSG_HELP_QQ = '''机器人使用说明
 /start_push - 开启推送模式
 /set_battle_info - 设置对战显示信息
 /me - 显示你的喷喷信息
+/set_api_key - 设置 api_key, 同步数据到 https://stat.ink
 /friends - 显示在线的喷喷好友
+
+https://github.com/paul-sama/splatoon3-bot
 '''
 
 
