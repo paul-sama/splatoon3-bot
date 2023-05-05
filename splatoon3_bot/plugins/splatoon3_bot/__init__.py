@@ -76,7 +76,8 @@ async def bot_on_start():
 
 @get_driver().on_bot_connect
 async def _(bot: Bot):
-    logger.info(f'bot_connect {bot.self_id}')
+    bot_type = 'Telegram' if isinstance(bot, TGBot) else 'QQ'
+    logger.info(f' {bot_type} bot connect {bot.self_id} '.center(60, '-').center(120, ' '))
 
     scheduler.add_job(
         cron_job, 'interval', minutes=1, id=f'sp3_cron_job_{bot.self_id}', args=[bot]
