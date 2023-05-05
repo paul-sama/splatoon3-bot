@@ -144,5 +144,6 @@ dmypy.json
 
 splatoon3_bot/plugins/ink_bot/temp/
 splatoon3_bot/plugins/splatoon3_bot/resource/s3sits_git/
+splatoon3_bot/plugins/splatoon3_bot/resource/*.txt
 
 # End of https://www.toptal.com/developers/gitignore/api/python
