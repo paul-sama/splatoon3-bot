@@ -7,6 +7,7 @@ from nonebot.adapters.onebot.v11 import Bot as QQBot
 from .db_sqlite import set_db_info, get_user, get_or_set_user
 from .sp3bot import get_user_db_info, get_last_battle_or_coop, get_me, push_latest_battle
 from .sp3msg import MSG_HELP, MSG_HELP_QQ, get_statics
+from .sp3job import cron_job
 from .utils import INTERVAL, bot_send
 
 from .cmd_get import *
@@ -72,3 +73,12 @@ async def _help(bot: Bot, event: Event):
 async def bot_on_start():
     version = utils.BOT_VERSION
     logger.info(f' bot start, version: {version} '.center(120, '-'))
+
+
+@get_driver().on_bot_connect
+async def _(bot: Bot):
+    logger.info(f'bot_connect {bot.self_id}')
+
+    scheduler.add_job(
+        cron_job, 'interval', minutes=1, id=f'sp3_cron_job_{bot.self_id}', args=[bot]
+    )

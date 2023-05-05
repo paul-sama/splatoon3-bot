@@ -13,6 +13,7 @@ from .db_sqlite import set_db_info, get_user, get_or_set_user
 from .sp3iksm import log_in, login_2, A_VERSION
 from .splat import Splatoon
 from .sp3bot import get_last_battle_or_coop
+from .sp3job import get_post_stat_msg, update_s3si_ts
 from .utils import bot_send, check_session_handler
 
 __all__ = ['login', 'login_id', 'clear_db_info', 'set_db_info', 'get_set_battle_info']
@@ -91,6 +92,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 /me - show your info
 /last - show the latest battle or coop
 /start_push - start push mode
+/set_api_key - set stat.ink api_key, bot will sync your data to stat.ink
 """
     if isinstance(bot, QQBot):
         msg = f"""
@@ -99,6 +101,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 /friends - 显示在线的喷喷好友
 /last - 显示最近一场对战或打工
 /start_push - 开启推送模式
+/set_api_key - 设置 api_key, 同步数据到 https://stat.ink
 """
     await bot.send(event, message=msg)
 
@@ -172,3 +175,43 @@ async def get_set_battle_info(bot: Bot, event: Event):
     get_or_set_user(user_id=user_id, user_info=json.dumps(db_user_info))
     msg = await get_last_battle_or_coop(user_id, get_battle=True)
     await bot_send(bot, event, message=msg, parse_mode='Markdown')
+
+
+matcher_set_api_key = on_command("set_api_key", block=True)
+
+
+@matcher_set_api_key.handle()
+@check_session_handler
+async def set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
+    if 'group' in event.get_event_name():
+        await matcher_set_battle_info.finish("请私聊机器人完成设置操作")
+        return
+
+    msg = '''Please copy you api_key from https://stat.ink/profile then paste below'''
+    if isinstance(bot, QQBot):
+        msg = '请从 https://stat.ink/profile 页面复制你的 api_key 后发送给机器人'
+    await bot_send(bot, event, message=msg)
+
+
+@matcher_set_api_key.receive('id')
+async def get_set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
+    api_key = event.get_plaintext().strip()
+
+    if len(api_key) != 43:
+        await matcher_set_api_key.finish("错误信息")
+        return
+
+    logger.info(f'set_api_key: {api_key}')
+    get_or_set_user(user_id=event.get_user_id(), api_key=api_key)
+
+    msg = f'''set_api_key success, bot will check every 3 hours and post your data to stat.ink.
+first sync will be in minutes.
+    '''
+    if isinstance(bot, QQBot):
+        msg = f'''设置成功，机器人会每3小时检查一次并同步你的数据到 stat.ink 第一次同步会即刻开始。'''
+    await bot_send(bot, event, message=msg)
+
+    update_s3si_ts()
+    msg = get_post_stat_msg(event.get_user_id())
+    if msg:
+        await bot_send(bot, event, message=msg)
