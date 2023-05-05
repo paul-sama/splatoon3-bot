@@ -29,7 +29,7 @@ async def cron_job(bot: Bot):
         file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
         if not os.path.exists(file_msg_path):
             continue
-        logger.debug(f"get msg file: {file_msg_path}")
+        # logger.debug(f"get msg file: {file_msg_path}")
         with open(file_msg_path, 'r') as f:
             msg = f.read()
         if msg:
@@ -40,7 +40,7 @@ async def cron_job(bot: Bot):
                 elif isinstance(bot, QQBot):
                     ret = await bot.send_private_msg(user_id=u.user_id_qq, message=msg)
                 if ret:
-                    logger.info(f"{u.id} send message: {ret.text}")
+                    logger.info(f"{u.id} send message: {ret}, {msg}")
                     os.remove(file_msg_path)
             except Exception as e:
                 logger.error(f"{u.id}, post_battle_to_stat_ink: {e}, {msg}")
