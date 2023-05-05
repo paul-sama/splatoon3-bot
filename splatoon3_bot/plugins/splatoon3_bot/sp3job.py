@@ -55,6 +55,8 @@ async def cron_job(bot: Bot):
     for u in users:
         if not u.api_key or not u.session_token:
             continue
+        if (isinstance(bot, TGBot) and not u.user_id_tg) or (isinstance(bot, QQBot) and not u.user_id_qq):
+            continue
 
         _thread = threading.Thread(target=asyncio.run, args=(thread_function(u.id),))
         _thread.start()
