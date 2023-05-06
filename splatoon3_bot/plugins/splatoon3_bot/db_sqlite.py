@@ -92,6 +92,7 @@ def get_or_set_user(**kwargs):
 def get_all_user():
     session = DBSession()
     users = session.query(UserTable).all()
+    session.close()
     return users
 
 
