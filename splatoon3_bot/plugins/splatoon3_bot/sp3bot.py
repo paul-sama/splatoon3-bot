@@ -56,7 +56,7 @@ def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
     return msg
 
 
-async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get_pic=False):
+async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get_coop=False, get_pic=False, idx=0):
     user = get_user(user_id=user_id)
     splt = Splatoon(user.id, user.session_token)
 
@@ -64,7 +64,7 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
     res = splt.get_recent_battles(skip_check_token=True if for_push else False)
     if not res:
         return None
-    b_info = res['data']['latestBattleHistories']['historyGroups']['nodes'][0]['historyDetails']['nodes'][0]
+    b_info = res['data']['latestBattleHistories']['historyGroups']['nodes'][0]['historyDetails']['nodes'][idx]
     battle_id = b_info['id']
     battle_t = base64.b64decode(battle_id).decode('utf-8').split('_')[0].split(':')[-1]
 
@@ -79,12 +79,16 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
             'coop_point': res['data']['coopResult']['pointCard']['regularPoint'],
             'coop_eggs': res['data']['coopResult']['historyGroups']['nodes'][0]['highestResult'].get('jobScore') or 0
         }
-        coop_id = res['data']['coopResult']['historyGroups']['nodes'][0]['historyDetails']['nodes'][0]['id']
+        coop_id = res['data']['coopResult']['historyGroups']['nodes'][0]['historyDetails']['nodes'][idx]['id']
         coop_t = base64.b64decode(coop_id).decode('utf-8').split('_')[0].split(':')[-1]
     except:
         coop_info = {}
         coop_id = ''
         coop_t = ''
+
+    if get_coop:
+        get_battle = False
+        battle_t = ''
 
     if get_battle or battle_t > coop_t:
         if for_push:
