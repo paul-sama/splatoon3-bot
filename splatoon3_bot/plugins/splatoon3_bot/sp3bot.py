@@ -11,6 +11,7 @@ from nonebot.adapters.onebot.v11 import Bot as QQBot
 from .db_sqlite import get_user, get_or_set_user
 from .splat import Splatoon
 from .sp3msg import get_battle_msg, get_coop_msg, get_summary, get_statics, get_friends
+from .sp3msg_md import get_battle_msg as get_battle_msg_md, get_coop_msg as get_coop_msg_md
 from .utils import bot_send, INTERVAL
 
 
@@ -39,17 +40,23 @@ def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
         if is_battle:
             battle_detail = splt.get_battle_detail(_id)
             kwargs['splt'] = splt
-            msg = get_battle_msg(extra_info, battle_detail, **kwargs)
+            if kwargs.get('get_pic'):
+                msg = get_battle_msg_md(extra_info, battle_detail, **kwargs)
+            else:
+                msg = get_battle_msg(extra_info, battle_detail, **kwargs)
         else:
             coo_detail = splt.get_coop_detail(_id)
-            msg = get_coop_msg(extra_info, coo_detail)
+            if kwargs.get('get_pic'):
+                msg = get_coop_msg_md(extra_info, coo_detail)
+            else:
+                msg = get_coop_msg(extra_info, coo_detail)
     except Exception as e:
         logger.exception(e)
         msg = f'get last {"battle" if is_battle else "coop"} failed, please try again later.'
     return msg
 
 
-async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False):
+async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get_pic=False):
     user = get_user(user_id=user_id)
     splt = Splatoon(user.id, user.session_token)
 
@@ -87,12 +94,12 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False):
             user_info = json.loads(user.user_info)
         except:
             user_info = {}
-        msg = get_last_msg(splt, battle_id, b_info, battle_show_type=user_info.get('battle_show_type'))
+        msg = get_last_msg(splt, battle_id, b_info, battle_show_type=user_info.get('battle_show_type'), get_pic=get_pic)
         return msg
     else:
         if for_push:
             return coop_id, coop_info, False
-        msg = get_last_msg(splt, coop_id, coop_info, False)
+        msg = get_last_msg(splt, coop_id, coop_info, False, get_pic=get_pic)
         return msg
 
 

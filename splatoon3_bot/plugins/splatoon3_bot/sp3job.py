@@ -142,8 +142,8 @@ def exported_to_stat_ink(user_id, session_token, api_key, user_lang):
 
     configs = get_driver().config
     deno_path = getattr(configs, 'deno_path', None)
-    if not deno_path:
-        logger.info('deno_path not set'.center(120, '-'))
+    if not deno_path or os.path.exists(deno_path):
+        logger.info(f'deno_path not set: {deno_path or ""} '.center(120, '-'))
         return
 
     cmd = f'{deno_path} run -Ar ./s3si.ts -n -p {path_config_file}'

@@ -43,3 +43,4 @@ uvloop==0.17.0
 watchfiles==0.19.0
 websockets==11.0.2
 yarl==1.9.2
+nonebot_plugin_htmlrender

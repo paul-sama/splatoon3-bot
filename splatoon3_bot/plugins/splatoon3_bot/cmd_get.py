@@ -25,6 +25,15 @@ async def last(bot: Bot, event: Event):
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
+@on_command("last_pic", block=True).handle()
+@check_session_handler
+async def last(bot: Bot, event: Event):
+    user_id = event.get_user_id()
+
+    msg = await get_last_battle_or_coop(user_id, get_pic=True)
+    await bot_send(bot, event, msg, parse_mode='Markdown')
+
+
 @on_command("me", block=True).handle()
 @check_session_handler
 async def me(bot: Bot, event: Event):

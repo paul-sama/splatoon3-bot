@@ -62,7 +62,7 @@ async def unknown_command(bot: Bot, event: Event):
 @on_command("help", aliases={'h', '帮助', '说明', '文档'}, block=True).handle()
 async def _help(bot: Bot, event: Event):
     if isinstance(bot, TGBot):
-        await bot.send(event, message=MSG_HELP, disable_web_page_preview=True)
+        await bot_send(bot, event, message=MSG_HELP, disable_web_page_preview=True)
 
     elif isinstance(bot, QQBot):
         await bot_send(bot, event, message=MSG_HELP_QQ)

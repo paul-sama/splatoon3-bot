@@ -1,17 +1,32 @@
 
+import os
 import functools
 
 from nonebot import logger
 from nonebot.adapters import Bot, Event
 from nonebot.adapters.telegram import Bot as TGBot
+from nonebot.adapters.telegram.message import File
 from nonebot.adapters.onebot.v11 import Bot as QQBot, Message
 from .db_sqlite import get_user
 
+from nonebot import require
+require("nonebot_plugin_htmlrender")
+from nonebot_plugin_htmlrender import md_to_pic
+
 INTERVAL = 10
-BOT_VERSION = '0.0.3'
+BOT_VERSION = '0.0.4'
+DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
 async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
+
+    if message and message.strip().startswith('####'):
+        tmp_file = await get_pic_from_md_msg(message)
+        if tmp_file:
+            if isinstance(bot, TGBot):
+                await bot.send(event, File.photo(tmp_file))
+            return
+
     if isinstance(bot, QQBot):
         message = message.replace('`', '').replace('*', '').replace('\_', '_').strip()
         if 'group' in event.get_event_name():
@@ -64,3 +79,19 @@ def check_session_handler(func):
         return result
 
     return wrapper
+
+
+async def get_pic_from_md_msg(message):
+    import PIL.Image, uuid, os, io
+
+    path_folder = f'{DIR_RESOURCE}/msg_img'
+    if not os.path.exists(path_folder):
+        os.makedirs(path_folder)
+
+    pic_bytes = await md_to_pic(message, width=1000, css_path=f'{DIR_RESOURCE}/md.css')
+    if pic_bytes:
+        tmp_file = f'{path_folder}/{uuid.uuid4().hex}.png'
+        a = PIL.Image.open(io.BytesIO(pic_bytes))
+        a.save(tmp_file, format="PNG")
+        logger.debug(f'tmp_file: {tmp_file}')
+        return tmp_file
