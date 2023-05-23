@@ -1,5 +1,5 @@
 import time
-import requests
+import httpx
 from loguru import logger
 from .db_sqlite import get_or_set_user
 from .sp3iksm import A_VERSION, APP_USER_AGENT
@@ -49,7 +49,7 @@ class Splatoon:
             '_gtoken': web_service_token  # X-GameWebToken
         }
         url = f"{API_URL}/api/bullet_tokens"
-        r = requests.post(url, headers=app_head, cookies=app_cookies)
+        r = httpx.post(url, headers=app_head, cookies=app_cookies)
         try:
             return r.json()['bulletToken']
         except Exception as e:
@@ -86,7 +86,7 @@ class Splatoon:
     def test_page(self):
         data = utils.gen_graphql_body(utils.translate_rid["HomeQuery"])
         # t = time.time()
-        test = requests.post(utils.GRAPHQL_URL, data=data,
+        test = httpx.post(utils.GRAPHQL_URL, data=data,
                              headers=self.headbutt(self.bullet_token), cookies=dict(_gtoken=self.gtoken))
         # logger.debug(f'_test_page: {time.time() - t:.3f}s')
         if test.status_code != 200:
@@ -98,7 +98,7 @@ class Splatoon:
             if not skip_check_token:
                 self.test_page()
             t = time.time()
-            res = requests.post(utils.GRAPHQL_URL, data=data,
+            res = httpx.post(utils.GRAPHQL_URL, data=data,
                                 headers=self.headbutt(self.bullet_token), cookies=dict(_gtoken=self.gtoken))
             logger.debug(f'_request: {time.time() - t:.3f}s')
             if res.status_code != 200:
@@ -145,13 +145,13 @@ class Splatoon:
         res = self._request(data, skip_check_token)
         return res
 
-    def app_do_req(self, req):
+    @staticmethod
+    def app_do_req(method='POST', url='', headers=None, json=None):
         t = time.time()
-        prep_req = self.req_session.prepare_request(req)
-        res = self.req_session.send(prep_req)
-
-        logger.debug(f">> {time.time() - t:.3f}s {prep_req.method} {prep_req.url}")
-        return res.json()
+        res = httpx.request(method, url, headers=headers, json=json)
+        ret = res.json()
+        logger.debug(f">> {time.time() - t:.3f}s {method} {url}")
+        return ret
 
     def app_get_token(self):
         headers = {
@@ -170,17 +170,16 @@ class Splatoon:
             'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer-session-token'
         }
 
-        req = requests.Request('POST', 'https://accounts.nintendo.com/connect/1.0.0/api/token',
-                               headers=headers, json=json_body)
-        r = self.app_do_req(req)
+        r = self.app_do_req(method='POST', url='https://accounts.nintendo.com/connect/1.0.0/api/token',
+                            headers=headers, json=json_body)
         return r
 
     def app_get_nintendo_account_data(self, access_token):
-        req = requests.Request('GET', 'https://api.accounts.nintendo.com/2.0.0/users/me', headers={
+        req = httpx.Request('GET', 'https://api.accounts.nintendo.com/2.0.0/users/me', headers={
             "User-Agent": "OnlineLounge/2.2.0 NASDKAPI Android",
             "Authorization": "Bearer {}".format(access_token)
         })
-        r = self.app_do_req(req)
+        r = self.app_do_req(method='GET', url=req.url, headers=req.headers)
         return r
 
     def app_login_switch_web(self, id_token, nintendo_profile):
@@ -208,10 +207,10 @@ class Splatoon:
         jsonbody['parameter']['naBirthday'] = nintendo_profile['birthday']
         jsonbody['parameter']['language'] = nintendo_profile['language']
 
-        req = requests.Request('POST', 'https://api-lp1.znc.srv.nintendo.net/v3/Account/Login',
+        req = httpx.Request('POST', 'https://api-lp1.znc.srv.nintendo.net/v3/Account/Login',
                                headers=headers, json=jsonbody)
 
-        r = self.app_do_req(req)
+        r = self.app_do_req(method='POST', url=req.url, headers=req.headers, json=jsonbody)
         try:
             web_token = r["result"]["webApiServerCredential"]["accessToken"]
         except:
@@ -221,7 +220,6 @@ class Splatoon:
 
     def app_ns_friend_list(self):
         self.nso_app_version = iksm.get_nsoapp_version()
-        self.req_session = requests.Session()
 
         r = self.app_get_token()
         id_token = r.get('id_token')
@@ -244,7 +242,7 @@ class Splatoon:
 
         json_body = {'parameter': {}, 'requestId': str(utils.uuid.uuid4())}
 
-        req = requests.Request('POST', 'https://api-lp1.znc.srv.nintendo.net/v3/Friend/List',
+        req = httpx.Request('POST', 'https://api-lp1.znc.srv.nintendo.net/v3/Friend/List',
                                headers=headers, json=json_body)
-        r = self.app_do_req(req)
+        r = self.app_do_req(method='POST', url=req.url, headers=req.headers, json=json_body)
         return r

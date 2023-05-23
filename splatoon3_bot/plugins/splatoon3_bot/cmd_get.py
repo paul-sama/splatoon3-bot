@@ -1,7 +1,7 @@
 from nonebot import on_command, logger
 from nonebot.adapters import Event, Bot
 
-from .sp3bot import get_user_db_info, get_last_battle_or_coop, get_me, get_friends_msg
+from .sp3bot import get_user_db_info, get_last_battle_or_coop, get_me, get_friends_msg, get_ns_friends_msg
 from .utils import bot_send, check_session_handler
 
 __all__ = ['show_db_info', 'last', 'me']
@@ -66,4 +66,11 @@ async def me(bot: Bot, event: Event):
 @check_session_handler
 async def me(bot: Bot, event: Event):
     msg = get_friends_msg(event.get_user_id())
+    await bot_send(bot, event, msg, parse_mode='Markdown')
+
+
+@on_command("ns_friends", block=True).handle()
+@check_session_handler
+async def me(bot: Bot, event: Event):
+    msg = get_ns_friends_msg(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown')

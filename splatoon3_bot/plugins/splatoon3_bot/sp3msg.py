@@ -547,3 +547,46 @@ def get_friends(splt, lang='zh-CN'):
     for k, v in _dict.items():
         msg += f'`{k:>20}: {v}`\n'
     return msg
+
+
+def get_ns_friends(splt):
+    res = splt.app_ns_friend_list() or {}
+    res = res.get('result')
+    if not res:
+        logger.info(res)
+        return 'No friends found!'
+
+    msg = ''
+    _dict = defaultdict(int)
+    for f in res.get('friends') or []:
+        if (f.get('presence') or {}).get('state') != 'ONLINE' and f.get('isFavoriteFriend') is False:
+            continue
+        msg += f"{f.get('name')}\t"
+        if (f.get('presence') or {}).get('state') == 'ONLINE':
+            msg += f" {f['presence']['game'].get('name')}"
+            _dict[f['presence']['game'].get('name')] += 1
+            if f['presence']['game'].get('totalPlayTime'):
+                msg += f"({int(f['presence']['game'].get('totalPlayTime')/60)}h)"
+        else:
+            t = (f.get('presence') or {}).get('logoutAt') or 0
+            if t:
+                delt = str(dt.utcnow() - dt.utcfromtimestamp(t))
+                tt = delt
+                if tt.startswith('0'):
+                    tt = tt.split(', ')[-1]
+                tt = tt.split('.')[0][:-3].replace(':', 'h')
+                msg += f" (offline about {tt})"
+            else:
+                msg += f" ({(f.get('presence') or {}).get('state', 'offline')})"
+        msg += '\n'
+    st = ''
+    _dict['total online'] = sum(_dict.values())
+    _dict['total'] = len(res.get('friends') or [])
+    for k, v in _dict.items():
+        st += f'{k:>45}: {v}\n'
+
+    msg = f'''```
+{msg}
+{st}
+```'''
+    return msg
