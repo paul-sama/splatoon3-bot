@@ -142,7 +142,7 @@ def exported_to_stat_ink(user_id, session_token, api_key, user_lang):
 
     configs = get_driver().config
     deno_path = getattr(configs, 'deno_path', None)
-    if not deno_path or os.path.exists(deno_path):
+    if not deno_path or not os.path.exists(deno_path):
         logger.info(f'deno_path not set: {deno_path or ""} '.center(120, '-'))
         return
 

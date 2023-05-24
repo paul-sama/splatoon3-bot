@@ -123,8 +123,8 @@ def set_db_info(**kwargs):
                         session.commit()
                 else:
                     new_user = UserTable(
-                        user_id_tg=user_id if id_type == 'tg' else '',
-                        user_id_qq=user_id if id_type == 'qq' else '',
+                        user_id_tg=user_id if id_type == 'tg' else None,
+                        user_id_qq=user_id if id_type == 'qq' else None,
                         username=kwargs.get('username'),
                         first_name=kwargs.get('first_name'),
                         last_name=kwargs.get('last_name'),
