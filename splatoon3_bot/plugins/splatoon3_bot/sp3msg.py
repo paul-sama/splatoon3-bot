@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import unicodedata
 from collections import defaultdict
 from datetime import datetime as dt, timedelta
 from nonebot import logger
@@ -532,6 +533,12 @@ def fmt_sp3_state(f):
     return _state
 
 
+def wide_chars(s):
+    """return the extra width for wide characters
+    ref: http://stackoverflow.com/a/23320535/1276501"""
+    return sum(unicodedata.east_asian_width(x) in ('F', 'W') for x in s)
+
+
 def get_friends(splt, lang='zh-CN'):
     data = utils.gen_graphql_body(utils.translate_rid['FriendsList'])
     res = splt._request(data)
@@ -593,7 +600,9 @@ def get_ns_friends(splt):
     for f in res.get('friends') or []:
         if (f.get('presence') or {}).get('state') != 'ONLINE' and f.get('isFavoriteFriend') is False:
             continue
-        msg += f"{f.get('name')}\t"
+        u_name = f.get('name') or ''
+        ww = 10 - wide_chars(u_name)
+        msg += f"{u_name:<{ww}}\t"
         if (f.get('presence') or {}).get('state') == 'ONLINE':
             _game_name = f['presence']['game'].get('name') or ''
             _game_name = _game_name.replace('The Legend of Zelda: Tears of the Kingdom', 'TOTK')
