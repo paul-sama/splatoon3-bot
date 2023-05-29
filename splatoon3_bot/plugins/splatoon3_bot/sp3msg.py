@@ -503,6 +503,35 @@ WIN_RATE: {data['WIN'] / data['TOTAL']:.2%}
     return msg
 
 
+def fmt_sp3_state(f):
+    _state = f.get('onlineState')
+    if _state == 'OFFLINE':
+        return
+
+    if _state == 'VS_MODE_FIGHTING':
+        _state = f'VS_MODE ({f["vsMode"]["mode"]})'
+        if f['vsMode']['mode'] == 'BANKARA':
+            if f['vsMode']['id'] == 'VnNNb2RlLTUx':
+                _state += 'O'
+            else:
+                _state += 'C'
+
+        elif f['vsMode']['mode'] == 'FEST':
+            mod_id = f['vsMode']['id']
+            if mod_id == 'VnNNb2RlLTY=':
+                _state += 'O'
+            elif mod_id == 'VnNNb2RlLTg=':
+                _state += '3'
+            else:
+                _state += 'C'
+
+    elif _state == 'COOP_MODE_FIGHTING':
+        _state = f'COOP_MODE'
+        if f.get('coopRule') != 'REGULAR':
+            _state += f" ({f.get('coopRule')})"
+    return _state
+
+
 def get_friends(splt, lang='zh-CN'):
     data = utils.gen_graphql_body(utils.translate_rid['FriendsList'])
     res = splt._request(data)
@@ -512,30 +541,9 @@ def get_friends(splt, lang='zh-CN'):
     msg = ''
     _dict = defaultdict(int)
     for f in res['data']['friends']['nodes']:
-        _state = f.get('onlineState')
-        if _state == 'OFFLINE':
+        if f.get('onlineState') == 'OFFLINE':
             continue
-        if _state == 'VS_MODE_FIGHTING':
-            _state = f'VS_MODE ({f["vsMode"]["mode"]})'
-            if f['vsMode']['mode'] == 'BANKARA':
-                if f['vsMode']['id'] == 'VnNNb2RlLTUx':
-                    _state += 'O'
-                else:
-                    _state += 'C'
-
-            elif f['vsMode']['mode'] == 'FEST':
-                mod_id = f['vsMode']['id']
-                if mod_id == 'VnNNb2RlLTY=':
-                    _state += 'O'
-                elif mod_id == 'VnNNb2RlLTg=':
-                    _state += '3'
-                else:
-                    _state += 'C'
-
-        elif _state == 'COOP_MODE_FIGHTING':
-            _state = f'COOP_MODE'
-            if f.get('coopRule') != 'REGULAR':
-                _state += f" ({f.get('coopRule')})"
+        _state = fmt_sp3_state(f)
 
         _dict[_state] += 1
         n = f['playerName'] or f.get('nickname')
@@ -556,6 +564,30 @@ def get_ns_friends(splt):
         logger.info(res)
         return 'No friends found!'
 
+    get_sp3 = False
+
+    for f in res.get('friends') or []:
+        if (f.get('presence') or {}).get('state') != 'ONLINE':
+            continue
+        if f['presence']['game'].get('name') == 'Splatoon 3':
+            get_sp3 = True
+            break
+
+    dict_sp3 = {}
+    _dict_sp3 = defaultdict(int)
+    if get_sp3:
+        data = utils.gen_graphql_body(utils.translate_rid['FriendsList'])
+        sp3_res = splt._request(data) or []
+        if sp3_res:
+            for f in sp3_res['data']['friends']['nodes']:
+                if f.get('onlineState') == 'OFFLINE':
+                    continue
+                _state = fmt_sp3_state(f)
+                if _state == 'ONLINE':
+                    continue
+                dict_sp3[f.get('nickname')] = _state
+                _dict_sp3[_state] += 1
+
     msg = ''
     _dict = defaultdict(int)
     for f in res.get('friends') or []:
@@ -563,10 +595,14 @@ def get_ns_friends(splt):
             continue
         msg += f"{f.get('name')}\t"
         if (f.get('presence') or {}).get('state') == 'ONLINE':
-            msg += f" {f['presence']['game'].get('name')}"
-            _dict[f['presence']['game'].get('name')] += 1
+            _game_name = f['presence']['game'].get('name') or ''
+            _game_name = _game_name.replace('The Legend of Zelda: Tears of the Kingdom', 'TOTK')
+            msg += f" {_game_name}"
+            _dict[_game_name] += 1
             if f['presence']['game'].get('totalPlayTime'):
                 msg += f"({int(f['presence']['game'].get('totalPlayTime')/60)}h)"
+            if f.get('name') in dict_sp3:
+                msg += f" | {dict_sp3[f.get('name')]}"
         else:
             t = (f.get('presence') or {}).get('logoutAt') or 0
             if t:
@@ -583,7 +619,13 @@ def get_ns_friends(splt):
     _dict['total online'] = sum(_dict.values())
     _dict['total'] = len(res.get('friends') or [])
     for k, v in _dict.items():
-        st += f'{k:>45}: {v}\n'
+        st += f'{k:>25}: {v}\n'
+
+    if _dict_sp3:
+        _dict_sp3['total sp3'] = sum(_dict_sp3.values())
+        st += '\n'
+        for k, v in _dict_sp3.items():
+            st += f'{k:>25}: {v}\n'
 
     msg = f'''```
 {msg}
