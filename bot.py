@@ -6,6 +6,7 @@ from nonebot.adapters.telegram import Adapter as TelegramAdapter
 from nonebot.adapters.onebot.v11 import Adapter as QQAdapter
 from nonebot.log import logger_id, default_filter
 
+
 # 移除 NoneBot 默认的日志处理器
 logger.remove(logger_id)
 # 添加新的日志处理器

@@ -9,6 +9,7 @@ from nonebot.typing import T_State
 
 from .inkbot import stage_handle, coop_handle, textmode_handle
 
+'''
 @on_command("图",
             aliases={'下图', '下下图', '当', '当当', '当当当', '排', '排排', '排排排', '排排排排',
                      '下下下图', '图2', '下图2', '下下图2', '下下下图2'},
@@ -43,3 +44,5 @@ async def bot_coop_handle(bot: Bot, event: Event, state: T_State):
 
         message = Message(msg) + Message(img)
         await bot.send(event, message=message)
+
+'''

@@ -141,6 +141,7 @@ dmypy.json
 
 .idea/
 *.sqlite
+*.db
 
 splatoon3_bot/plugins/ink_bot/temp/
 splatoon3_bot/plugins/splatoon3_bot/resource/s3sits_git/
