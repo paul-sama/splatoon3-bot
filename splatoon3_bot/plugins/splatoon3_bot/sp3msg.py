@@ -6,6 +6,7 @@ from collections import defaultdict
 from datetime import datetime as dt, timedelta
 from nonebot import logger
 from .s3s import utils
+from .db_sqlite import get_top_player
 
 
 INTERVAL = 10
@@ -66,6 +67,16 @@ https://github.com/paul-sama/splatoon3-bot
 '''
 
 
+def get_top_str(p_id):
+    player_code = (base64.b64decode(p_id).decode('utf-8') or '').split(':u-')[-1]
+    top_str = ''
+    r = get_top_player(player_code)
+    if r and r[0] and r[0]:
+        top_str = f'X{r[0]}({r[1]})'
+        return top_str
+    return top_str
+
+
 def get_row_text(p, battle_show_type='1'):
     re = p['result']
     if not re:
@@ -80,15 +91,6 @@ def get_row_text(p, battle_show_type='1'):
     name_id = p.get('nameId')
     by_name = p.get('byname') or ''
     weapon = (p.get('weapon') or {}).get('name') or ''
-    badges = []
-    if (p.get('nameplate') or {}).get('badges'):
-        for b in p['nameplate']['badges']:
-            if not b:
-                continue
-            b_id = base64.b64decode(b['id']).decode('utf-8')
-            if b_id[-1] in ('2', '3') and '3100002' not in b_id:
-                # logger.info(f"{name} b_id: {b_id}")
-                badges.append('*')
 
     if battle_show_type == '2':
         name = weapon
@@ -97,11 +99,16 @@ def get_row_text(p, battle_show_type='1'):
     elif battle_show_type == '4':
         name = f"{weapon} ({name})"
     elif battle_show_type == '5':
-        name = f"{weapon} ({name}) {by_name} {''.join(badges)}"
+        name = f"{weapon} ({name}) {by_name}"
     elif battle_show_type == '6':
         name = f"{weapon} ({name})#{name_id} {by_name}"
     name = name.replace('`', '`\``')
     t = f"`{ak:>2}{k_str:>5}k {d:>2}d{ration:>4.1f}{re['special']:>3}sp {p['paint']:>4}p {name}`\n"
+
+    top_str = get_top_str(p['id'])
+    if top_str:
+        t = t.strip() + f' *{top_str}*\n'
+
     if p.get('isMyself'):
         t = t.strip().replace('`', '').replace(name, '')
         t = f"`{t}`*{name}*\n"

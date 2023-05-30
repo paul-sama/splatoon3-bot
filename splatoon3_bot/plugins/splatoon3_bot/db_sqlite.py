@@ -221,3 +221,11 @@ def clean_top_player(top_id):
     session.query(TopPlayer).filter(TopPlayer.top_id == top_id).delete()
     session.commit()
     session.close()
+
+
+def get_top_player(player_code):
+    session = DBSession()
+    user = session.query(func.min(TopPlayer.rank), func.max(TopPlayer.power)
+                         ).filter(TopPlayer.player_code == player_code).first()
+    session.close()
+    return user
