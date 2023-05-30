@@ -27,6 +27,10 @@ async def cron_job(bot: Bot):
 
     now = dt.now()
 
+    # parse x rank player at 3:00
+    if now.hour == 3 and now.minute == 0 and isinstance(bot, TGBot):
+        get_x_player()
+
     # run every 3 hours
     if not (now.hour % 3 == 0 and now.minute == 0):
         return
@@ -41,10 +45,6 @@ async def cron_job(bot: Bot):
 
         _thread = threading.Thread(target=asyncio.run, args=(thread_function(u.id),))
         _thread.start()
-
-    # parse x rank player at 3:00
-    if now.hour == 3 and now.minute == 0 and isinstance(bot, TGBot):
-        get_x_player()
 
 
 async def send_user_msg(bot, users):
