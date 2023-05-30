@@ -50,6 +50,25 @@ class GroupTable(Base):
     update_time = Column(DateTime(), onupdate=func.now())
 
 
+class TopPlayer(Base):
+    __tablename__ = 'top_player'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    top_id = Column(String(), default='')
+    top_type = Column(String(), default='')
+    rank = Column(Integer(), default=0)
+    power = Column(String(), default='')
+    player_name = Column(String(), default='')
+    player_name_id = Column(String(), default='')
+    player_code = Column(String(), default='')
+    byname = Column(String(), default='')
+    weapon_id = Column(Integer(), default=0)
+    weapon = Column(String(), default='')
+    play_time = Column(DateTime())
+    create_time = Column(DateTime(), default=func.now())
+    update_time = Column(DateTime(), onupdate=func.now())
+
+
 engine = create_engine(database_uri, connect_args={"check_same_thread": False})
 
 Base.metadata.create_all(engine)
@@ -173,3 +192,32 @@ def get_user(**kwargs):
 
     except Exception as e:
         logger.error(f'get_user error: {e}')
+
+
+def write_top_player(row):
+    top_id, _top_type, rank, power, name, name_id, player_code, byname, weapon_id, weapon = row
+
+    session = DBSession()
+    _dict = {
+        'top_id': top_id,
+        'top_type': _top_type,
+        'rank': rank,
+        'power': power,
+        'player_name': name,
+        'player_name_id': name_id,
+        'player_code': player_code,
+        'byname': byname,
+        'weapon_id': weapon_id,
+        'weapon': weapon,
+    }
+    new_user = TopPlayer(**_dict)
+    session.add(new_user)
+    session.commit()
+    session.close()
+
+
+def clean_top_player(top_id):
+    session = DBSession()
+    session.query(TopPlayer).filter(TopPlayer.top_id == top_id).delete()
+    session.commit()
+    session.close()

@@ -11,41 +11,22 @@ from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.onebot.v11 import Bot as QQBot
 
 from .db_sqlite import get_or_set_user, get_all_user
+from .scripts.top_player import get_x_player
+
 
 logger = logger.bind(cron=True)
 
 async def cron_job(bot: Bot):
+    """定时任务， 每分钟每个bot执行"""
     # logger.debug(f'cron_job {bot.self_id}')
 
     users = get_all_user()
 
     # check msg file every minute and send msg, can't send msg in thread
-    path_folder = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
-    for u in users:
-        if not u.api_key or not u.session_token:
-            continue
-        if (isinstance(bot, TGBot) and not u.user_id_tg) or (isinstance(bot, QQBot) and not u.user_id_qq):
-            continue
-        file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
-        if not os.path.exists(file_msg_path):
-            continue
-        # logger.debug(f"get msg file: {file_msg_path}")
-        with open(file_msg_path, 'r') as f:
-            msg = f.read()
-        if msg:
-            try:
-                ret = None
-                if isinstance(bot, TGBot):
-                    ret = await bot.send_message(chat_id=u.user_id_tg, text=msg, disable_web_page_preview=True)
-                elif isinstance(bot, QQBot):
-                    ret = await bot.send_private_msg(user_id=u.user_id_qq, message=msg)
-                if ret:
-                    logger.info(f"{u.id} send message: {ret}, {msg}")
-                    os.remove(file_msg_path)
-            except Exception as e:
-                logger.error(f"{u.id}, post_battle_to_stat_ink: {e}, {msg}")
+    await send_user_msg(bot, users)
 
     now = dt.now()
+
     # run every 3 hours
     if not (now.hour % 3 == 0 and now.minute == 0):
         return
@@ -60,6 +41,38 @@ async def cron_job(bot: Bot):
 
         _thread = threading.Thread(target=asyncio.run, args=(thread_function(u.id),))
         _thread.start()
+
+    # parse x rank player at 3:00
+    if now.hour == 3 and now.minute == 0 and isinstance(bot, TGBot):
+        get_x_player()
+
+
+async def send_user_msg(bot, users):
+    path_folder = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
+    for u in users:
+        if not u.api_key or not u.session_token:
+            continue
+        if (isinstance(bot, TGBot) and not u.user_id_tg) or (isinstance(bot, QQBot) and not u.user_id_qq):
+            continue
+        file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
+        if not os.path.exists(file_msg_path):
+            continue
+        # logger.debug(f"get msg file: {file_msg_path}")
+        msg = ''
+        with open(file_msg_path, 'r') as f:
+            msg = f.read()
+        if msg:
+            try:
+                ret = None
+                if isinstance(bot, TGBot):
+                    ret = await bot.send_message(chat_id=u.user_id_tg, text=msg, disable_web_page_preview=True)
+                elif isinstance(bot, QQBot):
+                    ret = await bot.send_private_msg(user_id=u.user_id_qq, message=msg)
+                if ret:
+                    logger.info(f"{u.id} send message: {ret}, {msg}")
+                    os.remove(file_msg_path)
+            except Exception as e:
+                logger.error(f"{u.id}, post_battle_to_stat_ink: {e}, {msg}")
 
 
 async def thread_function(user_id):

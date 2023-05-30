@@ -1,0 +1,136 @@
+
+import base64
+import json
+import time
+from nonebot import logger
+
+from ..s3s import utils
+from ..splat import Splatoon
+from ..db_sqlite import write_top_player, clean_top_player, get_all_user
+
+
+def parse_x_row(n, top_type, x_type, top_id):
+    n = n['node']
+    name = n['name']
+    name_id = n['nameId']
+    rank = n['rank']
+    power = n['xPower']
+    byname = n['byname']
+    weapon = n['weapon']['name']
+    p_id = base64.b64decode(n['id']).decode('utf-8')
+    player_code = p_id.split('-')[-1]
+    _top_type = f'{top_type}:{x_type}'
+    weapon_id = int(base64.b64decode(n['weapon']['id']).decode('utf-8').split('-')[-1])
+
+    row = [top_id, _top_type, rank, power, name, name_id, player_code, byname, weapon_id, weapon]
+    # logger.info(row[:-1])
+    write_top_player(row)
+
+
+def get_x_items(top_id, splt):
+    """获取X排行榜第一屏数据"""
+    _d = utils.gen_graphql_body('d5e4924c05891208466fcba260d682e7', varname='id', varvalue=top_id)
+    res = splt._request(_d)
+    return res
+
+
+def get_top_x(data_row, top_id, x_type, mode_hash, splt=None):
+    logger.info(f'get_top_x: {top_id}, {x_type}')
+    res = data_row
+    if not res:
+        return
+
+    top_type = base64.b64decode(top_id).decode('utf-8')
+    for n in res['data']['xRanking'][f'xRanking{x_type}']['edges']:
+        parse_x_row(n, top_type, x_type, top_id)
+
+    has_next_page = res['data']['xRanking'][f'xRanking{x_type}']['pageInfo']['hasNextPage']
+    cursor = res['data']['xRanking'][f'xRanking{x_type}']['pageInfo']['endCursor']
+    while True:
+        if not has_next_page:
+            break
+
+        _d = {
+            "extensions": {"persistedQuery": {"sha256Hash": mode_hash, "version": 1}},
+            "variables": {'cursor': cursor, 'first': 25, 'page': 1, 'id': top_id}
+        }
+        _d = json.dumps(_d)
+        _res = splt._request(_d)
+        for n in _res['data']['node'][f'xRanking{x_type}']['edges']:
+            parse_x_row(n, top_type, x_type, top_id)
+
+        cursor = _res['data']['node'][f'xRanking{x_type}']['pageInfo']['endCursor']
+        has_next_page = _res['data']['node'][f'xRanking{x_type}']['pageInfo']['hasNextPage']
+        logger.info(f'get page:  {cursor}, {has_next_page}')
+        if not has_next_page:
+            break
+
+    for page in (2, 3, 4, 5):
+        _d = {
+            "extensions": {"persistedQuery": {"sha256Hash": mode_hash, "version": 1}},
+            "variables": {'cursor': None, 'first': 25, 'page': page, 'id': top_id}
+        }
+        _d = json.dumps(_d)
+        _res = splt._request(_d)
+
+        for n in _res['data']['node'][f'xRanking{x_type}']['edges']:
+            parse_x_row(n, top_type, x_type, top_id)
+
+        cursor = _res['data']['node'][f'xRanking{x_type}']['pageInfo']['endCursor']
+        has_next_page = _res['data']['node'][f'xRanking{x_type}']['pageInfo']['hasNextPage']
+        while True:
+            if not has_next_page:
+                break
+            _d = {
+                "extensions": {"persistedQuery": {"sha256Hash": mode_hash, "version": 1}},
+                "variables": {'cursor': cursor, 'first': 25, 'page': page, 'id': top_id}
+            }
+            _d = json.dumps(_d)
+            _res = splt._request(_d)
+            for n in _res['data']['node'][f'xRanking{x_type}']['edges']:
+                parse_x_row(n, top_type, x_type, top_id)
+
+            cursor = _res['data']['node'][f'xRanking{x_type}']['pageInfo']['endCursor']
+            has_next_page = _res['data']['node'][f'xRanking{x_type}']['pageInfo']['hasNextPage']
+
+            logger.info(f'get page:  {cursor}, {has_next_page}')
+            if not has_next_page:
+                break
+
+
+def parse_x_data(top_id, splt):
+    clean_top_player(top_id)
+    first_rows = get_x_items(top_id, splt)
+
+    for _t in (
+            ('Ar', '6de3895bd90b5fa5220b5e9355981e16'),
+            ('Lf', 'd96057b8f46e5f7f213a35c8ea2b8fdc'),
+            ('Gl', 'd62ec65b297968b659103d8dc95d014d'),
+            ('Cl', '3ab25d7f475cb3d5daf16f835a23411b')
+    ):
+        x_type, hash_mode = _t
+        get_top_x(first_rows, top_id, x_type, hash_mode, splt)
+        time.sleep(5)
+
+
+def get_x_player():
+    logger.info(f'get x player start')
+    s = time.time()
+
+    users = get_all_user()
+    splt = None
+    for u in users:
+        if u and u.session_token:
+            user_id = u.user_id_qq or u.user_id_tg or u.id
+            splt = Splatoon(user_id, u.session_token)
+            break
+
+    if not splt:
+        logger.info(f'no user login.')
+        return
+
+    # for top_id in ('WFJhbmtpbmdTZWFzb24tcDoy', 'WFJhbmtpbmdTZWFzb24tYToy'):  # season-2
+    for top_id in ('WFJhbmtpbmdTZWFzb24tcDoz', 'WFJhbmtpbmdTZWFzb24tYToz'):  #season-3
+        parse_x_data(top_id, splt)
+
+    logger.info(f'get x player end. {time.time() - s}')
