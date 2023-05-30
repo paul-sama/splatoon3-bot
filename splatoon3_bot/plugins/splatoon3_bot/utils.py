@@ -6,7 +6,7 @@ from nonebot import logger
 from nonebot.adapters import Bot, Event
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.telegram.message import File
-from nonebot.adapters.onebot.v11 import Bot as QQBot, Message
+from nonebot.adapters.onebot.v11 import Bot as QQBot, Message, MessageSegment
 from .db_sqlite import get_user
 
 from nonebot import require
@@ -14,7 +14,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '0.0.5'
+BOT_VERSION = '0.0.6'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -25,6 +25,9 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         if tmp_file:
             if isinstance(bot, TGBot):
                 await bot.send(event, File.photo(tmp_file))
+            elif isinstance(bot, QQBot):
+                img = MessageSegment.image('file:///' + tmp_file)
+                await bot.send(event, message=Message(img))
             return
 
     if isinstance(bot, QQBot):
