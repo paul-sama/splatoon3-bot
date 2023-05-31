@@ -2,7 +2,8 @@ from nonebot import on_command, logger
 from nonebot.adapters import Event, Bot
 
 from .sp3bot import (
-    get_user_db_info, get_last_battle_or_coop, get_me, get_friends_msg, get_ns_friends_msg, get_x_top_msg
+    get_user_db_info, get_last_battle_or_coop, get_me, get_friends_msg, get_ns_friends_msg, get_x_top_msg,
+    get_my_schedule_msg
 )
 from .utils import bot_send, check_session_handler
 
@@ -81,4 +82,10 @@ async def ns_friends(bot: Bot, event: Event):
 @on_command("x_top", block=True).handle()
 async def x_top(bot: Bot, event: Event):
     msg = get_x_top_msg()
+    await bot_send(bot, event, msg, parse_mode='Markdown')
+
+
+@on_command("my_schedule", block=True).handle()
+async def schedule(bot: Bot, event: Event):
+    msg = get_my_schedule_msg(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown')

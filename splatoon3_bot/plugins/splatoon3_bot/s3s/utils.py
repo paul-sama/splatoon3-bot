@@ -28,6 +28,8 @@ translate_rid = {
 	'HistorySummary':                    'd9246baf077b2a29b5f7aac321810a77',
 	'TotalQuery':                        'f8ae00773cc412a50dd41a6d9a159ddd',
 	'XRankingQuery':                     'd771444f2584d938db8d10055599011d',
+	'ScheduleQuery':                     'd1f062c14f74f758658b2703a5799002',
+	'StageRecordsQuery':                 'f08a932d533845dde86e674e03bbb7d3',
 }
 
 def get_web_view_ver():

@@ -10,7 +10,9 @@ from nonebot.adapters.onebot.v11 import Bot as QQBot
 
 from .db_sqlite import get_user, get_or_set_user, get_all_user
 from .splat import Splatoon
-from .sp3msg import get_battle_msg, get_coop_msg, get_summary, get_statics, get_friends, get_ns_friends, get_x_top
+from .sp3msg import (
+    get_battle_msg, get_coop_msg, get_summary, get_statics, get_friends, get_ns_friends, get_x_top, get_my_schedule
+)
 from .sp3msg_md import get_battle_msg as get_battle_msg_md, get_coop_msg as get_coop_msg_md
 from .utils import bot_send, INTERVAL
 
@@ -217,4 +219,12 @@ def get_x_top_msg():
             break
     msg = get_x_top(splt)
     logger.debug(msg)
+    return msg
+
+
+def get_my_schedule_msg(user_id):
+    user = get_or_set_user(user_id=user_id)
+    splt = Splatoon(user_id, user.session_token)
+    msg = get_my_schedule(splt)
+    # logger.debug(msg)
     return msg
