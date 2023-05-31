@@ -226,6 +226,7 @@ def get_battle_msg_title(b_info, battle_detail, **kwargs):
     mode = b_info['vsMode']['mode']
     rule = b_info['vsRule']['name']
     judgement = b_info['judgement']
+    stage = b_info['vsStage']['name']
     bankara_match = (battle_detail.get('bankaraMatch') or {}).get('mode') or ''
 
     point = 0
@@ -264,7 +265,7 @@ def get_battle_msg_title(b_info, battle_detail, **kwargs):
 
     # BANKARA(OPEN) 真格蛤蜊 WIN S+9 +8p
     # FEST(OPEN) 占地对战 WIN  +2051
-    title = f"`{mode}{bankara_match} {rule} {judgement} {b_info.get('udemae') or ''} {str_point}`\n"
+    title = f"`{mode}{bankara_match} {rule}({stage}) {judgement} {b_info.get('udemae') or ''} {str_point}`\n"
     return title, point, b_process
 
 
@@ -290,7 +291,9 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
     msg += ''.join(text_list)
 
     # footer
-    msg += f"`duration: {battle_detail['duration']}s, knockout: {battle_detail['knockout']} {b_process}`"
+    score_list = [str((t.get('result') or {}).get('score')) for t in teams if 'score' in (t.get('result') or {})]
+    score = ':'.join(score_list)
+    msg += f"`duration: {battle_detail['duration']}s, {score} knockout: {battle_detail['knockout']} {b_process}`"
 
     succ = 0
     if 'current_statics' in kwargs:
