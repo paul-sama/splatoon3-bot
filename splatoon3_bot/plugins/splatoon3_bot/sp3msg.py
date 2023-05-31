@@ -651,3 +651,40 @@ def get_ns_friends(splt):
 {st}
 ```'''
     return msg
+
+
+def region_x_top(x):
+    ar = x['xRankingAr']['nodes'][0]
+    lf = x['xRankingLf']['nodes'][0]
+    gl = x['xRankingGl']['nodes'][0]
+    cl = x['xRankingCl']['nodes'][0]
+    return f'''{ar['xPower']} {ar['name']} #{ar['nameId']} {ar['weapon']['name']}
+{lf['xPower']} {lf['name']} #{lf['nameId']} {lf['weapon']['name']}
+{gl['xPower']} {gl['name']} #{gl['nameId']} {gl['weapon']['name']}
+{cl['xPower']} {cl['name']} #{cl['nameId']} {cl['weapon']['name']}
+'''
+
+
+def get_x_top(splt):
+    sha = utils.translate_rid['XRankingQuery']
+    res = splt._request(utils.gen_graphql_body(sha, varname='region', varvalue='PACIFIC'))
+    res_a = splt._request(utils.gen_graphql_body(sha, varname='region', varvalue='ATLANTIC'), skip_check_token=True)
+    if not res:
+        return 'No X found!'
+
+    x = res['data']['xRanking']['currentSeason']
+    t = x['lastUpdateTime'].replace('T', ' ').replace('Z', '')
+    region_p = region_x_top(x)
+    x_a = res_a['data']['xRanking']['currentSeason']
+    t_a = x_a['lastUpdateTime'].replace('T', ' ').replace('Z', '')
+    region_a = region_x_top(x_a)
+
+    msg = f'''```
+{x['name']}
+{res['data']['xRanking']['region']} {t}(UTC)
+{region_p}
+{res_a['data']['xRanking']['region']} {t_a}(UTC)
+{region_a}
+```
+'''
+    return msg
