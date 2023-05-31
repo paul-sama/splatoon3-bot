@@ -17,7 +17,7 @@ from nonebot_plugin_apscheduler import scheduler
 __all__ = ['start_push', 'stop_push', 'scheduler']
 
 
-@on_command("start_push", block=True).handle()
+@on_command("start_push", aliases={'sp', 'push', 'start'}, block=True).handle()
 @check_session_handler
 async def start_push(bot: Bot, event: Event, state: T_State):
     user_id = event.get_user_id()
@@ -58,7 +58,7 @@ async def start_push(bot: Bot, event: Event, state: T_State):
     await bot_send(bot, event, msg)
 
 
-@on_command("stop_push", block=True).handle()
+@on_command("stop_push", aliases={'stop', 'st', 'stp'}, block=True).handle()
 async def stop_push(bot: Bot, event: Event):
     msg = f'Stop push!'
     logger.info(msg)

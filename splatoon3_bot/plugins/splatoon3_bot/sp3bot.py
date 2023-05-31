@@ -176,7 +176,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
     splt = Splatoon(user_id, user.session_token)
     msg = get_last_msg(splt, battle_id, _info, is_battle, battle_show_type=db_user_info.get('battle_show_type'), **data)
 
-    r = await bot_send(bot, event, message=msg, parse_mode='MarkdownV2')
+    r = await bot_send(bot, event, message=msg, parse_mode='Markdown')
     if job_data.get('group_id') and r:
         message_id = ''
         if isinstance(bot, QQBot):

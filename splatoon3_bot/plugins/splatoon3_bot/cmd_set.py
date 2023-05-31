@@ -131,7 +131,7 @@ async def clear_db_info(bot: Bot, event: Event):
     await bot.send(event, message=msg)
 
 
-matcher_set_battle_info = on_command("set_battle_info", block=True)
+matcher_set_battle_info = on_command("set_battle_info", aliases={'sbi'}, block=True)
 
 
 @matcher_set_battle_info.handle()
