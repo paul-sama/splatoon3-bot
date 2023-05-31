@@ -114,7 +114,11 @@ def get_me(user_id):
     res = splt.get_summary()
     all_res = splt.get_all_res()
     coop = splt.get_coop_summary()
-    msg = get_summary(res, all_res, coop, lang=user.acc_loc)
+    try:
+        msg = get_summary(res, all_res, coop, lang=user.acc_loc)
+    except Exception as e:
+        logger.exception(e)
+        msg = f'get summary failed, please try again later.'
     logger.debug(msg)
     return msg
 

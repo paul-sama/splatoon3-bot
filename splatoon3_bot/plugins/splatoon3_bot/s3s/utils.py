@@ -25,6 +25,8 @@ translate_rid = {
 	'CoopHistoryDetailQuery':            '379f0d9b78b531be53044bcac031b34b', # SR  / req "coopHistoryDetailId" - query2
 	'MyOutfitCommonDataEquipmentsQuery': 'd29cd0c2b5e6bac90dd5b817914832f8', # for Lean's seed checker
 	'FriendsList':                       'f0a8ebc384cf5fbac01e8085fbd7c898',
+	'HistorySummary':                    'd9246baf077b2a29b5f7aac321810a77',
+	'TotalQuery':                        'f8ae00773cc412a50dd41a6d9a159ddd',
 }
 
 def get_web_view_ver():

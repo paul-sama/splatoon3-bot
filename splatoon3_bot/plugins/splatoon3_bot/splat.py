@@ -131,17 +131,17 @@ class Splatoon:
         return res
 
     def get_summary(self, skip_check_token=False):
-        data = utils.gen_graphql_body('32b6771f94083d8f04848109b7300af5')
+        data = utils.gen_graphql_body(utils.translate_rid['HistorySummary'])
         res = self._request(data, skip_check_token)
         return res
 
     def get_all_res(self, skip_check_token=True):
-        data = utils.gen_graphql_body('f8ae00773cc412a50dd41a6d9a159ddd')
+        data = utils.gen_graphql_body(utils.translate_rid['TotalQuery'])
         res = self._request(data, skip_check_token)
         return res
 
     def get_coop_summary(self, skip_check_token=True):
-        data = utils.gen_graphql_body('2fd21f270d381ecf894eb975c5f6a716')
+        data = utils.gen_graphql_body(utils.translate_rid['CoopHistoryQuery'])
         res = self._request(data, skip_check_token)
         return res
 
