@@ -2,7 +2,7 @@
   <a href="">
     <img src="https://img.shields.io/badge/QQ-1947343180-orange?style=flat-square" alt="QQ Chat">
   </a>
-  <a href="https://t.me/splatoon3bot">
+  <a href="https://t.me/splatoon3_bot">
     <img src="https://img.shields.io/badge/telegram-splatoon3bot-blue?style=flat-square" alt="Telegram">
   </a>
 
