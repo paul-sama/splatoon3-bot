@@ -63,7 +63,8 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
     # get last battle
     res = splt.get_recent_battles(skip_check_token=True if for_push else False)
     if not res:
-        return None
+        return f'`network error, please try again later.`'
+
     b_info = res['data']['latestBattleHistories']['historyGroups']['nodes'][0]['historyDetails']['nodes'][idx]
     battle_id = b_info['id']
     battle_t = base64.b64decode(battle_id).decode('utf-8').split('_')[0].split(':')[-1]

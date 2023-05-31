@@ -64,13 +64,13 @@ async def me(bot: Bot, event: Event):
 
 @on_command("friends", block=True).handle()
 @check_session_handler
-async def me(bot: Bot, event: Event):
+async def friends(bot: Bot, event: Event):
     msg = get_friends_msg(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
 @on_command("ns_friends", block=True).handle()
 @check_session_handler
-async def me(bot: Bot, event: Event):
+async def ns_friends(bot: Bot, event: Event):
     msg = get_ns_friends_msg(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown')

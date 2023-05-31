@@ -27,8 +27,8 @@ async def cron_job(bot: Bot):
 
     now = dt.now()
 
-    # parse x rank player at 3:00
-    if now.hour == 3 and now.minute == 0 and isinstance(bot, TGBot):
+    # parse x rank player at 2:40
+    if now.hour == 2 and now.minute == 40 and isinstance(bot, TGBot):
         get_x_player()
 
     # run every 3 hours
