@@ -79,6 +79,10 @@ async def _(bot: Bot):
     bot_type = 'Telegram' if isinstance(bot, TGBot) else 'QQ'
     logger.info(f' {bot_type} bot connect {bot.self_id} '.center(60, '-').center(120, ' '))
 
+    job_id = f'sp3_cron_job_{bot.self_id}'
+    if scheduler.get_job(job_id):
+        scheduler.remove_job(job_id)
+
     scheduler.add_job(
-        cron_job, 'interval', minutes=1, id=f'sp3_cron_job_{bot.self_id}', args=[bot]
+        cron_job, 'interval', minutes=1, id=job_id, args=[bot]
     )
