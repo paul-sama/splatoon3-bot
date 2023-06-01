@@ -8,14 +8,14 @@ from bs4 import BeautifulSoup
 
 SPLATNET3_URL = "https://api.lp1.av5ja.srv.nintendo.net"
 GRAPHQL_URL  = "https://api.lp1.av5ja.srv.nintendo.net/api/graphql"
-WEB_VIEW_VERSION = "3.0.0-2857bc50" # fallback
+WEB_VIEW_VERSION = "4.0.0-e2ee936d" # fallback
 S3S_NAMESPACE = uuid.UUID('b3a2dbf5-2c09-4792-b78c-00b548b70aeb')
 
 # SHA256 hash database for SplatNet 3 GraphQL queries
 # full list: https://github.com/samuelthomas2774/nxapi/discussions/11#discussioncomment-3614603
 translate_rid = {
-	'HomeQuery':                         '22e2fa8294168003c21b00c333c35384', # blank vars
-	'LatestBattleHistoriesQuery':        '0176a47218d830ee447e10af4a287b3f', # INK / blank vars - query1
+	'HomeQuery':                         '7dcc64ea27a08e70919893a0d3f70871', # blank vars
+	'LatestBattleHistoriesQuery':        '0d90c7576f1916469b2ae69f64292c02', # INK / blank vars - query1
 	'RegularBattleHistoriesQuery':       '3baef04b095ad8975ea679d722bc17de', # INK / blank vars - query1
 	'BankaraBattleHistoriesQuery':       '0438ea6978ae8bd77c5d1250f4f84803', # INK / blank vars - query1
 	'PrivateBattleHistoriesQuery':       '8e5ae78b194264a6c230e262d069bd28', # INK / blank vars - query1
