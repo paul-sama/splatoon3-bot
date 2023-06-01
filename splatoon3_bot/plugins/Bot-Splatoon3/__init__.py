@@ -55,7 +55,11 @@ async def bot_send(bot: Bot, event: Event, **kwargs):
             msg = f"[CQ:at,qq={user_id}]"
 
         message = Message(msg) + Message(img)
-        await bot.send(event, message=message)
+        try:
+            await bot.send(event, message=message)
+        except Exception as e:
+            logger.error(f'QQBot send error: {e}')
+
     elif isinstance(bot, TGBot):
         await bot.send(event, File.photo(img))
 
