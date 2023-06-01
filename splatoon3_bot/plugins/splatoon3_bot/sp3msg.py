@@ -465,6 +465,15 @@ def get_summary(data, all_data, coop, lang='zh-CN'):
     if any([ar, lf, gl, cl]):
         x_msg = f"X max power:\n{ar:>7.2f}, {lf:>7.2f}, {gl:>7.2f}, {cl:>7.2f}"
 
+    _league = ''
+    _open = ''
+    if history.get('leagueMatchPlayHistory'):
+        _l = history['leagueMatchPlayHistory']
+        _league = f"🏅️{_l['gold']:>3} 🥈{_l['silver']:>3} 🥉{_l['bronze']:>3} {_l['attend']:>3}"
+    if history.get('bankaraMatchOpenPlayHistory'):
+        _o = history['bankaraMatchOpenPlayHistory']
+        _open = f"🏅️{_o['gold']:>3} 🥈{_o['silver']:>3} 🥉{_o['bronze']:>3} {_o['attend']:>3}"
+
     msg = f"""
 ```
 {player['name']} #{player['nameId']}
@@ -475,6 +484,8 @@ def get_summary(data, all_data, coop, lang='zh-CN'):
 {dict_lang['History.total_win']}: {history['winCountTotal']}{all_cnt} {r}
 {dict_lang['History.total_turf_point']}: {history['paintPointTotal']:,}p
 {dict_lang['History.badge']}: {len(history['badges'])}
+活动: {_league}
+开放: {_open}
 {s_time:%Y-%m-%d %H:%M:%S} +08:00
 {c_time:%Y-%m-%d %H:%M:%S} +08:00
 {x_msg}
