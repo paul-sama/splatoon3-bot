@@ -183,13 +183,13 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
         message_id = ''
         if isinstance(bot, QQBot):
             message_id = r.get('message_id')
-            if data.get('last_group_msg_id'):
-                await bot.call_api('delete_msg', message_id=data['last_group_msg_id'])
-        elif isinstance(bot, TGBot):
-            message_id = r.message_id
             # qq 五分钟后消息撤回失效
             # if data.get('last_group_msg_id'):
-            #    await bot.call_api('delete_message', message_id=data['last_group_msg_id'], chat_id=r.chat.id)
+            #     await bot.call_api('delete_msg', message_id=data['last_group_msg_id'])
+        elif isinstance(bot, TGBot):
+            message_id = r.message_id
+            if data.get('last_group_msg_id'):
+               await bot.call_api('delete_message', message_id=data['last_group_msg_id'], chat_id=r.chat.id)
         data['last_group_msg_id'] = message_id
 
 
