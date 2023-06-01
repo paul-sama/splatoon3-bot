@@ -61,7 +61,7 @@ async def bot_send(bot: Bot, event: Event, **kwargs):
             logger.error(f'QQBot send error: {e}')
 
     elif isinstance(bot, TGBot):
-        await bot.send(event, File.photo(img))
+        await bot.send(event, File.photo(img), reply_to_message_id=event.dict().get('message_id'))
 
 
 @matcher_random_weapon.handle()

@@ -14,7 +14,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '0.1.7'
+BOT_VERSION = '0.1.8'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -38,6 +38,10 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
             if '\nW1' in message:
                 message = message.split('\n\n')[0].strip()
             message = Message(f"[CQ:at,qq={event.get_user_id()}]" + message)
+
+    elif isinstance(bot, TGBot):
+        if 'group' in event.get_event_name() and 'reply_to_message_id' not in kwargs:
+            kwargs['reply_to_message_id'] = event.dict().get('message_id')
 
     try:
         r = await bot.send(event, message, **kwargs)

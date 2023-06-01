@@ -306,7 +306,7 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
             if last_power:
                 diff = open_power - last_power
                 if diff:
-                    str_open_power = f"战力: {diff:+.2f}({open_power})"
+                    str_open_power = f"战力: {diff:+.2f}({open_power:.2f})"
             current_statics['open_power'] = open_power
 
     msg += f"`duration: {duration}s, {score} knockout: {battle_detail['knockout']} {b_process} {str_open_power}`"
