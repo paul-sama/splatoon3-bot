@@ -69,7 +69,9 @@ async def send_user_msg(bot, users):
                 elif isinstance(bot, QQBot):
                     ret = await bot.send_private_msg(user_id=u.user_id_qq, message=msg)
                 if ret:
-                    logger.info(f"{u.id} send message: {ret}, {msg}")
+                    logger.debug(f"{u.id} send message: {ret}")
+                    logger.debug(f"{u.id} delete message file: {file_msg_path}")
+                    logger.info(msg)
                     os.remove(file_msg_path)
             except Exception as e:
                 logger.error(f"{u.id}, post_battle_to_stat_ink: {e}, {msg}")
