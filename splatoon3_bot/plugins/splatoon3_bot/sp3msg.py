@@ -31,7 +31,6 @@ MSG_HELP = """
 /me - show your info
 /friends - show splatoon3 online friends
 /ns_friends - show online friends
-/check_favorite_friends - check_favorite_friends
 /last - show the last battle or coop
 /start_push - start push mode
 /my_schedule - my schedule
@@ -39,10 +38,8 @@ MSG_HELP = """
 /x_top - show X Top Players
 
 settings:
-/set_lang - set language, default(zh-CN) 默认中文
 /set_api_key - set stat.ink api_key for post data
 /set_battle_info - set battle info
-/get_seed - leanny.github.io/splat3seedchecker/#/settings
 /show_db_info - show db info
 
 /help - show this help message
@@ -62,6 +59,10 @@ MSG_HELP_QQ = '''机器人使用说明
 /me - 显示你的喷喷信息
 /set_api_key - 设置 api_key, 同步数据到 https://stat.ink
 /friends - 显示在线的喷喷好友
+/ns_friends - 显示在线的NS好友
+/my_schedule - 显示我的赛程
+/coop_schedule - 显示打工赛程
+/x_top - 显示X段1名
 
 https://github.com/paul-sama/splatoon3-bot
 '''

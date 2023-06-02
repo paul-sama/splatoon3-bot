@@ -52,9 +52,9 @@ async def all_command(bot: Bot, event: Event):
 async def unknown_command(bot: Bot, event: Event):
     logger.info(f'unknown_command {event.get_event_name()}')
     if 'private' in event.get_event_name():
-        _msg = "Sorry, I didn't understand that command. /help\nOr permission denied /login first."
+        _msg = "Sorry, I didn't understand that command. /help"
         if isinstance(bot, QQBot):
-            _msg = '无效命令，输入 /help 查看帮助\n或无权限查看，请先 /login 登录'
+            _msg = '无效命令，输入 /help 查看帮助'
         logger.info(_msg)
         await bot.send(event, message=_msg)
 
