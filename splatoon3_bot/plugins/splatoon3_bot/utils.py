@@ -34,7 +34,11 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         message = message.replace('`', '').replace('*', '').replace('\_', '_').strip()
         if 'group' in event.get_event_name():
             # QQ机器人被风控，群聊消息太长会被吞掉，未被风控可取消截断
-            message = message.split('duration')[0].split('2022-')[0].split('2023-')[0].strip()
+            message = message.split('2022-')[0].split('2023-')[0].strip()
+            if 'duration: ' in message:
+                message, duration = message.split('duration: ')
+                duration = duration.strip().split('\n')[0]
+                message = message + f'\nduration: {duration}]'
             if '\nW1' in message:
                 message = message.split('\n\n')[0].strip()
             message = Message(f"[CQ:at,qq={event.get_user_id()}]" + message)
