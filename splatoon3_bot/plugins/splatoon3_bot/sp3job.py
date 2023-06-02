@@ -148,9 +148,9 @@ def exported_to_stat_ink(user_id, session_token, api_key, user_lang):
             f.write(json.dumps(config_data, indent=2, sort_keys=False, separators=(',', ': ')))
     else:
         for cmd in (
-                f"""sed -i "s/userLang[^,]*,/userLang\": \"{user_lang}\",/g" {path_config_file}""",
-                f"""sed -i "s/sessionToken[^,]*,/sessionToken\": \"{session_token}\",/g" {path_config_file}""",
-                f"""sed -i "s/statInkApiKey[^,]*,/statInkApiKey\": \"{api_key}\",/g" {path_config_file}""",
+                f"""sed -i 's/userLang[^,]*,/userLang\": \"{user_lang}\",/g' {path_config_file}""",
+                f"""sed -i 's/sessionToken[^,]*,/sessionToken\": \"{session_token}\",/g' {path_config_file}""",
+                f"""sed -i 's/statInkApiKey[^,]*,/statInkApiKey\": \"{api_key}\",/g' {path_config_file}""",
         ):
             logger.debug(f'cli: {cmd}')
             os.system(cmd)
