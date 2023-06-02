@@ -295,21 +295,33 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
     score_list = [str((t.get('result') or {}).get('score')) for t in teams if 'score' in (t.get('result') or {})]
     score = ':'.join(score_list)
     str_open_power = ''
+    str_max_open_power = ''
     if (battle_detail.get('bankaraMatch') or {}).get('mode') == 'OPEN':
         open_power = (battle_detail['bankaraMatch'].get('bankaraPower') or {}).get('power') or 0 or ''
         if open_power:
             str_open_power = f'战力: {open_power:.2f}'
             current_statics = {}
+            max_open_power = 0
             if 'current_statics' in kwargs:
                 current_statics = kwargs['current_statics']
+                max_open_power = current_statics.get('max_open_power') or 0
+            max_open_power = max(max_open_power, open_power)
             last_power = current_statics.get('open_power') or 0
             if last_power:
                 diff = open_power - last_power
                 if diff:
-                    str_open_power = f"战力: {diff:+.2f}({open_power:.2f})"
+                    str_open_power = f"战力: ({diff:+.2f}) {open_power:.2f}"
+            if max_open_power:
+                str_max_open_power = f', MAX: {max_open_power:.2f}'
             current_statics['open_power'] = open_power
+            current_statics['max_open_power'] = max_open_power
 
-    msg += f"`duration: {duration}s, {score} knockout: {battle_detail['knockout']} {b_process} {str_open_power}`"
+    str_open_power_inline = ''
+    if str_open_power and 'current_statics' in kwargs:
+        msg += f"`{str_open_power}{str_max_open_power}`\n"
+    elif str_open_power:
+        str_open_power_inline = str_open_power
+    msg += f"`duration: {duration}s, {score} knockout: {battle_detail['knockout']} {b_process} {str_open_power_inline}`"
 
     succ = 0
     if 'current_statics' in kwargs:
@@ -523,7 +535,7 @@ def get_statics(data):
         my_str += f"{data.get('KA', 0)} {data.get('K', 0)}+{data.get('A', 0)}k {data.get('D', 0)}d " \
                   f"{k_rate:.2f} {data.get('S', 0)}sp {data.get('P', 0)}p"
 
-    for k in ('point', 'successive', 'KA', 'K', 'A', 'D', 'S', 'P', 'fest_power', 'open_power'):
+    for k in ('point', 'successive', 'KA', 'K', 'A', 'D', 'S', 'P', 'fest_power', 'open_power', 'max_open_power'):
         if k in data:
             del data[k]
 
