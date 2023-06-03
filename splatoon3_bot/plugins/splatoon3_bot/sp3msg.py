@@ -263,6 +263,10 @@ def get_battle_msg_title(b_info, battle_detail, **kwargs):
             rule += ' (x100)'
         elif fest_match.get('dragonMatchType') == 'DOUBLE_DRAGON':
             rule += ' (x333)'
+    elif mode == 'LEAGUE':
+        bankara_match = ((battle_detail.get('leagueMatch') or {}).get('leagueMatchEvent') or {}).get('name')
+        if bankara_match:
+            bankara_match = f'({bankara_match})'
 
     # BANKARA(OPEN) 真格蛤蜊 WIN S+9 +8p
     # FEST(OPEN) 占地对战 WIN  +2051
@@ -293,12 +297,20 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
 
     # footer
     duration = battle_detail['duration']
-    score_list = [str((t.get('result') or {}).get('score')) for t in teams if 'score' in (t.get('result') or {})]
+    score_list = []
+    for t in teams:
+        if (t.get('result') or {}).get('score'):
+            score_list.append(str((t['result']['score'])))
+        elif (t.get('result') or {}).get('paintRatio'):
+            score_list.append(f"{t['result']['paintRatio']:.2%}"[:-2])
     score = ':'.join(score_list)
     str_open_power = ''
     str_max_open_power = ''
-    if (battle_detail.get('bankaraMatch') or {}).get('mode') == 'OPEN':
-        open_power = (battle_detail['bankaraMatch'].get('bankaraPower') or {}).get('power') or 0 or ''
+    if (battle_detail.get('bankaraMatch') or {}).get('mode') == 'OPEN' or battle_detail.get('leagueMatch'):
+        open_power = ((battle_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
+        if battle_detail.get('leagueMatch'):
+            open_power = battle_detail['leagueMatch'].get('myLeaguePower') or 0
+
         if open_power:
             str_open_power = f'战力: {open_power:.2f}'
             current_statics = {}
