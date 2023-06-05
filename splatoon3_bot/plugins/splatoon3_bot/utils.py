@@ -14,7 +14,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '0.2.0'
+BOT_VERSION = '0.2.1'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -29,6 +29,25 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
                 img = MessageSegment.image('file:///' + tmp_file)
                 await bot.send(event, message=Message(img))
             return
+
+    if kwargs.get('photo'):
+        img_data = kwargs.get('photo')
+        if isinstance(bot, QQBot):
+            img = MessageSegment.image(file=img_data, cache=False)
+
+            msg = ''
+            if 'group' in event.get_event_name():
+                user_id = str(event.get_user_id())
+                msg = f"[CQ:at,qq={user_id}]"
+            message = Message(msg) + Message(img)
+            try:
+                await bot.send(event, message=message)
+            except Exception as e:
+                logger.error(f'QQBot send error: {e}')
+
+        elif isinstance(bot, TGBot):
+            await bot.send(event, File.photo(img_data))
+        return
 
     if isinstance(bot, QQBot):
         message = message.replace('`', '').replace('*', '').replace('\_', '_').strip()

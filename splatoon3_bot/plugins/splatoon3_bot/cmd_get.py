@@ -3,7 +3,7 @@ from nonebot.adapters import Event, Bot
 
 from .sp3bot import (
     get_user_db_info, get_last_battle_or_coop, get_me, get_friends_msg, get_ns_friends_msg, get_x_top_msg,
-    get_my_schedule_msg
+    get_my_schedule_msg, get_screenshot_image
 )
 from .utils import bot_send, check_session_handler
 
@@ -80,3 +80,12 @@ async def x_top(bot: Bot, event: Event):
 async def schedule(bot: Bot, event: Event):
     msg = get_my_schedule_msg(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown')
+
+
+@on_command("screen_shot", aliases={'ss'}, block=True).handle()
+async def screen_shot(bot: Bot, event: Event):
+    key = ''
+    if ' ' in event.get_plaintext():
+        key = event.get_plaintext().split(' ', 1)[1].strip()
+    img = await get_screenshot_image(event.get_user_id(), key=key)
+    await bot_send(bot, event, message='', photo=img)

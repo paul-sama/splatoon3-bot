@@ -36,6 +36,7 @@ MSG_HELP = """
 /my_schedule - my schedule
 /coop_schedule - Coop Schedule
 /x_top - show X Top Players
+/screen_shot - ss, get screen shot of SplatNet
 
 settings:
 /set_api_key - set stat.ink api_key for post data
@@ -63,6 +64,7 @@ MSG_HELP_QQ = '''机器人使用说明
 /my_schedule - 显示我的赛程
 /coop_schedule - 显示打工赛程
 /x_top - 显示X段1名
+/screen_shot - ss, 获取App截图
 
 https://github.com/paul-sama/splatoon3-bot
 '''

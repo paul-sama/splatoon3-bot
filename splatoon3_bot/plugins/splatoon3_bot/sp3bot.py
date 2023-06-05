@@ -14,6 +14,7 @@ from .sp3msg import (
     get_battle_msg, get_coop_msg, get_summary, get_statics, get_friends, get_ns_friends, get_x_top, get_my_schedule
 )
 from .sp3msg_md import get_battle_msg as get_battle_msg_md, get_coop_msg as get_coop_msg_md
+from .splatnet_image import get_app_screenshot
 from .utils import bot_send, INTERVAL
 
 
@@ -228,3 +229,13 @@ def get_my_schedule_msg(user_id):
     msg = get_my_schedule(splt)
     # logger.debug(msg)
     return msg
+
+
+async def get_screenshot_image(user_id, key=None):
+
+    user = get_or_set_user(user_id=user_id)
+    splt = Splatoon(user_id, user.session_token)
+    splt.test_page()
+    user = get_or_set_user(user_id=user_id)
+    img = await get_app_screenshot(user.gtoken, key)
+    return img
