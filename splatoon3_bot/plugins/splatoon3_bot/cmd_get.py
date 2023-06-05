@@ -85,12 +85,14 @@ async def x_top(bot: Bot, event: Event):
 
 
 @on_command("my_schedule", block=True).handle()
+@check_session_handler
 async def schedule(bot: Bot, event: Event):
     msg = get_my_schedule_msg(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
 @on_command("screen_shot", aliases={'ss'}, block=True).handle()
+@check_session_handler
 async def screen_shot(bot: Bot, event: Event):
     key = ''
     if ' ' in event.get_plaintext():
