@@ -9,7 +9,7 @@ from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.onebot.v11 import Bot as QQBot
 
 from .db_sqlite import get_user, get_or_set_user, get_all_user
-from .splat import Splatoon
+from .splat import Splatoon, API_URL
 from .sp3msg import (
     get_battle_msg, get_coop_msg, get_summary, get_statics, get_friends, get_ns_friends, get_x_top, get_my_schedule
 )
@@ -59,7 +59,8 @@ def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
     return msg
 
 
-async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get_coop=False, get_pic=False, idx=0):
+async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get_coop=False, get_pic=False, idx=0,
+                                  get_screenshot=False):
     user = get_user(user_id=user_id)
     splt = Splatoon(user.id, user.session_token)
 
@@ -97,6 +98,14 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
     if get_battle or battle_t > coop_t:
         if for_push:
             return battle_id, b_info, True
+        if get_screenshot:
+            try:
+                url = f"{API_URL}/history/detail/{battle_id}?lang=zh-CN"
+                pic = await get_app_screenshot(user.gtoken, url=url)
+            except Exception as e:
+                logger.exception(e)
+                pic = None
+            return pic
 
         try:
             user_info = json.loads(user.user_info)
@@ -107,6 +116,15 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
     else:
         if for_push:
             return coop_id, coop_info, False
+        if get_screenshot:
+            try:
+                url = f"{API_URL}/coop/{coop_id}?lang=zh-CN"
+                pic = await get_app_screenshot(user.gtoken, url=url)
+            except Exception as e:
+                logger.exception(e)
+                pic = None
+            return pic
+
         msg = get_last_msg(splt, coop_id, coop_info, False, get_pic=get_pic)
         return msg
 
