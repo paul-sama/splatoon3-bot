@@ -57,7 +57,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
             if 'duration: ' in message:
                 message, duration = message.split('duration: ')
                 duration = duration.strip().split('\n')[0]
-                message = message + f'\nduration: {duration}]'
+                message = message + f'\nduration: {duration}'
             if '\nW1' in message:
                 message = message.split('\n\n')[0].strip()
             message = Message(f"[CQ:at,qq={event.get_user_id()}]" + message)
