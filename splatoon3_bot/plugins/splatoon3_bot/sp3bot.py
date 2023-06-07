@@ -255,5 +255,9 @@ async def get_screenshot_image(user_id, key=None):
     splt = Splatoon(user_id, user.session_token)
     splt.test_page()
     user = get_or_set_user(user_id=user_id)
-    img = await get_app_screenshot(user.gtoken, key)
+    try:
+        img = await get_app_screenshot(user.gtoken, key)
+    except Exception as e:
+        logger.exception(e)
+        img = None
     return img

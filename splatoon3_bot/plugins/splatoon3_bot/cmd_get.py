@@ -98,4 +98,7 @@ async def screen_shot(bot: Bot, event: Event):
     if ' ' in event.get_plaintext():
         key = event.get_plaintext().split(' ', 1)[1].strip()
     img = await get_screenshot_image(event.get_user_id(), key=key)
-    await bot_send(bot, event, message='', photo=img)
+    message = ''
+    if not img:
+        message = 'Network Error, Please try again later.'
+    await bot_send(bot, event, message=message, photo=img)
