@@ -301,9 +301,9 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
     duration = battle_detail['duration']
     score_list = []
     for t in teams:
-        if (t.get('result') or {}).get('score'):
+        if (t.get('result') or {}).get('score') is not None:
             score_list.append(str((t['result']['score'])))
-        elif (t.get('result') or {}).get('paintRatio'):
+        elif (t.get('result') or {}).get('paintRatio') is not None:
             score_list.append(f"{t['result']['paintRatio']:.2%}"[:-2])
     score = ':'.join(score_list)
     str_open_power = ''
