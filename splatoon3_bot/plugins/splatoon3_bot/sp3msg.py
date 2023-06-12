@@ -513,10 +513,12 @@ def get_summary(data, all_data, coop, lang='zh-CN'):
     _open = ''
     if history.get('leagueMatchPlayHistory'):
         _l = history['leagueMatchPlayHistory']
-        _league = f"🏅️{_l['gold']:>3} 🥈{_l['silver']:>3} 🥉{_l['bronze']:>3} {_l['attend']:>3}"
+        _n = _l['attend'] - _l['gold'] - _l['silver'] - _l['bronze']
+        _league = f"🏅️{_l['gold']:>3} 🥈{_l['silver']:>3} 🥉{_l['bronze']:>3} {_n:>3}"
     if history.get('bankaraMatchOpenPlayHistory'):
         _o = history['bankaraMatchOpenPlayHistory']
-        _open = f"🏅️{_o['gold']:>3} 🥈{_o['silver']:>3} 🥉{_o['bronze']:>3} {_o['attend']:>3}"
+        _n = _o['attend'] - _o['gold'] - _o['silver'] - _o['bronze']
+        _open = f"🏅️{_o['gold']:>3} 🥈{_o['silver']:>3} 🥉{_o['bronze']:>3} {_n:>3}"
 
     msg = f"""
 ```
