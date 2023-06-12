@@ -53,6 +53,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         message = message.replace('`', '').replace('*', '').replace('\_', '_').strip()
         if 'group' in event.get_event_name():
             # QQ机器人被风控，群聊消息太长会被吞掉，未被风控可取消截断
+            message = message.replace('https://github.com/paul-sama/splatoon3-bot', '')
             if '开放' in message:
                 message = message.split('2022-')[0].split('2023-')[0].strip()
             if 'duration: ' in message:
