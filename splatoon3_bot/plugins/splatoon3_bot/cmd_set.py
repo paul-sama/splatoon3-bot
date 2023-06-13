@@ -214,5 +214,29 @@ first sync will be in minutes.
 
     update_s3si_ts()
     msg = get_post_stat_msg(event.get_user_id())
-    if msg:
-        await bot_send(bot, event, message=msg)
+    if not msg:
+        msg = 'All done!'
+    await bot_send(bot, event, message=msg)
+
+
+@on_command("sync_now", block=True).handle()
+@check_session_handler
+async def sync_now(bot: Bot, event: Event):
+    if 'group' in event.get_event_name():
+        await bot_send(bot, event, MSG_PRIVATE)
+        return
+
+    user_id = event.get_user_id()
+    update_s3si_ts()
+    u = get_or_set_user(user_id=user_id)
+    if not (u and u.session_token and u.api_key):
+        msg = 'Please set api_key first, /set_api_key'
+        if isinstance(bot, QQBot):
+            msg = '请先设置 api_key, /set_api_key'
+        await bot_send(bot, event, msg)
+        return
+
+    msg = get_post_stat_msg(user_id)
+    if not msg:
+        msg = 'All done!'
+    await bot_send(bot, event, msg, parse_mode='Markdown')

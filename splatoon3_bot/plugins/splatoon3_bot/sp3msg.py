@@ -40,6 +40,7 @@ MSG_HELP = """
 
 settings:
 /set_api_key - set stat.ink api_key for post data
+/sync_now - sync data to stat.ink now
 /set_battle_info - set battle info
 /show_db_info - show db info
 
@@ -59,12 +60,13 @@ MSG_HELP_QQ = '''机器人使用说明
 /set_battle_info - 设置对战显示信息
 /me - 显示你的喷喷信息
 /set_api_key - 设置 api_key, 同步数据到 https://stat.ink
+/sync_now - 立刻同步数据
 /friends - 显示在线的喷喷好友
 /ns_friends - 显示在线的NS好友
 /my_schedule - 显示我的赛程
 /coop_schedule - 显示打工赛程
 /x_top - 显示X段1名
-/screen_shot - ss, 获取App截图
+/screen_shot - 获取App截图
 
 https://github.com/paul-sama/splatoon3-bot
 '''
