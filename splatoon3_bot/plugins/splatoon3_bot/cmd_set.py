@@ -53,7 +53,7 @@ Log in, right click the "Select this account" button, copy the link address, and
         elif isinstance(bot, QQBot):
             msg = f'''在浏览器中打开下面链接
 {url}
-登陆后，右键账号后面的红色按钮，复制链接后发送给机器人
+登陆后，右键账号后面的红色按钮，复制链接后发送给机器人 (两分钟内有效)
 '''
         if msg:
             await bot.send(event, message=msg)
