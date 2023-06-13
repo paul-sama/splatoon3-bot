@@ -17,6 +17,7 @@ from .sp3job import get_post_stat_msg, update_s3si_ts
 from .utils import bot_send, check_session_handler
 
 __all__ = ['login', 'login_id', 'clear_db_info', 'set_db_info', 'get_set_battle_info']
+MSG_PRIVATE = '请添加机器人为好友再私聊完成登录操作'
 
 
 matcher_login = on_command("login", block=True)
@@ -25,7 +26,7 @@ matcher_login = on_command("login", block=True)
 @matcher_login.handle()
 async def login(bot: Bot, event: Event, state: T_State):
     if 'group' in event.get_event_name():
-        await matcher_login.finish("请私聊机器人完成登录操作")
+        await matcher_login.finish(MSG_PRIVATE)
         return
 
     dir_path = os.path.dirname(os.path.abspath(__file__))
@@ -138,7 +139,7 @@ matcher_set_battle_info = on_command("set_battle_info", aliases={'sbi'}, block=T
 @check_session_handler
 async def set_battle_info(bot: Bot, event: Event, matcher: matcher_set_battle_info):
     if isinstance(bot, QQBot) and 'group' in event.get_event_name():
-        await matcher_set_battle_info.finish("请私聊机器人完成设置操作")
+        await matcher_set_battle_info.finish(MSG_PRIVATE)
         return
 
     msg = '''
@@ -184,7 +185,7 @@ matcher_set_api_key = on_command("set_api_key", block=True)
 @check_session_handler
 async def set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     if 'group' in event.get_event_name():
-        await matcher_set_battle_info.finish("请私聊机器人完成设置操作")
+        await matcher_set_battle_info.finish(MSG_PRIVATE)
         return
 
     msg = '''Please copy you api_key from https://stat.ink/profile then paste below'''
