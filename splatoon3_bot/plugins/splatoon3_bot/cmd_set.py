@@ -65,7 +65,7 @@ async def login_id(bot: Bot, event: Event, state: T_State):
 
     auth_code_verifier = state.get('auth_code_verifier')
 
-    err_msg = '登录失败，请 /login 重试'
+    err_msg = '登录失败，请 /login 重试, 复制新链接'
     if not text or len(text) < 500 or not text.startswith('npf') or not auth_code_verifier:
         logger.info(err_msg)
         await bot.send(event, message=err_msg)
