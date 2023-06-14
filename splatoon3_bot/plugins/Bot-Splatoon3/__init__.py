@@ -47,6 +47,8 @@ async def bot_send(bot: Bot, event: Event, **kwargs):
         return
 
     if isinstance(bot, QQBot):
+        logger.info('QQBot 不发地图信息')
+        return
         img = MessageSegment.image(file=img, cache=False)
 
         msg = ''
