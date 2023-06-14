@@ -12,7 +12,16 @@ async def get_app_screenshot(gtoken, key='', url=''):
         browser = await pw.chromium.launch()
         cookies = COOKIES[:]
         cookies[0]['value'] = gtoken
-        context = await browser.new_context(viewport={"width": 500, "height": 1000})
+        height = 1000
+        for _k in ('对战', '武器', '鲑鱼跑'):
+            if _k in key:
+                height = 2000
+        for _k in ('徽章',):
+            if _k in key:
+                height = 1500
+        if url and 'coop' in url:
+            height = 1500
+        context = await browser.new_context(viewport={"width": 500, "height": height})
         await context.add_cookies(cookies)
         page = await context.new_page()
         if url:
@@ -21,7 +30,7 @@ async def get_app_screenshot(gtoken, key='', url=''):
             await page.goto(f"{API_URL}/?lang=zh-CN")
         key = [] if not key else key.split(' ')
         for k in key:
-            await page.get_by_text(k).click()
+            await page.get_by_text(k, exact=True).click()
         await page.wait_for_timeout(6000)
         img_raw = await page.screenshot(full_page=True)
 
