@@ -29,6 +29,11 @@ async def login(bot: Bot, event: Event, state: T_State):
         await matcher_login.finish(MSG_PRIVATE)
         return
 
+    u = get_or_set_user(user_id=event.get_user_id())
+    if u and u.session_token:
+        msg = '用户已经登录\n如需重新登录或切换账号请继续下面操作\n登出或清空账号数据 /clear_db_info'
+        await bot_send(bot, event, msg)
+
     dir_path = os.path.dirname(os.path.abspath(__file__))
     img_path = f'{dir_path}/resource/sp3bot-login.gif'
     if isinstance(bot, TGBot):
@@ -48,7 +53,7 @@ async def login(bot: Bot, event: Event, state: T_State):
             msg = f'''
 Navigate to this URL in your browser:
 {url}
-Log in, right click the "Select this account" button, copy the link address, and paste below.
+Log in, right click the "Select this account" button, copy the link address, and paste below. (Valid for 2 minutes)
             '''
         elif isinstance(bot, QQBot):
             msg = f'''在浏览器中打开下面链接
@@ -86,7 +91,6 @@ async def login_id(bot: Bot, event: Event, state: T_State):
     set_db_info(**data)
     '''
 /set_lang - set language, default(zh-CN) 默认中文
-/set_api_key - set stat.ink api_key, bot will sync your data to stat.ink
 '''
     msg = f"""
 Login success! Bot now can get your splatoon3 data from SplatNet.
