@@ -7,6 +7,7 @@ from datetime import datetime as dt, timedelta
 from nonebot import logger
 from .s3s import utils
 from .db_sqlite import get_top_player
+from .utils import BOT_VERSION
 
 
 INTERVAL = 10
@@ -26,7 +27,7 @@ DICT_RANK_POINT = {
 }
 
 
-MSG_HELP = """
+MSG_HELP = f"""
 /login - login
 /me - show your info
 /friends - show splatoon3 online friends
@@ -44,16 +45,16 @@ settings:
 /set_battle_info - set battle info
 /show_db_info - show db info
 
-/help - show this help message
+/help - show this help message {BOT_VERSION}
 """
 
-MSG_HELP_QQ = '''机器人使用说明
+MSG_HELP_QQ = f'''机器人使用说明
 命令起始字符 / 或 、
 
 /工 - 显示当前时段的打工信息
 /图 - 显示当前时段的对战信息
 
-/help - 显示此帮助信息
+/help - 显示此帮助信息 {BOT_VERSION}
 /login - 登录喷喷账号
 /last - 显示最近一场对战或打工
 /start_push - 开启推送模式
