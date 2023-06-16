@@ -122,6 +122,10 @@ def set_db_info(**kwargs):
         group_id = kwargs.get('group_id')
         id_type = kwargs.get('id_type') or 'tg'
 
+        if 'username' in kwargs:
+            kwargs['username'] = kwargs['username'] or None
+            logger.debug(f'set_db_info: {kwargs}')
+
         session = DBSession()
         if user_id:
             query_lst = []
