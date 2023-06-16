@@ -20,7 +20,7 @@ class UserTable(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id_tg = Column(String(), unique=True, nullable=True)
     user_id_qq = Column(String(), unique=True, nullable=True)
-    username = Column(String(), unique=True, nullable=True)
+    username = Column(String(), nullable=True)
     first_name = Column(String(), nullable=True)
     last_name = Column(String(), nullable=True)
     push = Column(Boolean(), default=False)
