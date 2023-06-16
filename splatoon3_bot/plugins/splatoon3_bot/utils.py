@@ -74,9 +74,12 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         r = None
         logger.error(message)
         logger.error(e)
-        # if 'group' in event.get_event_name():
-        #     message = Message(f"[CQ:at,qq={event.get_user_id()}]" + '消息被风控，请稍后再试')
-        #     r = await bot.send(event, message, **kwargs)
+        if 'group' in event.get_event_name():
+            message += '\n\n' + '群消息发送失败，bot被风控，请私聊使用或稍后再试'
+            try:
+                await bot.send_private_msg(user_id=event.get_user_id(), message=message)
+            except Exception as e:
+                logger.error(e)
 
     return r
 
