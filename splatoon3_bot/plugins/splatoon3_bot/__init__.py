@@ -84,5 +84,6 @@ async def _(bot: Bot):
         scheduler.remove_job(job_id)
 
     scheduler.add_job(
-        cron_job, 'interval', minutes=1, id=job_id, args=[bot]
+        cron_job, 'interval', minutes=1, id=job_id, args=[bot],
+        misfire_grace_time=59, coalesce=True, max_instances=3
     )

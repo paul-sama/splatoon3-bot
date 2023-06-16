@@ -14,7 +14,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '0.2.8'
+BOT_VERSION = '0.2.9'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -74,7 +74,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         r = None
         logger.error(message)
         logger.error(e)
-        if 'group' in event.get_event_name():
+        if 'group' in event.get_event_name() and isinstance(bot, QQBot):
             message += '\n\n' + '群消息发送失败，bot被风控，请私聊使用或稍后再试'
             try:
                 await bot.send_private_msg(user_id=event.get_user_id(), message=message)

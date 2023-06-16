@@ -50,7 +50,8 @@ async def start_push(bot: Bot, event: Event, state: T_State):
     }
     state['job_data'] = job_data
     scheduler.add_job(
-        push_latest_battle, 'interval', seconds=INTERVAL, id=job_id, args=[bot, event, job_data]
+        push_latest_battle, 'interval', seconds=INTERVAL, id=job_id, args=[bot, event, job_data],
+        misfire_grace_time=INTERVAL - 1, coalesce=True, max_instances=10
     )
     msg = f'Start push! check new data(battle or coop) every {INTERVAL} seconds. /stop_push to stop'
     if isinstance(bot, QQBot):
