@@ -34,7 +34,7 @@ matcher_stage_group = on_command('图', block=True)
 matcher_stage_group2 = on_command('图图', block=True)
 matcher_stage_next1 = on_command('下图', block=True)
 matcher_stage_next12 = on_command('下图图', block=True)
-matcher_random_weapon = on_command('随机武器', block=True)
+matcher_random_weapon = on_command('V3随机武器', block=True)
 
 
 
@@ -50,7 +50,7 @@ async def bot_send(bot: Bot, event: Event, **kwargs):
         img = MessageSegment.image(file=img, cache=False)
 
         msg = ''
-        if 'group' in event.get_event_name():
+        if 'group' in event.get_event_name() and not kwargs.get('not_skip_group'):
             user_id = str(event.get_user_id())
             msg = f"[CQ:at,qq={user_id}]"
 
@@ -69,7 +69,7 @@ async def bot_send(bot: Bot, event: Event, **kwargs):
 
 @matcher_random_weapon.handle()
 async def _(bot: Bot, event: Event):
-    await bot_send(bot, event, img=get_random_weapon())
+    await bot_send(bot, event, img=get_random_weapon(), not_skip_group=True)
 
 
 @matcher_select_all_mode.handle()
