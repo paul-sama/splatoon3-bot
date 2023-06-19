@@ -14,7 +14,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '0.3.1'
+BOT_VERSION = '0.3.2'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -27,7 +27,13 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
                 await bot.send(event, File.photo(tmp_file))
             elif isinstance(bot, QQBot):
                 img = MessageSegment.image('file:///' + tmp_file)
-                await bot.send(event, message=Message(img))
+                try:
+                    await bot.send(event, message=Message(img))
+                except Exception as e:
+                    logger.warning(f'QQBot send error: {e}')
+                    if 'group' in event.get_event_name():
+                        message += '群消息发送失败，bot被风控，请私聊使用或稍后再试'
+                        await bot.send_private_msg(user_id=event.get_user_id(), message=message)
             return
 
     if kwargs.get('photo'):
@@ -43,7 +49,10 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
             try:
                 await bot.send(event, message=message)
             except Exception as e:
-                logger.error(f'QQBot send error: {e}')
+                logger.warning(f'QQBot send error: {e}')
+                if 'group' in event.get_event_name():
+                    message += '群消息发送失败，bot被风控，请私聊使用或稍后再试'
+                    await bot.send_private_msg(user_id=event.get_user_id(), message=message)
 
         elif isinstance(bot, TGBot):
             await bot.send(event, File.photo(img_data))

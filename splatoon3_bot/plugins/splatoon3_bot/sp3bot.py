@@ -139,7 +139,7 @@ def get_me(user_id):
         msg = get_summary(res, all_res, coop, lang=user.acc_loc)
     except Exception as e:
         logger.exception(e)
-        msg = f'get summary failed, please try again later.'
+        msg = f'获取数据失败，请稍后再试或重新登录 /login'
     logger.debug(msg)
     return msg
 
@@ -164,11 +164,12 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
         logger.info(f'push_latest_battle: {user.username}, {job_id}')
 
     data = job_data or {}
-    res = await get_last_battle_or_coop(user_id, for_push=True)
-    if not res:
-        logger.debug('no new battle or coop')
+    try:
+        res = await get_last_battle_or_coop(user_id, for_push=True)
+        battle_id, _info, is_battle = res
+    except Exception as e:
+        logger.debug(f'no new battle or coop, {e}')
         return
-    battle_id, _info, is_battle = res
 
     db_user_info = defaultdict(str)
     if user.user_info:
