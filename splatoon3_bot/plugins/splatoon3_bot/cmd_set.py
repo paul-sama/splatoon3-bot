@@ -13,7 +13,7 @@ from .db_sqlite import set_db_info, get_user, get_or_set_user
 from .sp3iksm import log_in, login_2, A_VERSION
 from .splat import Splatoon
 from .sp3bot import get_last_battle_or_coop
-from .sp3job import get_post_stat_msg, update_s3si_ts
+from .sp3job import get_post_stat_msg, update_s3si_ts, thread_function, threading, asyncio
 from .utils import bot_send, check_session_handler
 
 __all__ = ['login', 'login_id', 'clear_db_info', 'set_db_info', 'get_set_battle_info']
@@ -220,10 +220,9 @@ first sync will be in minutes.
     await bot_send(bot, event, message=msg)
 
     update_s3si_ts()
-    msg = get_post_stat_msg(event.get_user_id())
-    if not msg:
-        msg = 'All done!'
-    await bot_send(bot, event, message=msg)
+    user_id = event.get_user_id()
+    _thread = threading.Thread(target=asyncio.run, args=(thread_function(user_id),))
+    _thread.start()
 
 
 @on_command("sync_now", block=True).handle()
