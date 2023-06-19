@@ -308,6 +308,7 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
     score = ':'.join(score_list)
     str_open_power = ''
     str_max_open_power = ''
+    last_power = ''
     if (battle_detail.get('bankaraMatch') or {}).get('mode') == 'OPEN' or battle_detail.get('leagueMatch'):
         open_power = ((battle_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
         if battle_detail.get('leagueMatch'):
@@ -322,17 +323,30 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
                 max_open_power = current_statics.get('max_open_power') or 0
             max_open_power = max(max_open_power, open_power)
             last_power = current_statics.get('open_power') or 0
+            get_prev = None
+            if not last_power:
+                get_prev = True
+                prev_id = (battle_detail.get('previousHistoryDetail') or {}).get('id')
+                splt = kwargs.get('splt')
+                if splt:
+                    prev_info = splt.get_battle_detail(prev_id)
+                    if prev_info:
+                        prev_detail = prev_info.get('data', {}).get('vsHistoryDetail') or {}
+                        prev_open_power = ((prev_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
+                        if prev_open_power:
+                            last_power = prev_open_power
+
             if last_power:
                 diff = open_power - last_power
                 if diff:
                     str_open_power = f"战力: ({diff:+.2f}) {open_power:.2f}"
-            if max_open_power:
+            if max_open_power and not get_prev:
                 str_max_open_power = f', MAX: {max_open_power:.2f}'
             current_statics['open_power'] = open_power
             current_statics['max_open_power'] = max_open_power
 
     str_open_power_inline = ''
-    if str_open_power and 'current_statics' in kwargs:
+    if str_open_power and ('current_statics' in kwargs or last_power):
         msg += f"`{str_open_power}{str_max_open_power}`\n"
     elif str_open_power:
         str_open_power_inline = str_open_power
