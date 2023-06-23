@@ -7,7 +7,9 @@
   </a>
 
 
-## How to start
+## 机器人[使用文档](https://docs.qq.com/sheet/DUkZHRWtCUkR0d2Nr?tab=BB08J2)
+
+## 自己搭建指南
 
 python >= 3.8
 1. python -m pip install --user pipx
@@ -16,5 +18,6 @@ python >= 3.8
 4. python -m venv .venv
 5. source .venv/bin/activate
 6. pip install -r requirements.txt
-7. cp .env.example .env
-8. nb run --reload
+7. cp .env.sample .env
+8. edit .env
+9. nb run --reload
