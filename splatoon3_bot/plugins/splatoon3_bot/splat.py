@@ -53,7 +53,7 @@ class Splatoon:
         try:
             return r.json()['bulletToken']
         except Exception as e:
-            logger.error(f'{self.user_id} get_bullet error. {r.status_code}, {e}')
+            logger.exception(f'{self.user_id} get_bullet error. {r.status_code}, {e}')
             logger.warning(r.text)
             raise Exception(f'{self.user_id} get_bullet error. {r.status_code}')
 
@@ -107,7 +107,7 @@ class Splatoon:
             else:
                 return res.json()
         except Exception as e:
-            logger.error(f'_request error: {e}')
+            logger.exception(f'_request error: {e}')
             return None
 
     def get_recent_battles(self, skip_check_token=False):

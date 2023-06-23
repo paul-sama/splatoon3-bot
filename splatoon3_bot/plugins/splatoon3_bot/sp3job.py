@@ -3,6 +3,7 @@ import json
 import subprocess
 import asyncio
 import threading
+import time
 
 from collections import defaultdict
 from datetime import datetime as dt
@@ -37,6 +38,7 @@ async def cron_job(bot: Bot):
 
     update_s3si_ts()
 
+    time.sleep(5)
     for u in users:
         if not u.api_key or not u.session_token:
             continue

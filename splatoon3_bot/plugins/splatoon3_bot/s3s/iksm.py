@@ -2,6 +2,7 @@
 # https://github.com/frozenpandaman/s3s
 # License: GPLv3
 
+from loguru import logger
 import base64, hashlib, json, os, re, sys
 import requests
 from bs4 import BeautifulSoup
@@ -77,10 +78,10 @@ def log_in(ver):
 
 	post_login = r.history[0].url
 
-	print("\nMake sure you have fully read the \"Token generation\" section of the readme before proceeding. To manually input a token instead, enter \"skip\" at the prompt below.")
-	print("\nNavigate to this URL in your browser:")
-	print(post_login)
-	print("Log in, right click the \"Select this account\" button, copy the link address, and paste it below:")
+	logger.info("\nMake sure you have fully read the \"Token generation\" section of the readme before proceeding. To manually input a token instead, enter \"skip\" at the prompt below.")
+	logger.info("\nNavigate to this URL in your browser:")
+	logger.info(post_login)
+	logger.info("Log in, right click the \"Select this account\" button, copy the link address, and paste it below:")
 	while True:
 		try:
 			use_account_url = input("")
@@ -89,13 +90,13 @@ def log_in(ver):
 			session_token_code = re.search('de=(.*)&', use_account_url)
 			return get_session_token(session_token_code.group(1), auth_code_verifier)
 		except KeyboardInterrupt:
-			print("\nBye!")
+			logger.info("\nBye!")
 			return
 		except AttributeError:
-			print("Malformed URL. Please try again, or press Ctrl+C to exit.")
-			print("URL:", end=' ')
+			logger.error("Malformed URL. Please try again, or press Ctrl+C to exit.")
+			logger.error("URL:", end=' ')
 		except KeyError: # session_token not found
-			print("\nThe URL has expired. Please log out and back into your Nintendo Account and try again.")
+			logger.error("\nThe URL has expired. Please log out and back into your Nintendo Account and try again.")
 			return
 
 
@@ -167,9 +168,9 @@ def get_gtoken(f_gen_url, session_token, ver):
 			'Accept-Encoding': 'gzip'
 		}
 	except:
-		print("Not a valid authorization request. Please delete config.txt and try again.")
-		print("Error from Nintendo (in api/token step):")
-		print(json.dumps(id_response, indent=2))
+		logger.error("Not a valid authorization request. Please delete config.txt and try again.")
+		logger.error("Error from Nintendo (in api/token step):")
+		logger.error(json.dumps(id_response, indent=2))
 		return
 
 	url = "https://api.accounts.nintendo.com/2.0.0/users/me"
@@ -198,9 +199,9 @@ def get_gtoken(f_gen_url, session_token, ver):
 	except SystemExit:
 		return
 	except:
-		print("Error(s) from Nintendo:")
-		print(json.dumps(id_response, indent=2))
-		print(json.dumps(user_info, indent=2))
+		logger.error("Error(s) from Nintendo:")
+		logger.error(json.dumps(id_response, indent=2))
+		logger.error(json.dumps(user_info, indent=2))
 		return
 	body["parameter"] = parameter
 
@@ -233,9 +234,9 @@ def get_gtoken(f_gen_url, session_token, ver):
 			splatoon_token = json.loads(r.text)
 			id_token = splatoon_token["result"]["webApiServerCredential"]["accessToken"]
 		except:
-			print("Error from Nintendo (in Account/Login step):")
-			print(json.dumps(splatoon_token, indent=2))
-			print("Re-running the script usually fixes this.")
+			logger.error("Error from Nintendo (in Account/Login step):")
+			logger.error(json.dumps(splatoon_token, indent=2))
+			logger.error("Re-running the script usually fixes this.")
 			return
 
 		f, uuid, timestamp = call_imink_api(id_token, 2, f_gen_url)
@@ -279,8 +280,8 @@ def get_gtoken(f_gen_url, session_token, ver):
 			web_service_resp = json.loads(r.text)
 			web_service_token = web_service_resp["result"]["accessToken"]
 		except:
-			print("Error from Nintendo (in Game/GetWebServiceToken step):")
-			print(json.dumps(web_service_resp, indent=2))
+			logger.error("Error from Nintendo (in Game/GetWebServiceToken step):")
+			logger.error(json.dumps(web_service_resp, indent=2))
 			return
 
 	return web_service_token, user_nickname, user_lang, user_country
@@ -307,25 +308,25 @@ def get_bullet(web_service_token, web_view_ver, app_user_agent, user_lang, user_
 	r = requests.post(url, headers=app_head, cookies=app_cookies)
 
 	if r.status_code == 401:
-		print("Unauthorized error (ERROR_INVALID_GAME_WEB_TOKEN). Cannot fetch tokens at this time.")
+		logger.error("Unauthorized error (ERROR_INVALID_GAME_WEB_TOKEN). Cannot fetch tokens at this time.")
 		return
 	elif r.status_code == 403:
-		print("Forbidden error (ERROR_OBSOLETE_VERSION). Cannot fetch tokens at this time.")
+		logger.error("Forbidden error (ERROR_OBSOLETE_VERSION). Cannot fetch tokens at this time.")
 		return
 	elif r.status_code == 204: # No Content, USER_NOT_REGISTERED
-		print("Cannot access SplatNet 3 without having played online.")
+		logger.error("Cannot access SplatNet 3 without having played online.")
 		return
 
 	try:
 		bullet_resp = json.loads(r.text)
 		bullet_token = bullet_resp["bulletToken"]
 	except (json.decoder.JSONDecodeError, TypeError):
-		print("Got non-JSON response from Nintendo (in api/bullet_tokens step:")
-		print(bullet_resp)
+		logger.error("Got non-JSON response from Nintendo (in api/bullet_tokens step:")
+		logger.error(bullet_resp)
 		return
 	except:
-		print("Error from Nintendo (in api/bullet_tokens step):")
-		print(json.dumps(bullet_resp, indent=2))
+		logger.error("Error from Nintendo (in api/bullet_tokens step):")
+		logger.error(json.dumps(bullet_resp, indent=2))
 		return
 
 	return bullet_token
@@ -353,11 +354,11 @@ def call_imink_api(id_token, step, f_gen_url):
 	except:
 		try: # if api_response never gets set
 			if api_response.text:
-				print(f"Error during f generation:\n{json.dumps(json.loads(api_response.text), indent=2, ensure_ascii=False)}")
+				logger.error(f"Error during f generation:\n{json.dumps(json.loads(api_response.text), indent=2, ensure_ascii=False)}")
 			else:
-				print(f"Error during f generation: Error {api_response.status_code}.")
+				logger.error(f"Error during f generation: Error {api_response.status_code}.")
 		except:
-			print(f"Couldn't connect to f generation API ({f_gen_url}). Please try again.")
+			logger.error(f"Couldn't connect to f generation API ({f_gen_url}). Please try again.")
 
 		return
 
