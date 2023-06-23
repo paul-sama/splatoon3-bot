@@ -43,7 +43,7 @@ def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
         if is_battle:
             battle_detail = splt.get_battle_detail(_id)
             kwargs['splt'] = splt
-            if kwargs.get('get_pic'):
+            if kwargs.get('get_pic') or kwargs.get('get_image'):
                 msg = get_battle_msg_md(extra_info, battle_detail, **kwargs)
             else:
                 msg = get_battle_msg(extra_info, battle_detail, **kwargs)
@@ -60,7 +60,7 @@ def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
 
 
 async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get_coop=False, get_pic=False, idx=0,
-                                  get_screenshot=False):
+                                  get_screenshot=False, get_image=False):
     user = get_user(user_id=user_id)
     splt = Splatoon(user.id, user.session_token)
 
@@ -111,7 +111,8 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
             user_info = json.loads(user.user_info)
         except:
             user_info = {}
-        msg = get_last_msg(splt, battle_id, b_info, battle_show_type=user_info.get('battle_show_type'), get_pic=get_pic)
+        msg = get_last_msg(splt, battle_id, b_info, battle_show_type=user_info.get('battle_show_type'), get_pic=get_pic,
+                           get_image=get_image)
         return msg
     else:
         if for_push:
@@ -125,7 +126,7 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
                 pic = None
             return pic
 
-        msg = get_last_msg(splt, coop_id, coop_info, False, get_pic=get_pic)
+        msg = get_last_msg(splt, coop_id, coop_info, False, get_pic=get_pic, get_image=get_image)
         return msg
 
 

@@ -1,5 +1,5 @@
 
-from .sp3msg import get_battle_msg_title, set_statics
+from .sp3msg import get_battle_msg_title, set_statics, logger
 
 
 def get_row_text(p, battle_show_type='1'):
@@ -35,15 +35,40 @@ def get_row_text(p, battle_show_type='1'):
     return t
 
 
+def get_row_text_image(p, battle_show_type='1'):
+    re = p['result']
+    if not re:
+        re = {"kill": 0, "death": 99, "assist": 0, "special": 0}
+    ak = re['kill']
+    k = re['kill'] - re['assist']
+    k_str = f'{k}+{re["assist"]}'
+    d = re['death']
+    ration = k / d if d else 99
+    name = p['name']
+    weapon_img = ((p.get('weapon') or {}).get('image') or {}).get('url') or ''
+    w_str = f'<img height="40" src="{weapon_img}"/>'
+    name = f'{name}|'
+    t = f"|{w_str}|{ak:>2}|{k_str:>5}k | {d:>2}d|{ration:>4.1f}|{re['special']:>3}sp| {p['paint']:>4}p| {name}|\n"
+    return t
+
+
 def get_battle_msg(b_info, battle_detail, **kwargs):
+    logger.debug(f'get_battle_msg kwargs: {kwargs}')
     mode = b_info['vsMode']['mode']
     judgement = b_info['judgement']
     battle_detail = battle_detail['data']['vsHistoryDetail'] or {}
     title, point, b_process = get_battle_msg_title(b_info, battle_detail, **kwargs)
 
+    get_image = kwargs.get('get_image')
+
     # title
     msg = '#### ' + title.replace('`', '')
-    msg += '''|||||||
+    if get_image:
+        msg += '''|||||||||
+|---|---:|---:|---:|---|---|---|---|
+    '''
+    else:
+        msg += '''|||||||
 |---|---|---|---|---|---|
 '''
 
@@ -52,12 +77,70 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
     teams = [battle_detail['myTeam']] + battle_detail['otherTeams']
     for team in sorted(teams, key=lambda x: x['order']):
         for p in team['players']:
-            text_list.append(get_row_text(p, kwargs.get('battle_show_type')))
+            if get_image:
+                text_list.append(get_row_text_image(p, kwargs.get('battle_show_type')))
+            else:
+                text_list.append(get_row_text(p, kwargs.get('battle_show_type')))
         ti = '||'
         if mode == 'FEST':
             ti = f"|{(team.get('result') or {}).get('paintRatio') or 0:.2%}  {team.get('festTeamName')}|"
         text_list.append(f'{ti}\n')
     msg += ''.join(text_list)
+
+    # footer
+    duration = battle_detail['duration']
+    score_list = []
+    for t in teams:
+        if (t.get('result') or {}).get('score') is not None:
+            score_list.append(str((t['result']['score'])))
+        elif (t.get('result') or {}).get('paintRatio') is not None:
+            score_list.append(f"{t['result']['paintRatio']:.2%}"[:-2])
+    score = ':'.join(score_list)
+    str_open_power = ''
+    str_max_open_power = ''
+    last_power = ''
+    if (battle_detail.get('bankaraMatch') or {}).get('mode') == 'OPEN' or battle_detail.get('leagueMatch'):
+        open_power = ((battle_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
+        if battle_detail.get('leagueMatch'):
+            open_power = battle_detail['leagueMatch'].get('myLeaguePower') or 0
+
+        if open_power:
+            str_open_power = f'战力: {open_power:.2f}'
+            current_statics = {}
+            max_open_power = 0
+            if 'current_statics' in kwargs:
+                current_statics = kwargs['current_statics']
+                max_open_power = current_statics.get('max_open_power') or 0
+            max_open_power = max(max_open_power, open_power)
+            last_power = current_statics.get('open_power') or 0
+            get_prev = None
+            if not last_power:
+                get_prev = True
+                prev_id = (battle_detail.get('previousHistoryDetail') or {}).get('id')
+                splt = kwargs.get('splt')
+                if splt:
+                    prev_info = splt.get_battle_detail(prev_id)
+                    if prev_info:
+                        prev_detail = prev_info.get('data', {}).get('vsHistoryDetail') or {}
+                        prev_open_power = ((prev_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
+                        if prev_open_power:
+                            last_power = prev_open_power
+
+            if last_power:
+                diff = open_power - last_power
+                if diff:
+                    str_open_power = f"战力: ({diff:+.2f}) {open_power:.2f}"
+            if max_open_power and not get_prev:
+                str_max_open_power = f', MAX: {max_open_power:.2f}'
+            current_statics['open_power'] = open_power
+            current_statics['max_open_power'] = max_open_power
+
+    str_open_power_inline = ''
+    if str_open_power and ('current_statics' in kwargs or last_power):
+        msg += f"\n####{str_open_power}{str_max_open_power}\n"
+    elif str_open_power:
+        str_open_power_inline = str_open_power
+    msg += f"\n#### duration: {duration}s, {score} knockout: {battle_detail['knockout']} {b_process} {str_open_power_inline}"
 
     return msg
 
