@@ -3,7 +3,6 @@ import json
 import subprocess
 import asyncio
 import threading
-import time
 
 from collections import defaultdict
 from datetime import datetime as dt
@@ -26,6 +25,10 @@ async def cron_job(bot: Bot):
     # check msg file every minute and send msg, can't send msg in thread
     await send_user_msg(bot, users)
 
+    # 同步任务全在tg bot上执行，避免qq被风控下线无法同步
+    if isinstance(bot, QQBot):
+        return
+
     now = dt.now()
 
     # parse x rank player at 2:40
@@ -38,12 +41,8 @@ async def cron_job(bot: Bot):
 
     update_s3si_ts()
 
-    time.sleep(5)
     for u in users:
         if not u.api_key or not u.session_token:
-            continue
-        # 同步任务全在tg bot上执行，避免qq被风控下线无法同步
-        if isinstance(bot, QQBot):
             continue
         # if (isinstance(bot, TGBot) and not u.user_id_tg) or (isinstance(bot, QQBot) and not u.user_id_qq):
         #     continue
