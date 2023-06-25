@@ -12,6 +12,7 @@ from nonebot.adapters.onebot.v11 import Bot as QQBot
 
 from .db_sqlite import get_or_set_user, get_all_user
 from .scripts.top_player import get_x_player
+from .scripts.report import update_user_info
 
 
 logger = logger.bind(cron=True)
@@ -34,6 +35,10 @@ async def cron_job(bot: Bot):
     # parse x rank player at 2:40
     if now.hour == 2 and now.minute == 40 and isinstance(bot, TGBot):
         get_x_player()
+
+    # report at 8:00
+    if now.hour == 8 and now.minute == 00 and isinstance(bot, TGBot):
+        update_user_info()
 
     # run every 3 hours
     if not (now.hour % 3 == 0 and now.minute == 0):

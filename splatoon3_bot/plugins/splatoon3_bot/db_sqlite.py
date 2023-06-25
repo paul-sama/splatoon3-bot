@@ -3,7 +3,7 @@
 
 import os
 from loguru import logger
-from sqlalchemy import Column, String, create_engine, Integer, Boolean, Text, DateTime, func
+from sqlalchemy import Column, String, create_engine, Integer, Boolean, Text, DateTime, func, Float
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -35,6 +35,9 @@ class UserTable(Base):
     nickname = Column(String(), default='')
     friend_code = Column(String(), default='')
     user_id_sp = Column(String(), nullable=True)
+    report_type = Column(Integer(), default=0)  # 1:daily, 2:weekly, 3:monthly, 4:season
+    last_play_time = Column(DateTime(), nullable=True)
+    first_play_time = Column(DateTime(), nullable=True)
     create_time = Column(DateTime(), default=func.now())
     update_time = Column(DateTime(), onupdate=func.now())
 
@@ -67,6 +70,50 @@ class TopPlayer(Base):
     play_time = Column(DateTime())
     create_time = Column(DateTime(), default=func.now())
     update_time = Column(DateTime(), onupdate=func.now())
+
+
+class Report(Base):
+    __tablename__ = 'report'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(), nullable=False)
+    user_id_sp = Column(String(), default='')
+    nickname = Column(String(), default='')
+    name_id = Column(String(), default='')
+    byname = Column(String(), default='')
+    rank = Column(Integer, default='')
+    udemae = Column(String(), default='')
+    udemae_max = Column(String(), default='')
+    total_cnt = Column(Integer, default='')
+    win_cnt = Column(Integer, default='')
+    lose_cnt = Column(Integer, default='')
+    win_rate = Column(Float, default=None)
+    paint = Column(Integer, default='')
+    badges = Column(Integer, default='')
+    event_gold = Column(Integer, default='')
+    event_silver = Column(Integer, default='')
+    event_bronze = Column(Integer, default='')
+    event_none = Column(Integer, default='')
+    open_gold = Column(Integer, default='')
+    open_silver = Column(Integer, default='')
+    open_bronze = Column(Integer, default='')
+    open_none = Column(Integer, default='')
+    max_power = Column(Float, default=None)
+    x_ar = Column(Float, default=None)
+    x_lf = Column(Float, default=None)
+    x_gl = Column(Float, default=None)
+    x_cl = Column(Float, default=None)
+    coop_cnt = Column(Integer, default='')
+    coop_gold_egg = Column(Integer, default='')
+    coop_egg = Column(Integer, default='')
+    coop_boss_cnt = Column(Integer, default='')
+    coop_rescue = Column(Integer, default='')
+    coop_point = Column(Integer, default='')
+    coop_gold = Column(Integer, default='')
+    coop_silver = Column(Integer, default='')
+    coop_bronze = Column(Integer, default='')
+    last_play_time = Column(DateTime(), nullable=True)
+    create_time = Column(DateTime(), default=func.now())
 
 
 engine = create_engine(database_uri, connect_args={"check_same_thread": False})
@@ -233,3 +280,13 @@ def get_top_player(player_code):
                          ).filter(TopPlayer.player_code == player_code).first()
     session.close()
     return user
+
+
+def model_add_report(**kwargs):
+    logger.debug(f'model_add_report: {kwargs}')
+    _dict = kwargs
+    session = DBSession()
+    new_report = Report(**_dict)
+    session.add(new_report)
+    session.commit()
+    session.close()
