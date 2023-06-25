@@ -109,7 +109,11 @@ def parse_x_data(top_id, splt):
             ('Cl', '3ab25d7f475cb3d5daf16f835a23411b')
     ):
         x_type, hash_mode = _t
-        get_top_x(first_rows, top_id, x_type, hash_mode, splt)
+        try:
+            get_top_x(first_rows, top_id, x_type, hash_mode, splt)
+        except Exception as ex:
+            logger.exception(f'get_top_x error: {top_id}, {x_type}, {ex}')
+            continue
         time.sleep(5)
 
 
