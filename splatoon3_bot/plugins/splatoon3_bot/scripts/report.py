@@ -11,7 +11,7 @@ from ..db_sqlite import get_all_user, get_user, set_db_info, model_add_report
 logger = logger.bind(report=True)
 
 
-def set_user_info(user_id):
+def set_user_info(user_id, skip_report=False):
     u = get_user(user_id=user_id)
     if not u or not u.session_token:
         return
@@ -54,7 +54,7 @@ def set_user_info(user_id):
     logger.debug(f'set_user_info: {_dict}')
     set_db_info(**_dict)
 
-    if last_play_time.date() == (dt.utcnow() - timedelta(days=1)).date():
+    if last_play_time.date() == (dt.utcnow() - timedelta(days=1)).date() and skip_report is False:
         set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code)
 
 
@@ -135,10 +135,27 @@ def update_user_info():
             continue
 
         try:
-            import threading
-            threading.Thread(target=set_user_info, args=(u.id,)).start()
+            set_user_info(u.id)
+            # import threading
+            # threading.Thread(target=set_user_info, args=(u.id,)).start()
         except Exception as e:
-            logger.exception(e)
-            logger.error(f'update_user_info: {u.id}, {u.user_id_qq or u.user_id_tg}, {u.username} failed.')
+            logger.warning(e)
+            logger.warning(f'update_user_info_failed: {u.id}, {u.user_id_qq or u.user_id_tg}, {u.username}')
 
-    logger.info(f'update_user_info: {dt.utcnow() - t}')
+    logger.info(f'update_user_info_end: {dt.utcnow() - t}')
+
+
+def update_user_info_first():
+    t = dt.utcnow()
+    users = get_all_user()
+    for u in users:
+        if not u or not u.session_token:
+            continue
+
+        try:
+            set_user_info(u.id, skip_report=True)
+        except Exception as e:
+            logger.warning(e)
+            logger.warning(f'update_user_info_first_failed: {u.id}, {u.user_id_qq or u.user_id_tg}, {u.username}')
+
+    logger.info(f'update_user_info_first_end: {dt.utcnow() - t}')
