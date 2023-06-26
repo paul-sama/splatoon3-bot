@@ -168,9 +168,9 @@ def get_gtoken(f_gen_url, session_token, ver):
 			'Accept-Encoding': 'gzip'
 		}
 	except:
-		logger.error("Not a valid authorization request. Please delete config.txt and try again.")
-		logger.error("Error from Nintendo (in api/token step):")
-		logger.error(json.dumps(id_response, indent=2))
+		logger.warning("Not a valid authorization request. Please delete config.txt and try again.")
+		logger.warning("Error from Nintendo (in api/token step):")
+		logger.warning(json.dumps(id_response, indent=2))
 		return
 
 	url = "https://api.accounts.nintendo.com/2.0.0/users/me"
@@ -199,9 +199,9 @@ def get_gtoken(f_gen_url, session_token, ver):
 	except SystemExit:
 		return
 	except:
-		logger.error("Error(s) from Nintendo:")
-		logger.error(json.dumps(id_response, indent=2))
-		logger.error(json.dumps(user_info, indent=2))
+		logger.warning("Error(s) from Nintendo:")
+		logger.warning(json.dumps(id_response, indent=2))
+		logger.warning(json.dumps(user_info, indent=2))
 		return
 	body["parameter"] = parameter
 
@@ -234,9 +234,9 @@ def get_gtoken(f_gen_url, session_token, ver):
 			splatoon_token = json.loads(r.text)
 			id_token = splatoon_token["result"]["webApiServerCredential"]["accessToken"]
 		except:
-			logger.error("Error from Nintendo (in Account/Login step):")
-			logger.error(json.dumps(splatoon_token, indent=2))
-			logger.error("Re-running the script usually fixes this.")
+			logger.warning("Error from Nintendo (in Account/Login step):")
+			logger.warning(json.dumps(splatoon_token, indent=2))
+			logger.warning("Re-running the script usually fixes this.")
 			return
 
 		f, uuid, timestamp = call_imink_api(id_token, 2, f_gen_url)
@@ -280,8 +280,8 @@ def get_gtoken(f_gen_url, session_token, ver):
 			web_service_resp = json.loads(r.text)
 			web_service_token = web_service_resp["result"]["accessToken"]
 		except:
-			logger.error("Error from Nintendo (in Game/GetWebServiceToken step):")
-			logger.error(json.dumps(web_service_resp, indent=2))
+			logger.warning("Error from Nintendo (in Game/GetWebServiceToken step):")
+			logger.warning(json.dumps(web_service_resp, indent=2))
 			return
 
 	return web_service_token, user_nickname, user_lang, user_country
