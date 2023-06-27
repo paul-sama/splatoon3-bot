@@ -24,6 +24,7 @@ async def all_command(bot: Bot, event: Event):
             'username': _event.get('from_', {}).get('username', ''),
             'first_name': _event.get('from_', {}).get('first_name', ''),
             'last_name': _event.get('from_', {}).get('last_name', ''),
+            'cmd': event.get_plaintext().strip(),
         })
         if _event.get('chat', {}).get('type') == 'group':
             data.update({
@@ -34,6 +35,7 @@ async def all_command(bot: Bot, event: Event):
         data.update({
             'id_type': 'qq',
             'username': _event.get('sender', {}).get('nickname', ''),
+            'cmd': event.get_plaintext().strip(),
         })
         if _event.get('group_id'):
             try:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import datetime
 import os
 from loguru import logger
 from sqlalchemy import Column, String, create_engine, Integer, Boolean, Text, DateTime, func, Float
@@ -32,6 +33,7 @@ class UserTable(Base):
     gtoken = Column(String(), nullable=True)
     bullettoken = Column(String(), nullable=True)
     user_info = Column(Text(), nullable=True)
+    cmd = Column(Text(), nullable=True)
     nickname = Column(String(), default='')
     friend_code = Column(String(), default='')
     user_id_sp = Column(String(), nullable=True)
@@ -49,6 +51,7 @@ class GroupTable(Base):
     group_id = Column(String(), nullable=False)
     group_name = Column(String(), default='')
     group_type = Column(String(), default='')
+    cmd = Column(Text(), nullable=True)
     create_time = Column(DateTime(), default=func.now())
     update_time = Column(DateTime(), onupdate=func.now())
 
@@ -169,9 +172,17 @@ def set_db_info(**kwargs):
         group_id = kwargs.get('group_id')
         id_type = kwargs.get('id_type') or 'tg'
 
+        if group_id and kwargs.get('cmd'):
+            _cmd = kwargs.get('cmd')
+            if not isinstance(_cmd, str) or (
+                    _cmd[1:4].strip() not in ['log', 'las', 'ss', 'scr', 'me', 'hel', '文档', '帮助', '图', '工']
+            ):
+                del kwargs['cmd']
+
         if 'username' in kwargs:
             kwargs['username'] = kwargs['username'] or None
-            logger.debug(f'set_db_info: {kwargs}')
+
+        raw_kwargs = kwargs.copy()
 
         session = DBSession()
         if user_id:
@@ -183,6 +194,18 @@ def set_db_info(**kwargs):
             if query_lst:
                 user = session.query(UserTable).filter(*query_lst).first()
                 if user:
+                    kwargs = raw_kwargs.copy()
+                    if kwargs.get('cmd'):
+                        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        str_cmd = f"{now} {kwargs.get('cmd')}"
+                        if kwargs.get('group_name'):
+                            str_cmd = f"{str_cmd} @{kwargs.get('group_name') or ''}({group_id or ''})"
+                        if user.cmd:
+                            new_cmd = user.cmd + '\n' + str_cmd
+                        else:
+                            new_cmd = str_cmd
+                        kwargs['cmd'] = new_cmd
+
                     for k, v in kwargs.items():
                         if getattr(user, k, '_empty') == '_empty':
                             continue
@@ -206,6 +229,16 @@ def set_db_info(**kwargs):
             group = session.query(GroupTable).filter(GroupTable.group_id == group_id,
                                                      GroupTable.group_type == id_type).first()
             if group:
+                kwargs = raw_kwargs.copy()
+                if kwargs.get('cmd'):
+                    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    str_cmd = f"{now} {kwargs.get('cmd')}"
+                    str_cmd = f"{str_cmd} @{kwargs.get('username') or ''}({kwargs.get('user_id') or ''})"
+                    if group.cmd:
+                        new_cmd = group.cmd + '\n' + str_cmd
+                    else:
+                        new_cmd = str_cmd
+                    kwargs['cmd'] = new_cmd
                 for k, v in kwargs.items():
                     if getattr(group, k, '_empty') == '_empty':
                         continue
