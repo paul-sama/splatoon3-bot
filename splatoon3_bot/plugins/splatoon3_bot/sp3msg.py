@@ -54,19 +54,10 @@ MSG_HELP_QQ = f'''机器人使用说明
 /help - 显示此帮助信息 {BOT_VERSION}
 /login - 登录喷喷账号
 /last - 显示最近一场对战或打工
-/start_push - 开启推送模式
-/set_battle_info - 设置对战显示信息
 /me - 显示你的喷喷信息
-/set_api_key - 设置 api_key, 同步数据到 https://stat.ink
-/sync_now - 立刻同步数据
-/friends - 显示在线的喷喷好友
-/ns_friends - 显示在线的NS好友
-/my_schedule - 显示我的赛程
-/coop_schedule - 显示打工赛程
-/x_top - 显示X段1名
-/screen_shot - 获取App截图
 
-https://github.com/paul-sama/splatoon3-bot
+更多指令:
+https://docs.qq.com/sheet/DUkZHRWtCUkR0d2Nr?tab=BB08J2
 '''
 
 

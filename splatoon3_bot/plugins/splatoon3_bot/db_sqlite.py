@@ -175,7 +175,9 @@ def set_db_info(**kwargs):
         if group_id and kwargs.get('cmd'):
             _cmd = kwargs.get('cmd')
             if not isinstance(_cmd, str) or (
-                    _cmd[1:4].strip() not in ['log', 'las', 'ss', 'scr', 'me', 'hel', '文档', '帮助', '图', '工']
+                    _cmd[1:4].strip() not in [
+                'log', 'las', 'ss', 'scr', 'me', 'hel', 'sta', 'x_t', 'my_', 'coo', 'fri', 'ns_',
+                '文档', '帮助', '图', '图图', '图图图', '工', '全部工', '全部开', '全部挑']
             ):
                 del kwargs['cmd']
 
