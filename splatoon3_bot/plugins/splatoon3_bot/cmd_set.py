@@ -15,6 +15,8 @@ from .splat import Splatoon
 from .sp3bot import get_last_battle_or_coop
 from .sp3job import get_post_stat_msg, update_s3si_ts, thread_function, threading, asyncio
 from .utils import bot_send, check_session_handler
+from .scripts.report import get_report
+
 
 __all__ = ['login', 'login_id', 'clear_db_info', 'set_db_info', 'get_set_battle_info']
 MSG_PRIVATE = '请添加机器人为好友再私聊完成登录操作'
@@ -246,3 +248,23 @@ async def sync_now(bot: Bot, event: Event):
     if not msg:
         msg = 'All done!'
     await bot_send(bot, event, msg, parse_mode='Markdown')
+
+
+@on_command("report", block=True).handle()
+@check_session_handler
+async def report(bot: Bot, event: Event):
+    msg = get_report(user_id=1)
+    get_or_set_user(user_id=event.get_user_id(), report_type=1)
+    if msg:
+        msg += f'```\n\n日报订阅成功\n/unsubscribe 取消订阅```'
+    else:
+        msg = f'```\n数据准备中，请过几天再试\n\n日报订阅成功\n/unsubscribe 取消订阅```'
+    await bot_send(bot, event, message=msg, parse_mode='Markdown')
+
+
+@on_command("unsubscribe", block=True).handle()
+@check_session_handler
+async def unsubscribe(bot: Bot, event: Event):
+    get_or_set_user(user_id=event.get_user_id(), report_type=0)
+    msg = f'```\n取消订阅成功\n/report 订阅日报```'
+    await bot_send(bot, event, message=msg, parse_mode='Markdown')

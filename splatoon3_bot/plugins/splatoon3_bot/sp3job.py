@@ -87,7 +87,7 @@ async def send_user_msg(bot, users):
                     logger.info(msg)
                     os.remove(file_msg_path)
             except Exception as e:
-                logger.error(f"{u.id}, post_battle_to_stat_ink: {e}, {msg}")
+                logger.error(f"{u.id}, send_user_msg: {e}, {msg}")
 
 
 async def thread_function(user_id):
@@ -102,7 +102,7 @@ async def thread_function(user_id):
     if msg:
         logger.debug(f'{u.id}, {u.username}, {msg}')
         file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
-        with open(file_msg_path, 'w') as f:
+        with open(file_msg_path, 'a') as f:
             f.write(msg)
 
 

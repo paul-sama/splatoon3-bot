@@ -325,3 +325,14 @@ def model_add_report(**kwargs):
     session.add(new_report)
     session.commit()
     session.close()
+
+
+def model_get_report(**kwargs):
+    user_id = kwargs.get('user_id')
+    if not user_id:
+        return None
+    session = DBSession()
+    query = [Report.user_id == user_id]
+    report = session.query(Report).filter(*query).order_by(Report.create_time.desc()).all()
+    session.close()
+    return report
