@@ -45,7 +45,7 @@ async def cron_job(bot: Bot):
         update_user_info()
 
     # run every 2 hours
-    if not (now.hour % 3 == 2 and now.minute == 3):
+    if not (now.hour % 2 == 0 and now.minute == 3):
         return
 
     update_s3si_ts()
