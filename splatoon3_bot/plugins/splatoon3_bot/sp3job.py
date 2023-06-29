@@ -44,8 +44,8 @@ async def cron_job(bot: Bot):
     if now.hour == 8 and now.minute == 00 and isinstance(bot, TGBot):
         update_user_info()
 
-    # run every 3 hours
-    if not (now.hour % 3 == 0 and now.minute == 0):
+    # run every 2 hours
+    if not (now.hour % 3 == 2 and now.minute == 3):
         return
 
     update_s3si_ts()
@@ -61,7 +61,7 @@ async def cron_job(bot: Bot):
 
 
 async def send_user_msg(bot, users):
-    path_folder = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
+    path_folder = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource/user_msg'
     for u in users:
         if not u.api_key or not u.session_token:
             continue
@@ -94,7 +94,9 @@ async def thread_function(user_id):
     u = get_or_set_user(user_id=user_id)
     logger.debug(f"get user: {u.username}, have api_key: {u.api_key}")
 
-    path_folder = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
+    path_folder = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource/user_msg'
+    if not os.path.exists(path_folder):
+        os.mkdir(path_folder)
 
     msg = get_post_stat_msg(u.id)
     if msg:

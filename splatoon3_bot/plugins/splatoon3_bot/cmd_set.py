@@ -196,7 +196,7 @@ async def set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     if isinstance(bot, QQBot):
         msg = '''请从 https://stat.ink/profile 页面复制你的 api_key 后发送给机器人
 注册stat.ink账号后，无需其他操作，设置api_key
-机器人会每3小时检查并同步你的数据到 stat.ink (App最多保存最近50场对战数据)
+机器人会每2小时检查并同步你的数据到 stat.ink (App最多保存最近50场对战数据)
         '''
     await bot_send(bot, event, message=msg)
 
@@ -216,7 +216,7 @@ async def get_set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
 first sync will be in minutes.
     '''
     if isinstance(bot, QQBot):
-        msg = f'''设置成功，机器人会每3小时检查一次并同步你的数据到 stat.ink 第一次同步会即刻开始。'''
+        msg = f'''设置成功，机器人会每2小时检查一次并同步你的数据到 stat.ink 第一次同步会即刻开始。'''
     await bot_send(bot, event, message=msg)
 
     update_s3si_ts()
