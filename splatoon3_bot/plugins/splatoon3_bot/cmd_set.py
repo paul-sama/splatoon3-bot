@@ -253,8 +253,11 @@ async def sync_now(bot: Bot, event: Event):
 @on_command("report", block=True).handle()
 @check_session_handler
 async def report(bot: Bot, event: Event):
-    msg = get_report(user_id=1)
-    get_or_set_user(user_id=event.get_user_id(), report_type=1)
+    user_id = event.get_user_id()
+    u = get_or_set_user(user_id=user_id)
+    user_id = u.id
+    msg = get_report(user_id=user_id)
+    get_or_set_user(user_id=user_id, report_type=1)
     if msg:
         msg += f'```\n\n日报订阅成功\n/unsubscribe 取消订阅```'
     else:
