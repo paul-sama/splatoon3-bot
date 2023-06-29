@@ -63,8 +63,8 @@ async def cron_job(bot: Bot):
 async def send_user_msg(bot, users):
     path_folder = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource/user_msg'
     for u in users:
-        if not u.api_key or not u.session_token:
-            continue
+        # if not u.api_key or not u.session_token:
+        #     continue
         if (isinstance(bot, TGBot) and not u.user_id_tg) or (isinstance(bot, QQBot) and not u.user_id_qq):
             continue
         file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
