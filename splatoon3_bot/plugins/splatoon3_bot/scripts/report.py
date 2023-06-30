@@ -69,7 +69,7 @@ def set_user_info(user_id, skip_report=False):
 
         msg = get_report(u.id)
         if msg:
-            msg += '\n\n/unsubscribe 取消订阅\n'
+            # msg += '\n\n/unsubscribe 取消订阅\n'
             return msg
 
 
