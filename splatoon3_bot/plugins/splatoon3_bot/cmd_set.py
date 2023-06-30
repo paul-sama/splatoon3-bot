@@ -261,7 +261,7 @@ async def report(bot: Bot, event: Event):
     if msg:
         msg += f'```\n\n日报订阅成功\n/unsubscribe 取消订阅```'
     else:
-        msg = f'```\n数据准备中，请过几天再试\n\n日报订阅成功\n/unsubscribe 取消订阅```'
+        msg = f'```\n数据准备中。。。\n\n日报订阅成功\n/unsubscribe 取消订阅```'
     await bot_send(bot, event, message=msg, parse_mode='Markdown')
 
 
