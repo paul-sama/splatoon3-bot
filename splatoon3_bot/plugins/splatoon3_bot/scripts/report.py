@@ -2,6 +2,8 @@
 import base64
 import time
 from nonebot import logger
+from nonebot.adapters.telegram import Bot as TGBot
+from nonebot.adapters.onebot.v11 import Bot as QQBot
 
 from datetime import datetime as dt, timedelta
 
@@ -67,11 +69,8 @@ def set_user_info(user_id, skip_report=False):
 
         msg = get_report(u.id)
         if msg:
-            msg = msg.replace('`', '')
             msg += '\n\n/unsubscribe 取消订阅\n'
-            file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
-            with open(file_msg_path, 'a') as f:
-                f.write(msg)
+            return msg
 
 
 def set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code):
@@ -143,17 +142,31 @@ def set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code)
     model_add_report(**_report)
 
 
-def update_user_info():
+async def update_user_info(bot=None):
     t = dt.utcnow()
     users = get_all_user()
     for u in users:
         if not u or not u.session_token:
             continue
 
+        if bot and ((isinstance(bot, TGBot) and not u.user_id_tg) or (isinstance(bot, QQBot) and not u.user_id_qq)):
+            continue
+
         try:
-            set_user_info(u.id)
-            # import threading
-            # threading.Thread(target=set_user_info, args=(u.id,)).start()
+            msg = set_user_info(u.id)
+            if not msg:
+                continue
+
+            ret = None
+            if isinstance(bot, TGBot):
+                ret = await bot.send_message(chat_id=u.user_id_tg, text=msg, parse_mode='Markdown')
+            elif isinstance(bot, QQBot):
+                msg = msg.replace('`', '')
+                ret = await bot.send_private_msg(user_id=u.user_id_qq, message=msg)
+            if ret:
+                logger.debug(msg)
+                logger.debug(f"{u.id} send message: {ret}")
+
         except Exception as e:
             logger.warning(e)
             logger.warning(f'update_user_info_failed: {u.id}, {u.user_id_qq or u.user_id_tg}, {u.username}')

@@ -26,11 +26,15 @@ async def cron_job(bot: Bot):
     # check msg file every minute and send msg, can't send msg in thread
     await send_user_msg(bot, users)
 
+    now = dt.now()
+
+    # report at 8:00
+    if now.hour == 8 and now.minute == 0:
+        await update_user_info(bot=bot)
+
     # 同步任务全在tg bot上执行，避免qq被风控下线无法同步
     if isinstance(bot, QQBot):
         return
-
-    now = dt.now()
 
     # parse x rank player at 2:40
     if now.hour == 2 and now.minute == 40 and isinstance(bot, TGBot):
@@ -39,10 +43,6 @@ async def cron_job(bot: Bot):
     # update gtoken at 7:00
     if now.hour == 7 and now.minute == 00 and isinstance(bot, TGBot):
         update_user_info_first()
-
-    # report at 8:00
-    if now.hour == 8 and now.minute == 00 and isinstance(bot, TGBot):
-        update_user_info()
 
     # run every 2 hours
     if not (now.hour % 2 == 0 and now.minute == 3):
