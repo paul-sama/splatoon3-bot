@@ -89,7 +89,6 @@ async def login_id(bot: Bot, event: Event, state: T_State):
         'session_token': session_token,
         'user_id': user_id,
         'id_type': 'tg' if isinstance(bot, TGBot) else 'qq',
-        'report_type': 1,
     }
     set_db_info(**data)
     '''

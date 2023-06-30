@@ -55,7 +55,7 @@ def set_user_info(user_id, skip_report=False):
     logger.debug(f'set_user_info: {_dict}')
     set_db_info(**_dict)
 
-    if last_play_time.date() == (dt.utcnow() - timedelta(days=1)).date() and skip_report is False:
+    if last_play_time.date() >= (dt.utcnow() - timedelta(days=1)).date() and skip_report is False:
         set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code)
 
         if not u.report_type:
