@@ -26,7 +26,7 @@ async def all_command(bot: Bot, event: Event):
             'last_name': _event.get('from_', {}).get('last_name', ''),
             'cmd': event.get_plaintext().strip(),
         })
-        if _event.get('chat', {}).get('type') == 'group':
+        if 'group' in _event.get('chat', {}).get('type', ''):
             data.update({
                 'group_id': _event['chat']['id'],
                 'group_name': _event.get('chat', {}).get('title', ''),
