@@ -28,10 +28,6 @@ async def cron_job(bot: Bot):
 
     now = dt.now()
 
-    # report at 8:00
-    if now.hour == 8 and now.minute == 0:
-        await update_user_info(bot=bot)
-
     # 同步任务全在tg bot上执行，避免qq被风控下线无法同步
     if isinstance(bot, QQBot):
         return
@@ -43,6 +39,10 @@ async def cron_job(bot: Bot):
     # update gtoken at 7:00
     if now.hour == 7 and now.minute == 00 and isinstance(bot, TGBot):
         update_user_info_first()
+
+    # report at 8:00
+    if now.hour == 8 and now.minute == 0:
+        update_user_info()
 
     # run every 2 hours
     if not (now.hour % 2 == 0 and now.minute == 3):
@@ -78,8 +78,12 @@ async def send_user_msg(bot, users):
             try:
                 ret = None
                 if isinstance(bot, TGBot):
-                    ret = await bot.send_message(chat_id=u.user_id_tg, text=msg, disable_web_page_preview=True)
+                    if 'stat.ink' in msg:
+                        ret = await bot.send_message(chat_id=u.user_id_tg, text=msg, disable_web_page_preview=True)
+                    else:
+                        ret = await bot.send_message(chat_id=u.user_id_tg, text=msg, parse_mode='Markdown')
                 elif isinstance(bot, QQBot):
+                    msg = msg.replace('`', '')
                     ret = await bot.send_private_msg(user_id=u.user_id_qq, message=msg)
                 if ret:
                     logger.debug(f"{u.id} send message: {ret}")

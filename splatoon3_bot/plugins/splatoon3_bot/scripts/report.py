@@ -70,7 +70,9 @@ def set_user_info(user_id, skip_report=False):
         msg = get_report(u.id)
         if msg:
             # msg += '\n\n/unsubscribe 取消订阅\n'
-            return msg
+            file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
+            with open(file_msg_path, 'a') as f:
+                f.write(msg)
 
 
 def set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code):
@@ -142,31 +144,15 @@ def set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code)
     model_add_report(**_report)
 
 
-async def update_user_info(bot=None):
+def update_user_info():
     t = dt.utcnow()
     users = get_all_user()
     for u in users:
         if not u or not u.session_token:
             continue
 
-        if bot and ((isinstance(bot, TGBot) and not u.user_id_tg) or (isinstance(bot, QQBot) and not u.user_id_qq)):
-            continue
-
         try:
-            msg = set_user_info(u.id)
-            if not msg:
-                continue
-
-            ret = None
-            if isinstance(bot, TGBot):
-                ret = await bot.send_message(chat_id=u.user_id_tg, text=msg, parse_mode='Markdown')
-            elif isinstance(bot, QQBot):
-                msg = msg.replace('`', '')
-                ret = await bot.send_private_msg(user_id=u.user_id_qq, message=msg)
-            if ret:
-                logger.debug(msg)
-                logger.debug(f"{u.id} send message: {ret}")
-
+            set_user_info(u.id)
         except Exception as e:
             logger.warning(e)
             logger.warning(f'update_user_info_failed: {u.id}, {u.user_id_qq or u.user_id_tg}, {u.username}')
