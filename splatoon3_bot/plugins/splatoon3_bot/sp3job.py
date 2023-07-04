@@ -89,7 +89,8 @@ async def send_user_msg(bot, users):
                     logger.debug(f"{u.id} send message: {ret}")
                     logger.debug(f"{u.id} delete message file: {file_msg_path}")
                     logger.info(msg)
-                    os.remove(file_msg_path)
+                    if os.path.exists(file_msg_path):
+                        os.remove(file_msg_path)
             except Exception as e:
                 logger.error(f"{u.id}, send_user_msg: {e}, {msg}")
 

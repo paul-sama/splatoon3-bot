@@ -245,11 +245,11 @@ def get_report(user_id):
     if (old.coop_gold + old.coop_silver + old.coop_bronze) != (new.coop_gold + new.coop_silver + new.coop_bronze):
         str_coop = ''
         if old.coop_bronze != new.coop_bronze:
-            str_coop += f' 🏅️+{new.coop_bronze - old.coop_bronze}'
+            str_coop += f' 🏅️{new.coop_bronze - old.coop_bronze:+}'
         if old.coop_silver != new.coop_silver:
-            str_coop += f' 🥈+{new.coop_silver - old.coop_silver}'
+            str_coop += f' 🥈{new.coop_silver - old.coop_silver:+}'
         if old.coop_gold != new.coop_gold:
-            str_coop += f' 🥉+{new.coop_gold - old.coop_gold}'
+            str_coop += f' 🥉{new.coop_gold - old.coop_gold:+}'
         msg += f'鳞片: {str_coop}\n'
 
     msg = f'```{msg}```'

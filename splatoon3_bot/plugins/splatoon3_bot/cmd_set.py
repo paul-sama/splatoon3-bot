@@ -90,6 +90,8 @@ async def login_id(bot: Bot, event: Event, state: T_State):
         'user_id': user_id,
         'id_type': 'tg' if isinstance(bot, TGBot) else 'qq',
     }
+    if isinstance(bot, TGBot):
+        data['report_type'] = 1
     set_db_info(**data)
     '''
 /set_lang - set language, default(zh-CN) 默认中文
@@ -214,7 +216,7 @@ async def get_set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     logger.info(f'set_api_key: {api_key}')
     get_or_set_user(user_id=event.get_user_id(), api_key=api_key)
 
-    msg = f'''set_api_key success, bot will check every 3 hours and post your data to stat.ink.
+    msg = f'''set_api_key success, bot will check every 2 hours and post your data to stat.ink.
 first sync will be in minutes.
     '''
     if isinstance(bot, QQBot):
