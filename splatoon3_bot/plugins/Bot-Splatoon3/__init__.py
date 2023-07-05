@@ -1,26 +1,26 @@
 import re
 
-from nonebot import on_command, on_regex
+from nonebot import on_regex
 from nonebot.adapters import Event
 from nonebot.adapters import Bot
-from nonebot.adapters.onebot.v11 import MessageEvent
 from nonebot.adapters.onebot.v11 import MessageSegment
 from nonebot.adapters.onebot.v11 import Bot as QQBot, Message
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.telegram.message import File
-from nonebot.matcher import Matcher
 from nonebot.log import logger
-from nonebot.permission import SUPERUSER
 
 from .image import (
     get_save_temp_image,
     get_coop_stages_image,
     get_random_weapon_image,
     get_stages_image,
+    get_weapon_info_test,
 )
-from .imageProcesser import imageDB
-from .utils import multiple_replace, dict_contest, dict_rule
+from .translation import dict_keyword_replace
+from .image_processer import imageDB
+from .utils import multiple_replace
 from .data_source import get_screenshot
+from .admin_matcher import matcher_admin
 
 # 初始化插件时清空合成图片缓存表
 imageDB.clean_image_temp()
@@ -43,14 +43,7 @@ matcher_coop = on_regex(
 )
 
 # 其他命令 触发器
-matcher_else = on_regex(
-    "^[\\\/\.。]?(帮助|help|随机武器|装备|衣服|祭典|活动)$", priority=9, block=True
-)
-
-# # 管理员指令 触发器 只有nonebot环境文件内的管理员qq才能触发
-# matcher_admin = on_regex(
-#     "^[\\\/\.。]?(清空图片缓存)$", priority=1, block=True, permission=SUPERUSER
-# )
+matcher_else = on_regex("^[\\\/\.。]?(帮助|help|(随机武器).*|装备|衣服|祭典|活动)$", priority=9, block=True)
 
 
 async def bot_send(bot: Bot, event: Event, **kwargs):
@@ -87,7 +80,7 @@ async def bot_send(bot: Bot, event: Event, **kwargs):
 async def _(bot: Bot, event: Event):
     plain_text = event.get_message().extract_plain_text().strip()
     # 触发关键词  同义文本替换
-    plain_text = multiple_replace(plain_text)
+    plain_text = multiple_replace(plain_text, dict_keyword_replace)
     logger.info("同义文本替换后触发词为:" + plain_text + "\n")
     # 判断是否满足进一步正则
     num_list = []
@@ -103,7 +96,6 @@ async def _(bot: Bot, event: Event):
         re_list = re.findall("下", plain_text)
         num_list = list(set([len(re_list)]))
         num_list.sort()
-        stage_mode = None
         flag_match = True
     # 多图
     elif re.search("^下?图{1,11}$", plain_text):
@@ -136,7 +128,7 @@ async def _(bot: Bot, event: Event):
 async def _(bot: Bot, event: Event):
     plain_text = event.get_message().extract_plain_text().strip()
     # 触发关键词  同义文本替换  同时替换.。\/ 等前缀触发词
-    plain_text = multiple_replace(plain_text)
+    plain_text = multiple_replace(plain_text, dict_keyword_replace)
     logger.info("同义文本替换后触发词为:" + plain_text)
     # 判断是否满足进一步正则
     num_list = []
@@ -146,7 +138,7 @@ async def _(bot: Bot, event: Event):
     # 双筛选  规则  竞赛
     if re.search("^[0-9]*(全部)?(区域|蛤蜊|塔楼|鱼虎)(挑战|开放|X段)$", plain_text):
         if "全部" in plain_text:
-            num_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 11]
+            num_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
         else:
             if len(plain_text) == 2:
                 num_list = [0]
@@ -154,13 +146,13 @@ async def _(bot: Bot, event: Event):
                 num_list = list(set([int(x) for x in plain_text[:-4]]))
                 num_list.sort()
         stage_mode = plain_text[-4:]
-        contest_match = dict_contest[stage_mode[2:]]
+        contest_match = stage_mode[2:]
         rule_match = stage_mode[:2]
         flag_match = True
     # 双筛选  竞赛  规则
     elif re.search("^[0-9]*(全部)?(挑战|开放|X段)(区域|蛤蜊|塔楼|鱼虎)$", plain_text):
         if "全部" in plain_text:
-            num_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 11]
+            num_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
         else:
             if len(plain_text) == 2:
                 num_list = [0]
@@ -174,7 +166,7 @@ async def _(bot: Bot, event: Event):
     # 单筛选  竞赛
     elif re.search("^[0-9]*(全部)?(挑战|开放|X段|涂地)$", plain_text):
         if "全部" in plain_text:
-            num_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 11]
+            num_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
         else:
             if len(plain_text) == 2:
                 num_list = [0]
@@ -199,7 +191,7 @@ async def _(bot: Bot, event: Event):
     # 单筛选  模式
     elif re.search("^[0-9]*(全部)?(区域|蛤蜊|塔楼|鱼虎)$", plain_text):
         if "全部" in plain_text:
-            num_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 11]
+            num_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
         else:
             if len(plain_text) == 2:
                 num_list = [0]
@@ -235,16 +227,16 @@ async def _(bot: Bot, event: Event):
 async def _(bot: Bot, event: Event):
     plain_text = event.get_message().extract_plain_text().strip()
     # 触发关键词  同义文本替换
-    plain_text = multiple_replace(plain_text)
+    plain_text = multiple_replace(plain_text, dict_keyword_replace)
     logger.info("同义文本替换后触发词为:" + plain_text + "\n")
     # 判断是否满足进一步正则
-    all = False
-    if "全部" in plain_text or 'coop_schedule' in plain_text:
-        all = True
+    _all = False
+    if "全部" in plain_text:
+        _all = True
     # 传递函数指针
     func = get_coop_stages_image
     # 获取图片
-    img = get_save_temp_image(plain_text, func, all)
+    img = get_save_temp_image(plain_text, func, _all)
     # 发送消息
     await bot_send(bot, event, img=img)
 
@@ -254,43 +246,28 @@ async def _(bot: Bot, event: Event):
 async def _(bot: Bot, event: Event):
     plain_text = event.get_message().extract_plain_text().strip()
     # 触发关键词  同义文本替换
-    plain_text = multiple_replace(plain_text)
+    plain_text = multiple_replace(plain_text, dict_keyword_replace)
     logger.info("同义文本替换后触发词为:" + plain_text + "\n")
     # 判断是否满足进一步正则
     # 随机武器
-    if re.search("^随机武器$", plain_text):
+    if re.search("^随机武器.*$", plain_text):
         # 这个功能不能进行缓存，必须实时生成图
-        # 获取图片
-        weapon1 = None
-        weapon2 = None
-        img = get_random_weapon_image(weapon1, weapon2)
-        # 发送消息
-        await bot_send(bot, event, img=img)
+        # 测试数据库能否取到武器数据
+        if not get_weapon_info_test():
+            msg = "请机器人管理员先发送 更新武器数据 更新本地武器数据库后，才能使用随机武器功能"
+            await bot_send(bot, event, message=msg)
+        else:
+            img = get_random_weapon_image(plain_text)
+            # 发送消息
+            await bot_send(bot, event, img=img)
     elif re.search("^祭典$", plain_text):
         # 获取祭典，网页图片中含有倒计时，不适合进行缓存
         # 速度较慢，可以考虑后续从 json 自行生成，后续的分支都是网页截图
-        img = await get_screenshot(shoturl="https://splatoon3.ink/splatfests")
+        img = await get_screenshot(shot_url="https://splatoon3.ink/splatfests")
         await bot_send(bot, event, img=img)
     elif re.search("^活动$", plain_text):
-        img = await get_screenshot(shoturl="https://splatoon3.ink/challenges")
+        img = await get_screenshot(shot_url="https://splatoon3.ink/challenges")
         await bot_send(bot, event, img=img)
     elif re.search("^装备$", plain_text):
-        img = await get_screenshot(shoturl="https://splatoon3.ink/gear")
+        img = await get_screenshot(shot_url="https://splatoon3.ink/gear")
         await bot_send(bot, event, img=img)
-
-
-# # 管理员指令 触发器处理
-# @matcher_admin.handle()
-# async def _(bot: Bot, event: Event):
-#     plain_text = event.get_message().extract_plain_text().strip()
-#     err_msg = "执行失败，错误日志为: "
-#     # 清空图片缓存
-#     if re.search("^清空图片缓存$", plain_text):
-#         msg = "数据库合成图片缓存数据已清空！"
-#         try:
-#             imageDB.clean_image_temp()
-#         except Exception as e:
-#             msg = err_msg + str(e)
-#         # 发送消息
-#         await bot_send(bot, event, img=img)
-#         await matcher.finish(MessageSegment.text(msg))

@@ -6,11 +6,16 @@ import urllib3
 from nonebot.log import logger
 from playwright.async_api import Browser, async_playwright
 
+from ._class import ImageInfo
+from .image_processer import imageDB
 from .translation import (
     get_trans_stage,
     get_trans_weapon,
     get_trans_data,
     list_salmonrun_mode,
+    dict_contest_trans,
+    dict_rule_trans,
+    weapon_image_type,
 )
 from .utils import *
 
@@ -27,7 +32,7 @@ async def init_browser() -> Browser:
     return _browser
 
 
-# 获取目前唤起的 brower
+# 获取目前唤起的 browser
 async def get_browser() -> Browser:
     global _browser
     if _browser is None or not _browser.is_connected():
@@ -35,24 +40,22 @@ async def get_browser() -> Browser:
     return _browser
 
 
-# 通过 browser 获取 shoturl 中的网页截图
-async def get_screenshot(shoturl, shotpath=None):
+# 通过 browser 获取 shot_url 中的网页截图
+async def get_screenshot(shot_url, shot_path=None):
     # playwright 要求不能有多个 browser 被同时唤起
     browser = await get_browser()
-    context = await browser.new_context(
-        viewport={"width": 1480, "height": 900}, locale="zh-CH"
-    )
+    context = await browser.new_context(viewport={"width": 1480, "height": 900}, locale="zh-CH")
     page = await context.new_page()
     await page.set_viewport_size({"width": 1480, "height": 900})
-    await page.goto(shoturl)
+    await page.goto(shot_url)
     try:
         await page.wait_for_timeout(3000)
-        if shotpath is None:
+        if shot_path is None:
             return await page.screenshot()
         else:
-            await page.screenshot(path=shotpath)
+            await page.screenshot(path=shot_path)
     except Exception as e:
-        logger.error("Screenshot failed")
+        logger.error("Screenshot failed" + str(e))
         return await page.screenshot(full_page=True)
     finally:
         await context.close()
@@ -62,12 +65,8 @@ async def get_screenshot(shoturl, shotpath=None):
 def get_schedule_data():
     # 校验过期日程
     def check_expire_schedule(schedule):
-        st = datetime.datetime.strptime(
-            schedule["regularSchedules"]["nodes"][0]["startTime"], "%Y-%m-%dT%H:%M:%SZ"
-        )
-        ed = datetime.datetime.strptime(
-            schedule["regularSchedules"]["nodes"][0]["endTime"], "%Y-%m-%dT%H:%M:%SZ"
-        )
+        st = datetime.datetime.strptime(schedule["regularSchedules"]["nodes"][0]["startTime"], "%Y-%m-%dT%H:%M:%SZ")
+        ed = datetime.datetime.strptime(schedule["regularSchedules"]["nodes"][0]["endTime"], "%Y-%m-%dT%H:%M:%SZ")
         nw = datetime.datetime.now() - datetime.timedelta(hours=8)
         if st < nw < ed:
             return False
@@ -76,17 +75,16 @@ def get_schedule_data():
     global schedule_res
     if schedule_res is None or check_expire_schedule(schedule_res):
         logger.info("重新请求:日程数据")
-        with httpx.Client() as client:
-            result = client.get("https://splatoon3.ink/data/schedules.json")
-            schedule_res = json.load(result)
-            schedule_res = schedule_res["data"]
-            return schedule_res
+        result = cf_http_get("https://splatoon3.ink/data/schedules.json").text
+        schedule_res = json.loads(result)
+        schedule_res = schedule_res["data"]
+        return schedule_res
     else:
         return schedule_res
 
 
 # 取 打工 信息
-def get_coop_info(all=None):
+def get_coop_info(_all=None):
     # 取地图信息
     def get_stage_image_info(sch):  # sch为schedule[idx]
         return ImageInfo(
@@ -98,6 +96,7 @@ def get_coop_info(all=None):
 
     # 取装备信息
     def get_weapon_image_info(sch):  # sch为schedule[idx]
+        # for i in range(4) 是循环执行4次，不是多余的代码
         return [
             ImageInfo(
                 sch["setting"]["weapons"][i]["name"],
@@ -110,22 +109,22 @@ def get_coop_info(all=None):
 
     # 取时间信息
     def get_str_time(sch):
-        start_time = time_converter_day(sch["startTime"])
-        end_time = time_converter_day(sch["endTime"])
-        return "{} - {}".format(start_time, end_time)
+        _start_time = time_converter_day(sch["startTime"])
+        _end_time = time_converter_day(sch["endTime"])
+        return "{} - {}".format(_start_time, _end_time)
 
     # 取boss名称
     def get_str_boss(sch):
         return sch["__splatoon3ink_king_salmonid_guess"]
 
     # 校验普通打工时间，是否在特殊打工模式之后
-    def check_salmonrun_time(start_time, special_mode_start_time):
+    def check_salmonrun_time(_start_time, _special_mode_start_time):
         # 输入时间都缺少年份，需要手动补充一个年份后还原为date对象
         year = datetime.datetime.now().year
-        start_time = str(year) + "-" + start_time
-        special_mode_start_time = str(year) + "-" + special_mode_start_time
-        st = datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M")
-        su_st = datetime.datetime.strptime(special_mode_start_time, "%Y-%m-%d %H:%M")
+        _start_time = str(year) + "-" + _start_time
+        _special_mode_start_time = str(year) + "-" + _special_mode_start_time
+        st = datetime.datetime.strptime(_start_time, "%Y-%m-%d %H:%M")
+        su_st = datetime.datetime.strptime(_special_mode_start_time, "%Y-%m-%d %H:%M")
         if st > su_st:
             return True
         return False
@@ -146,7 +145,7 @@ def get_coop_info(all=None):
     boss = []
     mode = []
     schedule = regular_schedule
-    if not all:
+    if not _all:
         # 只输出两排
         for i in range(2):
             stage.append(get_stage_image_info(schedule[i]))
@@ -172,8 +171,9 @@ def get_coop_info(all=None):
         for k, v in enumerate(time):
             start_time = v.split(" - ")[0]
             if check_salmonrun_time(start_time, special_mode_start_time):
-                insert_idx = k - 1
+                insert_idx = k
                 need_offset = True
+                break
         if not need_offset:
             insert_idx = len(time)
         # 插入数据
@@ -196,7 +196,7 @@ def get_coop_info(all=None):
             if check_salmonrun_time(start_time, special_mode_start_time):
                 insert_idx = k
                 need_offset = True
-
+                break
         if not need_offset:
             insert_idx = len(time)
         # 插入数据
@@ -210,6 +210,56 @@ def get_coop_info(all=None):
     return stage, weapon, time, boss, mode
 
 
+# 取 装备信息
+def get_weapon_info(list_weapon: list):
+    weapon1 = []
+    weapon2 = []
+    for v in list_weapon:
+        _type = v["type"]
+        name = v["name"]
+        zh_weapon_class = ""
+        zh_weapon_sub = ""
+        zh_weapon_special = ""
+        zh_father_class = ""
+        if _type == weapon_image_type[3]:
+            # class
+            zh_weapon_class = name
+        elif _type == weapon_image_type[1]:
+            # sub
+            zh_weapon_sub = name
+        elif _type == weapon_image_type[2]:
+            # special
+            zh_weapon_special = name
+        elif _type == weapon_image_type[4]:
+            # father_class
+            zh_father_class = name
+        weaponData = imageDB.get_weapon_info(zh_weapon_class, zh_weapon_sub, zh_weapon_special, zh_father_class)
+        weaponData2 = imageDB.get_weapon_info(zh_weapon_class, zh_weapon_sub, zh_weapon_special, zh_father_class)
+        # 获取图片数据
+        # Main
+        weaponData.image = imageDB.get_weapon_image(weaponData.name, weapon_image_type[0]).get("image")
+        weaponData2.image = imageDB.get_weapon_image(weaponData2.name, weapon_image_type[0]).get("image")
+        # Sub
+        weaponData.sub_image = imageDB.get_weapon_image(weaponData.sub_name, weapon_image_type[1]).get("image")
+        weaponData2.sub_image = imageDB.get_weapon_image(weaponData2.sub_name, weapon_image_type[1]).get("image")
+        # Special
+        weaponData.special_image = imageDB.get_weapon_image(weaponData.special_name, weapon_image_type[2]).get("image")
+        weaponData2.special_image = imageDB.get_weapon_image(weaponData2.special_name, weapon_image_type[2]).get(
+            "image"
+        )
+        # Class
+        weaponData.weapon_class_image = imageDB.get_weapon_image(weaponData.weapon_class, weapon_image_type[3]).get(
+            "image"
+        )
+        weaponData2.weapon_class_image = imageDB.get_weapon_image(weaponData2.weapon_class, weapon_image_type[3]).get(
+            "image"
+        )
+        # 添加
+        weapon1.append(weaponData)
+        weapon2.append(weaponData2)
+    return weapon1, weapon2
+
+
 # 取 图 信息
 def get_stage_info(num_list=None, contest_match=None, rule_match=None):
     if num_list is None:
@@ -217,12 +267,12 @@ def get_stage_info(num_list=None, contest_match=None, rule_match=None):
     schedule = get_schedule_data()
     get_trans_data()
     # 竞赛 规则
-    if contest_match != None and contest_match != "":
-        new_contest_match = dict_contest[contest_match]
+    if contest_match is not None and contest_match != "":
+        new_contest_match = dict_contest_trans[contest_match]
     else:
         new_contest_match = contest_match
-    if rule_match != None and rule_match != "":
-        new_rule_match = dict_rule[rule_match]
+    if rule_match is not None and rule_match != "":
+        new_rule_match = dict_rule_trans[rule_match]
     else:
         new_rule_match = rule_match
 
