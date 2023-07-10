@@ -284,7 +284,8 @@ def get_group_node_msg(g_node, splt, _type):
         if _type == 'event':
             cur_power = battle_detail['data']['vsHistoryDetail']['leagueMatch']['myLeaguePower']
         else:
-            cur_power = battle_detail['data']['vsHistoryDetail']['bankaraMatch']['bankaraPower']['power']
+            b_d = battle_detail['data']['vsHistoryDetail'].get('bankaraMatch') or {}
+            cur_power = (b_d.get('bankaraPower') or {}).get('power')
         if cur_power:
             dict_p[_id] = {'cur': cur_power, 'diff': cur_power - last_power if last_power else ''}
         last_power = cur_power
