@@ -30,6 +30,7 @@ translate_rid = {
 	'XRankingQuery':                     'd771444f2584d938db8d10055599011d',
 	'ScheduleQuery':                     'd1f062c14f74f758658b2703a5799002',
 	'StageRecordsQuery':                 'f08a932d533845dde86e674e03bbb7d3',
+	'EventBattleHistoriesQuery':         '9744fcf676441873c7c8a51285b6aa4d',
 }
 
 def get_web_view_ver():

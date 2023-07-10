@@ -3,7 +3,7 @@ from nonebot.adapters import Event, Bot
 
 from .sp3bot import (
     get_user_db_info, get_last_battle_or_coop, get_me, get_friends_msg, get_ns_friends_msg, get_x_top_msg,
-    get_my_schedule_msg, get_screenshot_image
+    get_my_schedule_msg, get_screenshot_image, get_history_msg
 )
 from .utils import bot_send, check_session_handler
 
@@ -105,3 +105,19 @@ async def screen_shot(bot: Bot, event: Event):
     if not img:
         message = 'Network Error, Please try again later.'
     await bot_send(bot, event, message=message, photo=img)
+
+
+@on_command("history", block=True).handle()
+@check_session_handler
+async def history(bot: Bot, event: Event):
+    _type = 'open'
+
+    cmd_message = event.get_plaintext()[8:].strip()
+    logger.debug(f'last: {cmd_message}')
+    if cmd_message:
+        cmd_lst = cmd_message.split()
+        if 'e' in cmd_lst or 'event' in cmd_lst:
+            _type = 'event'
+
+    msg = get_history_msg(event.get_user_id(), _type=_type)
+    await bot_send(bot, event, msg, parse_mode='Markdown')

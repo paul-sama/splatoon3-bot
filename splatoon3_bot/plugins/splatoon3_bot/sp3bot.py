@@ -13,7 +13,7 @@ from .splat import Splatoon, API_URL
 from .sp3msg import (
     get_battle_msg, get_coop_msg, get_summary, get_statics, get_friends, get_ns_friends, get_x_top, get_my_schedule
 )
-from .sp3msg_md import get_battle_msg as get_battle_msg_md, get_coop_msg as get_coop_msg_md
+from .sp3msg_md import get_battle_msg as get_battle_msg_md, get_coop_msg as get_coop_msg_md, get_history
 from .splatnet_image import get_app_screenshot
 from .utils import bot_send, INTERVAL
 
@@ -263,3 +263,11 @@ async def get_screenshot_image(user_id, key=None):
         logger.exception(e)
         img = None
     return img
+
+
+def get_history_msg(user_id, _type='open'):
+    user = get_or_set_user(user_id=user_id)
+    splt = Splatoon(user_id, user.session_token)
+    msg = get_history(splt, _type=_type)
+    logger.debug(msg)
+    return msg

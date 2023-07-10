@@ -1,5 +1,5 @@
 
-from .sp3msg import get_battle_msg_title, set_statics, logger
+from .sp3msg import get_battle_msg_title, set_statics, logger, utils
 
 
 def get_row_text(p, battle_show_type='1'):
@@ -219,3 +219,132 @@ def get_coop_msg(coop_info, data):
         msg += f"""|{e.get('teamDefeatCount') or ''} |{e['defeatCount'] or ''} |{e['popCount'] or ''} | {img_str} {(e.get('enemy') or {}).get('name') or ''} {nice}|\n"""
     # logger.info(msg)
     return msg
+
+
+def get_history(splt, _type='open'):
+    data = None
+    if _type == 'event':
+        data = utils.gen_graphql_body(utils.translate_rid['EventBattleHistoriesQuery'])
+    elif _type == 'open':
+        data = utils.gen_graphql_body(utils.translate_rid['BankaraBattleHistoriesQuery'])
+
+    if not data:
+        return 'No battle found!'
+    res = splt._request(data)
+    if not res:
+        return 'No battle found!'
+
+    msg = ''
+    event_h = []
+    if _type == 'event':
+        event_h = res['data']['eventBattleHistories']['historyGroups']['nodes']
+    if _type == 'open':
+        event_h = res['data']['bankaraBattleHistories']['historyGroups']['nodes']
+
+    for g_node in event_h:
+        msg += get_group_node_msg(g_node, splt, _type)
+        break
+
+    msg = f'{msg}'
+    logger.info(msg)
+    return msg
+
+
+def get_group_node_msg(g_node, splt, _type):
+    if _type == 'event':
+        msg = '#### ' + g_node['leagueMatchHistoryGroup']['leagueMatchEvent']['name'] + '\n'
+        battle_lst = g_node['historyDetails']['nodes']
+    else:
+        msg = f"#### 开放: {g_node['historyDetails']['nodes'][0]['vsRule']['name']}\n"
+        battle_lst = []
+        stage_lst = []
+        for n in g_node['historyDetails']['nodes']:
+            if 'bankaraMatch' not in n or 'earnedUdemaePoint' not in n['bankaraMatch']:
+                continue
+            stage_name = n['vsStage']['name']
+            if stage_name not in stage_lst:
+                stage_lst.append(stage_name)
+            # 最新一个时段
+            if len(stage_lst) > 2:
+                break
+            battle_lst.append(n)
+
+    msg += '''
+|  |   ||  ||||||||||
+| --: |--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--|
+'''
+
+    dict_p = {}
+    last_power = 0
+    for b in battle_lst[::-1]:
+        _id = b['id']
+        dict_p[_id] = {}
+        _data = utils.gen_graphql_body(utils.translate_rid['VsHistoryDetailQuery'], varname='vsResultId', varvalue=_id)
+        battle_detail = splt._request(_data)
+        if _type == 'event':
+            cur_power = battle_detail['data']['vsHistoryDetail']['leagueMatch']['myLeaguePower']
+        else:
+            cur_power = battle_detail['data']['vsHistoryDetail']['bankaraMatch']['bankaraPower']['power']
+        if cur_power:
+            dict_p[_id] = {'cur': cur_power, 'diff': cur_power - last_power if last_power else ''}
+        last_power = cur_power
+
+        b_detail = battle_detail['data']['vsHistoryDetail']
+        my_str = get_my_row(b_detail['myTeam'])
+        duration = b_detail['duration']
+
+        score_list = []
+        for t in [b_detail['myTeam']] + b_detail['otherTeams']:
+            if (t.get('result') or {}).get('score') is not None:
+                score_list.append(str((t['result']['score'])))
+            elif (t.get('result') or {}).get('paintRatio') is not None:
+                score_list.append(f"{t['result']['paintRatio']:.2%}"[:-2])
+        score = ':'.join(score_list)
+        dict_p[_id].update({'my_str': my_str, 'duration': duration, 'score': score})
+
+    for n in battle_lst:
+        _id = n['id']
+        p = dict_p.get(_id) or {}
+        if p.get('diff'):
+            str_p = f'{p["diff"]:+.2f}|'
+        else:
+            str_p = '      |'
+
+        if p.get('cur'):
+            str_p += f' {p["cur"]:.2f}'
+        else:
+            str_p += '        '
+
+        my_str = p.get('my_str') or ''
+        weapon_img = (((n.get('player') or {}).get('weapon') or {}).get('image') or {}).get('url') or ''
+        weapon_str = f'<img height="20" src="{weapon_img}"/>'
+        duration = p.get('duration') or ''
+        score = p.get('score') or ''
+        jud = n.get('judgement') or ''
+        if jud not in ('WIN', 'LOSE'):
+            jud = 'DRAW'
+        row = f"|{jud}| {str_p}| {weapon_str}|{my_str}| {duration}s|{score}| {n['vsStage']['name']}"
+
+        msg += row + '\n'
+    msg += '||\n'
+    return msg
+
+
+def get_my_row(my_team):
+    p = {}
+    for _p in my_team['players']:
+        if _p.get('isMyself'):
+            p = _p
+            break
+
+    re = p['result']
+    if not re:
+        re = {"kill": 0, "death": 99, "assist": 0, "special": 0}
+    ak = re['kill']
+    k = re['kill'] - re['assist']
+    k_str = f'{k}+{re["assist"]}'
+    d = re['death']
+    ration = k / d if d else 99
+
+    t = f"{ak:>2}|{k_str:>5}k| {d:>2}d|{ration:>4.1f}|{re['special']:>3}sp| {p['paint']:>4}p "
+    return t
