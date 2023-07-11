@@ -113,11 +113,13 @@ async def history(bot: Bot, event: Event):
     _type = 'open'
 
     cmd_message = event.get_plaintext()[8:].strip()
-    logger.debug(f'last: {cmd_message}')
+    logger.debug(f'history: {cmd_message}')
     if cmd_message:
         cmd_lst = cmd_message.split()
         if 'e' in cmd_lst or 'event' in cmd_lst:
             _type = 'event'
+        if 'f' in cmd_lst or 'fest' in cmd_lst:
+            _type = 'fest'
 
     msg = get_history_msg(event.get_user_id(), _type=_type)
     await bot_send(bot, event, msg, parse_mode='Markdown')

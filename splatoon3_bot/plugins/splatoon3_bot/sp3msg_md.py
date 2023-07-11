@@ -222,14 +222,15 @@ def get_coop_msg(coop_info, data):
 
 
 def get_history(splt, _type='open'):
+    logger.info(f'get history {_type}')
     data = None
     if _type == 'event':
         data = utils.gen_graphql_body(utils.translate_rid['EventBattleHistoriesQuery'])
     elif _type == 'open':
         data = utils.gen_graphql_body(utils.translate_rid['BankaraBattleHistoriesQuery'])
+    elif _type == 'fest':
+        data = utils.gen_graphql_body(utils.translate_rid['RegularBattleHistoriesQuery'])
 
-    if not data:
-        return 'No battle found!'
     res = splt._request(data)
     if not res:
         return 'No battle found!'
@@ -240,21 +241,34 @@ def get_history(splt, _type='open'):
         event_h = res['data']['eventBattleHistories']['historyGroups']['nodes']
     if _type == 'open':
         event_h = res['data']['bankaraBattleHistories']['historyGroups']['nodes']
+    if _type == 'fest':
+        event_h = res['data']['regularBattleHistories']['historyGroups']['nodes']
+        new_event_h = []
+        for g in event_h:
+            for n in g['historyDetails']['nodes']:
+                # 单排 fest
+                if n['vsMode']['id'] == 'VnNNb2RlLTc=':
+                    new_event_h.append(g)
+                    break
+        event_h = new_event_h
 
     for g_node in event_h:
         msg += get_group_node_msg(g_node, splt, _type)
         break
 
-    msg = f'{msg}'
-    logger.info(msg)
+    # logger.info(msg)
+    if not msg:
+        return f'No battle {_type} found!'
     return msg
 
 
 def get_group_node_msg(g_node, splt, _type):
+    msg = ''
+    battle_lst = []
     if _type == 'event':
         msg = '#### ' + g_node['leagueMatchHistoryGroup']['leagueMatchEvent']['name'] + '\n'
         battle_lst = g_node['historyDetails']['nodes']
-    else:
+    elif _type == 'open':
         msg = f"#### 开放: {g_node['historyDetails']['nodes'][0]['vsRule']['name']}\n"
         battle_lst = []
         stage_lst = []
@@ -268,6 +282,9 @@ def get_group_node_msg(g_node, splt, _type):
             if len(stage_lst) > 2:
                 break
             battle_lst.append(n)
+    elif _type == 'fest':
+        msg = f"#### 祭典单排\n"
+        battle_lst = g_node['historyDetails']['nodes']
 
     msg += '''
 |  |   ||  ||||||||||
@@ -281,11 +298,18 @@ def get_group_node_msg(g_node, splt, _type):
         dict_p[_id] = {}
         _data = utils.gen_graphql_body(utils.translate_rid['VsHistoryDetailQuery'], varname='vsResultId', varvalue=_id)
         battle_detail = splt._request(_data)
+        if not battle_detail:
+            continue
+        cur_power = 0
         if _type == 'event':
             cur_power = battle_detail['data']['vsHistoryDetail']['leagueMatch']['myLeaguePower']
-        else:
+        elif _type == 'open':
             b_d = battle_detail['data']['vsHistoryDetail'].get('bankaraMatch') or {}
             cur_power = (b_d.get('bankaraPower') or {}).get('power')
+        elif _type == 'fest':
+            b_d = battle_detail['data']['vsHistoryDetail'].get('festMatch') or {}
+            cur_power = b_d.get('myFestPower')
+
         if cur_power:
             dict_p[_id] = {'cur': cur_power, 'diff': cur_power - last_power if last_power else ''}
         last_power = cur_power
@@ -305,6 +329,8 @@ def get_group_node_msg(g_node, splt, _type):
 
     for n in battle_lst:
         _id = n['id']
+        if _id not in dict_p:
+            continue
         p = dict_p.get(_id) or {}
         if p.get('diff'):
             str_p = f'{p["diff"]:+.2f}|'
@@ -324,7 +350,7 @@ def get_group_node_msg(g_node, splt, _type):
         jud = n.get('judgement') or ''
         if jud not in ('WIN', 'LOSE'):
             jud = 'DRAW'
-        row = f"|{jud}| {str_p}| {weapon_str}|{my_str}| {duration}s|{score}| {n['vsStage']['name']}"
+        row = f"|{jud}| {str_p}| {weapon_str}|{my_str}| {duration}s|{score}| {n['vsStage']['name'][:8]}"
 
         msg += row + '\n'
     msg += '||\n'
