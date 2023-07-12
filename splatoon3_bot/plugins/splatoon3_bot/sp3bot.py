@@ -100,6 +100,7 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
             return battle_id, b_info, True
         if get_screenshot:
             try:
+                user = get_user(user_id=user_id)
                 url = f"{API_URL}/history/detail/{battle_id}?lang=zh-CN"
                 pic = await get_app_screenshot(user.gtoken, url=url)
             except Exception as e:
@@ -119,6 +120,7 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
             return coop_id, coop_info, False
         if get_screenshot:
             try:
+                user = get_user(user_id=user_id)
                 url = f"{API_URL}/coop/{coop_id}?lang=zh-CN"
                 pic = await get_app_screenshot(user.gtoken, url=url)
             except Exception as e:
