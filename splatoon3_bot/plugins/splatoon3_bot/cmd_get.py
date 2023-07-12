@@ -29,6 +29,7 @@ async def last(bot: Bot, event: Event):
     get_pic = False
     get_image = False
     get_ss = False
+    mask = False
     idx = 0
     cmd_message = event.get_plaintext()[5:].strip()
     logger.debug(f'last: {cmd_message}')
@@ -44,13 +45,15 @@ async def last(bot: Bot, event: Event):
             get_image = True
         if 'ss' in cmd_lst or 'screenshot' in cmd_lst:
             get_ss = True
+        if 'm' in cmd_lst or 'mask' in cmd_lst:
+            mask = True
         for cmd in cmd_lst:
             if cmd.isdigit():
                 idx = int(cmd) - 1
                 break
 
     msg = await get_last_battle_or_coop(user_id, get_battle=get_battle, get_coop=get_coop, get_pic=get_pic, idx=idx,
-                                        get_screenshot=get_ss, get_image=get_image)
+                                        get_screenshot=get_ss, get_image=get_image, mask=mask)
     photo = None
     if get_ss:
         photo = msg

@@ -6,7 +6,7 @@ COOKIES = [{'name': '_gtoken', 'value': 'undefined', 'domain': 'api.lp1.av5ja.sr
             'expires': -1, 'httpOnly': False, 'secure': False, 'sameSite': 'Lax'}]
 
 
-async def get_app_screenshot(gtoken, key='', url=''):
+async def get_app_screenshot(gtoken, key='', url='', mask=False):
     logger.info(f'get_app_screenshot： {len(gtoken)}, {key}, {url}')
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
@@ -21,11 +21,16 @@ async def get_app_screenshot(gtoken, key='', url=''):
                 height = 1500
         if url and 'coop' in url:
             height = 1500
+        if mask:
+            height = 740
         context = await browser.new_context(viewport={"width": 500, "height": height})
         await context.add_cookies(cookies)
         page = await context.new_page()
         if url:
             await page.goto(url)
+            if mask:
+                await page.locator('"WIN!"').nth(0).click()
+                await page.locator('"LOSE..."').nth(0).click()
         else:
             await page.goto(f"{API_URL}/?lang=zh-CN")
         key = [] if not key else key.split(' ')
