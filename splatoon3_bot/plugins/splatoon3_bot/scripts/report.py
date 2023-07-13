@@ -177,7 +177,7 @@ def update_user_info_first():
 
 
 def get_report(user_id):
-    msg = '\n喷喷日报\n'
+    msg = '\n喷喷早报\n'
     report_list = model_get_report(user_id=user_id)
 
     # for r in report_list:

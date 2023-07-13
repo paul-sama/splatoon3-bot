@@ -261,9 +261,9 @@ async def report(bot: Bot, event: Event):
     msg = get_report(user_id=user_id)
     get_or_set_user(user_id=user_id, report_type=1)
     if msg:
-        msg += f'```\n\n日报订阅成功\n/unsubscribe 取消订阅```'
+        msg += f'```\n\n早报订阅成功\n/unsubscribe 取消订阅```'
     else:
-        msg = f'```\n数据准备中。。。\n\n日报订阅成功\n/unsubscribe 取消订阅```'
+        msg = f'```\n数据准备中。。。\n\n早报订阅成功\n/unsubscribe 取消订阅```'
     await bot_send(bot, event, message=msg, parse_mode='Markdown')
 
 
@@ -271,5 +271,5 @@ async def report(bot: Bot, event: Event):
 @check_session_handler
 async def unsubscribe(bot: Bot, event: Event):
     get_or_set_user(user_id=event.get_user_id(), report_type=0)
-    msg = f'```\n取消订阅成功\n/report 订阅日报```'
+    msg = f'```\n取消订阅成功\n/report 订阅早报```'
     await bot_send(bot, event, message=msg, parse_mode='Markdown')
