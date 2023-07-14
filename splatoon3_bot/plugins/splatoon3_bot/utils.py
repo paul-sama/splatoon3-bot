@@ -14,7 +14,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '0.5.5'
+BOT_VERSION = '0.5.6'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -28,6 +28,8 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
             cmd_lst = cmd_message.split()
             if 'i' in cmd_lst or 'image' in cmd_lst:
                 width = 630
+        if 'image_width' in kwargs:
+            width = kwargs.get('image_width')
         img_data = await md_to_pic(message, width=width, css_path=f'{DIR_RESOURCE}/md.css')
 
     if kwargs.get('photo'):

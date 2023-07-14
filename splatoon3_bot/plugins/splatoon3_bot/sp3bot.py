@@ -49,7 +49,7 @@ def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
                 msg = get_battle_msg(extra_info, battle_detail, **kwargs)
         else:
             coo_detail = splt.get_coop_detail(_id)
-            if kwargs.get('get_pic'):
+            if kwargs.get('get_pic') or kwargs.get('get_image'):
                 msg = get_coop_msg_md(extra_info, coo_detail)
             else:
                 msg = get_coop_msg(extra_info, coo_detail)
@@ -167,8 +167,9 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
         logger.info(f'push_latest_battle: {user.username}, {job_id}')
 
     data = job_data or {}
+    get_image = data.get('get_image', False)
     try:
-        res = await get_last_battle_or_coop(user_id, for_push=True)
+        res = await get_last_battle_or_coop(user_id, for_push=True, get_image=get_image)
         battle_id, _info, is_battle = res
     except Exception as e:
         logger.debug(f'no new battle or coop, {e}')
@@ -188,7 +189,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
                 if isinstance(bot, QQBot):
                     msg = '30分钟内没有游戏记录，停止推送。'
 
-                if data.get('current_statics'):
+                if data.get('current_statics') and data['current_statics'].get('TOTAL'):
                     msg += get_statics(data['current_statics'])
                 logger.info(f'{user.username}, {msg}')
                 await bot_send(bot, event, message=msg)
@@ -201,7 +202,8 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
     splt = Splatoon(user_id, user.session_token)
     msg = get_last_msg(splt, battle_id, _info, is_battle, battle_show_type=db_user_info.get('battle_show_type'), **data)
 
-    r = await bot_send(bot, event, message=msg, parse_mode='Markdown', reply_to_message_id=None)
+    image_width = 630 if get_image else 1000
+    r = await bot_send(bot, event, message=msg, parse_mode='Markdown', reply_to_message_id=None, image_width=image_width)
     if job_data.get('group_id') and r:
         message_id = ''
         if isinstance(bot, QQBot):

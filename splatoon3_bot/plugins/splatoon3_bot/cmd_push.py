@@ -22,6 +22,12 @@ __all__ = ['start_push', 'stop_push', 'scheduler']
 async def start_push(bot: Bot, event: Event, state: T_State):
     user_id = event.get_user_id()
     user = get_user(user_id=user_id)
+
+    cmd_lst = event.get_plaintext().strip().split(' ')
+    get_image = False
+    if 'i' in cmd_lst or 'image' in cmd_lst:
+        get_image = True
+
     if user and user.push or scheduler.get_job(f'{user_id}_push'):
         logger.info(f'remove job {user_id}_push')
         try:
@@ -47,6 +53,7 @@ async def start_push(bot: Bot, event: Event, state: T_State):
         'group_id': group_id,
         'job_id': job_id,
         'current_statics': defaultdict(int),
+        'get_image': get_image,
     }
     state['job_data'] = job_data
     scheduler.add_job(
@@ -75,7 +82,7 @@ async def stop_push(bot: Bot, event: Event):
     except:
         job_data = {}
 
-    if job_data and job_data.get('current_statics'):
+    if job_data and job_data.get('current_statics') and job_data['current_statics'].get('TOTAL'):
         msg += get_statics(job_data['current_statics'])
 
     await bot_send(bot, event, msg, parse_mode='Markdown')
