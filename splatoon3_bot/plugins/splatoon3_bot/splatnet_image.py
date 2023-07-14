@@ -35,7 +35,7 @@ async def get_app_screenshot(gtoken, key='', url='', mask=False):
             await page.goto(f"{API_URL}/?lang=zh-CN")
         key = [] if not key else key.split(' ')
         for k in key:
-            await page.get_by_text(k, exact=True).click()
+            await page.get_by_text(k, exact=True).nth(0).click()
         await page.wait_for_timeout(6000)
         img_raw = await page.screenshot(full_page=True)
 
