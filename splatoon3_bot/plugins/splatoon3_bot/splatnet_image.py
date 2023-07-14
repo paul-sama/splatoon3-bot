@@ -19,18 +19,24 @@ async def get_app_screenshot(gtoken, key='', url='', mask=False):
         for _k in ('徽章',):
             if _k in key:
                 height = 1500
-        if url and 'coop' in url:
-            height = 1500
         if mask:
             height = 740
+        if url and 'coop' in url:
+            height = 1500
         context = await browser.new_context(viewport={"width": 500, "height": height})
         await context.add_cookies(cookies)
         page = await context.new_page()
         if url:
             await page.goto(url)
-            if mask:
+            if mask and url and 'detail' in url:
                 await page.locator('"WIN!"').nth(0).click()
                 await page.locator('"LOSE..."').nth(0).click()
+            if mask and url and 'coop' in url:
+                for _r in ('"Clear!!"', '"Failure"'):
+                    try:
+                        await page.locator(_r).nth(0).click()
+                    except:
+                        pass
         else:
             await page.goto(f"{API_URL}/?lang=zh-CN")
         key = [] if not key else key.split(' ')

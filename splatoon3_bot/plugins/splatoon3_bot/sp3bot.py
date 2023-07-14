@@ -122,7 +122,7 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
             try:
                 user = get_user(user_id=user_id)
                 url = f"{API_URL}/coop/{coop_id}?lang=zh-CN"
-                pic = await get_app_screenshot(user.gtoken, url=url)
+                pic = await get_app_screenshot(user.gtoken, url=url, mask=mask)
             except Exception as e:
                 logger.exception(e)
                 pic = None
