@@ -58,9 +58,8 @@ async def bot_send(bot: Bot, event: Event, **kwargs):
         img = MessageSegment.image(file=img, cache=False)
 
         msg = ''
-        if 'group' in event.get_event_name() and not kwargs.get('not_skip_group'):
-            user_id = str(event.get_user_id())
-            msg = f"[CQ:at,qq={user_id}]"
+        if 'group' in event.get_event_name():
+            msg = f"[CQ:reply,id={event.dict().get('message_id')}]"
 
             # logger.info('QQBot 群不发地图信息')
             # return
