@@ -1,5 +1,5 @@
 
-from .sp3msg import get_battle_msg_title, set_statics, logger, utils
+from .sp3msg import get_battle_msg_title, set_statics, logger, utils, get_top_str
 
 
 def get_row_text(p, battle_show_type='1'):
@@ -45,6 +45,13 @@ def get_row_text_image(p, battle_show_type='1'):
     d = re['death']
     ration = k / d if d else 99
     name = p['name']
+    if p.get('isMyself'):
+        name = f'**{name}**'
+
+    top_str = get_top_str(p['id'])
+    if top_str:
+        name = name.strip() + f' `{top_str}`'
+
     weapon_img = ((p.get('weapon') or {}).get('image') or {}).get('url') or ''
     w_str = f'<img height="40" src="{weapon_img}"/>'
     name = f'{name}|'
@@ -123,6 +130,8 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
                     if prev_info:
                         prev_detail = prev_info.get('data', {}).get('vsHistoryDetail') or {}
                         prev_open_power = ((prev_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
+                        if prev_detail and not prev_open_power:
+                            prev_open_power = prev_detail.get('leagueMatch', {}).get('myLeaguePower') or 0
                         if prev_open_power:
                             last_power = prev_open_power
 

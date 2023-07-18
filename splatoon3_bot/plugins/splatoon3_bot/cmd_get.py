@@ -1,5 +1,6 @@
 from nonebot import on_command, logger
 from nonebot.adapters import Event, Bot
+from nonebot.adapters.onebot.v11 import Bot as QQBot
 
 from .sp3bot import (
     get_user_db_info, get_last_battle_or_coop, get_me, get_friends_msg, get_ns_friends_msg, get_x_top_msg,
@@ -29,6 +30,7 @@ async def show_db_info(bot: Bot, event: Event):
 async def last(bot: Bot, event: Event):
     user_id = event.get_user_id()
 
+    get_text = False
     get_battle = False
     get_coop = False
     get_pic = False
@@ -44,6 +46,8 @@ async def last(bot: Bot, event: Event):
             get_battle = True
         if 'c' in cmd_lst or 'coop' in cmd_lst:
             get_coop = True
+        if 't' in cmd_lst or 'text' in cmd_lst:
+            get_text = True
         if 'p' in cmd_lst or 'pic' in cmd_lst:
             get_pic = True
         if 'i' in cmd_lst or 'image' in cmd_lst:
@@ -56,6 +60,13 @@ async def last(bot: Bot, event: Event):
             if cmd.isdigit():
                 idx = int(cmd) - 1
                 break
+
+    if isinstance(bot, QQBot) and get_text is False and get_coop is False and get_pic is False and get_ss is False:
+        # qq /last 对战默认图片i
+        get_image = True
+
+    if get_text:
+        get_image = False
 
     msg = await get_last_battle_or_coop(user_id, get_battle=get_battle, get_coop=get_coop, get_pic=get_pic, idx=idx,
                                         get_screenshot=get_ss, get_image=get_image, mask=mask)
