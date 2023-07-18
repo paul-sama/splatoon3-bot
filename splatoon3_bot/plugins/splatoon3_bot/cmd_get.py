@@ -13,6 +13,11 @@ __all__ = ['show_db_info', 'last', 'me']
 @on_command("show_db_info", aliases={'sdi'}, block=True).handle()
 @check_session_handler
 async def show_db_info(bot: Bot, event: Event):
+
+    if 'group' in event.get_event_name():
+        await bot_send(bot, event, '请私聊机器人', parse_mode='Markdown')
+        return
+
     user_id = event.get_user_id()
     msg = get_user_db_info(user_id=user_id)
 
