@@ -198,7 +198,7 @@ def get_coop_msg(coop_info, data):
             s += f' 🥈{scale["silver"]}'
         if scale and scale.get('bronze'):
             s += f' 🥉{scale["bronze"]}'
-        wave_msg += f"`EX {detail['bossResult']['boss']['name']} ({w['goldenPopCount']}) {r} {s}`\n"
+        wave_msg += f"EX |{detail['bossResult']['boss']['name']} ({w['goldenPopCount']}) |{r} {s}||\n"
 
     if total_deliver_cnt and c_eggs:
         total_deliver_cnt = f'{total_deliver_cnt} ({c_eggs})'
