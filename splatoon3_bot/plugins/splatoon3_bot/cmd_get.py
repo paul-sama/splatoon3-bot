@@ -61,6 +61,7 @@ async def last(bot: Bot, event: Event):
                 idx = int(cmd) - 1
                 break
 
+    image_width = 1000
     if isinstance(bot, QQBot) and get_text is False and get_coop is False and get_pic is False and get_ss is False:
         # qq /last 对战默认图片i
         get_image = True
@@ -68,13 +69,16 @@ async def last(bot: Bot, event: Event):
     if get_text:
         get_image = False
 
+    if get_image:
+        image_width = 630
+
     msg = await get_last_battle_or_coop(user_id, get_battle=get_battle, get_coop=get_coop, get_pic=get_pic, idx=idx,
                                         get_screenshot=get_ss, get_image=get_image, mask=mask)
     photo = None
     if get_ss:
         photo = msg
         msg = ''
-    await bot_send(bot, event, msg, parse_mode='Markdown', photo=photo)
+    await bot_send(bot, event, msg, parse_mode='Markdown', photo=photo, image_width=image_width)
 
 
 @on_command("me", block=True).handle()
