@@ -36,7 +36,7 @@ def get_row_text(p, battle_show_type='1'):
     return t
 
 
-def get_row_text_image(p, battle_show_type='1'):
+def get_row_text_image(p, mask=False):
     re = p['result']
     if not re:
         re = {"kill": 0, "death": 99, "assist": 0, "special": 0}
@@ -48,6 +48,8 @@ def get_row_text_image(p, battle_show_type='1'):
     name = p['name']
     if p.get('isMyself'):
         name = f'**{name}**'
+    elif mask:
+        name = f'~~我是马赛克~~'
 
     top_str = get_top_str(p['id'])
     if top_str:
@@ -68,6 +70,7 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
     title, point, b_process = get_battle_msg_title(b_info, battle_detail, **kwargs)
 
     get_image = kwargs.get('get_image')
+    mask = kwargs.get('mask')
 
     # title
     msg = '#### ' + title.replace('`', '')
@@ -86,9 +89,9 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
     for team in sorted(teams, key=lambda x: x['order']):
         for p in team['players']:
             if get_image:
-                text_list.append(get_row_text_image(p, kwargs.get('battle_show_type')))
+                text_list.append(get_row_text_image(p, mask))
             else:
-                text_list.append(get_row_text(p, kwargs.get('battle_show_type')))
+                text_list.append(get_row_text(p, mask))
         ti = '||'
         if mode == 'FEST':
             ti = f"||||||||{(team.get('result') or {}).get('paintRatio') or 0:.2%}  {team.get('festTeamName')}|"
@@ -107,7 +110,7 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
     str_open_power = ''
     str_max_open_power = ''
     last_power = ''
-    if (battle_detail.get('bankaraMatch') or {}).get('mode') == 'OPEN' or battle_detail.get('leagueMatch'):
+    if not mask and (battle_detail.get('bankaraMatch') or {}).get('mode') == 'OPEN' or battle_detail.get('leagueMatch'):
         open_power = ((battle_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
         if battle_detail.get('leagueMatch'):
             open_power = battle_detail['leagueMatch'].get('myLeaguePower') or 0
@@ -161,18 +164,22 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
     return msg
 
 
-def coop_row(p):
+def coop_row(p, mask=False):
     weapon = f"<img height='18' src='{p['specialWeapon']['image']['url']}'/> |"
     for w in p['weapons']:
         weapon += f"<img height='18' src='{w['image']['url']}'/>"
+    p_name = p['player']['name']
+    if mask:
+        p_name = f'~~我是马赛克~~'
     return f"|x{p['defeatEnemyCount']}| {p['goldenDeliverCount']} |{p['rescuedCount']}d |" \
-           f"{p['deliverCount']} |{p['rescueCount']}r| {p['player']['name']}|{weapon}|"
+           f"{p['deliverCount']} |{p['rescueCount']}r| {p_name}|{weapon}|"
 
 
-def get_coop_msg(coop_info, data):
+def get_coop_msg(coop_info, data, **kwargs):
     c_point = coop_info.get('coop_point')
     c_eggs = coop_info.get('coop_eggs')
     detail = data['data']['coopHistoryDetail']
+    mask = kwargs.get('mask')
     my = detail['myResult']
     wave_msg = '''| | | |  |
 | -- | --: |--|--|
@@ -222,7 +229,7 @@ def get_coop_msg(coop_info, data):
 {coop_row(my)}
 """
     for p in detail['memberResults']:
-        msg += f"""{coop_row(p)}\n"""
+        msg += f"""{coop_row(p, mask)}\n"""
     msg += '''\n|        | |||
 |-------:|--|--|--|
 '''

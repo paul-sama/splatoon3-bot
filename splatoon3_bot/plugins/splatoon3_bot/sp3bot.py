@@ -50,7 +50,7 @@ def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
         else:
             coo_detail = splt.get_coop_detail(_id)
             if kwargs.get('get_pic') or kwargs.get('get_image'):
-                msg = get_coop_msg_md(extra_info, coo_detail)
+                msg = get_coop_msg_md(extra_info, coo_detail, **kwargs)
             else:
                 msg = get_coop_msg(extra_info, coo_detail)
     except Exception as e:
@@ -113,7 +113,7 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
         except:
             user_info = {}
         msg = get_last_msg(splt, battle_id, b_info, battle_show_type=user_info.get('battle_show_type'), get_pic=get_pic,
-                           get_image=get_image)
+                           get_image=get_image, mask=mask)
         return msg
     else:
         if for_push:
@@ -128,7 +128,7 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
                 pic = None
             return pic
 
-        msg = get_last_msg(splt, coop_id, coop_info, False, get_pic=get_pic, get_image=get_image)
+        msg = get_last_msg(splt, coop_id, coop_info, False, get_pic=get_pic, get_image=get_image, mask=mask)
         return msg
 
 
