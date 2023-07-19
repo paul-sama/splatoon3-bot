@@ -1,4 +1,5 @@
 
+from datetime import timedelta, datetime as dt
 from .sp3msg import get_battle_msg_title, set_statics, logger, utils, get_top_str
 
 
@@ -149,7 +150,13 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
         msg += f"\n####{str_open_power}{str_max_open_power}\n"
     elif str_open_power:
         str_open_power_inline = str_open_power
-    msg += f"\n#### duration: {duration}s, {score} knockout: {battle_detail['knockout']} {b_process} {str_open_power_inline}"
+
+    try:
+        date_play = dt.strptime(battle_detail['playedTime'], '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=8)
+        str_time = (date_play + timedelta(seconds=duration)).strftime('%y-%m-%d %H:%M:%S')
+    except Exception as e:
+        str_time = ''
+    msg += f"\n#### duration: {duration}s, {str_time}, {score} {b_process} {str_open_power_inline}"
 
     return msg
 
