@@ -1,5 +1,5 @@
 
-from nonebot import logger, on_startswith, on_command, get_driver
+from nonebot import logger, on_startswith, on_command, get_driver, get_bots
 from nonebot.adapters import Event, Bot
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.onebot.v11 import Bot as QQBot
@@ -76,6 +76,19 @@ async def bot_on_start():
     logger.info(f' bot start, version: {version} '.center(120, '-'))
 
 
+@get_driver().on_shutdown
+async def bot_on_shutdown():
+    version = utils.BOT_VERSION
+    logger.info(f' bot shutdown, version: {version} '.center(120, 'x'))
+    bots = get_bots()
+    logger.info(f'bot: {bots}')
+    for k in bots.keys():
+        job_id = f'sp3_cron_job_{k}'
+        if scheduler.get_job(job_id):
+            scheduler.remove_job(job_id)
+            logger.info(f'remove job {job_id}!')
+
+
 @get_driver().on_bot_connect
 async def _(bot: Bot):
     bot_type = 'Telegram' if isinstance(bot, TGBot) else 'QQ'
@@ -84,8 +97,10 @@ async def _(bot: Bot):
     job_id = f'sp3_cron_job_{bot.self_id}'
     if scheduler.get_job(job_id):
         scheduler.remove_job(job_id)
+        logger.info(f'remove job {job_id} first')
 
     scheduler.add_job(
         cron_job, 'interval', minutes=1, id=job_id, args=[bot],
         misfire_grace_time=59, coalesce=True, max_instances=3
     )
+    logger.info(f'add job {job_id}')
