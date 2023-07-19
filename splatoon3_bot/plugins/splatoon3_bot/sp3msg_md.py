@@ -131,7 +131,7 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
                         prev_detail = prev_info.get('data', {}).get('vsHistoryDetail') or {}
                         prev_open_power = ((prev_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
                         if prev_detail and not prev_open_power:
-                            prev_open_power = prev_detail.get('leagueMatch', {}).get('myLeaguePower') or 0
+                            prev_open_power = (prev_detail.get('leagueMatch') or {}).get('myLeaguePower') or 0
                         if prev_open_power:
                             last_power = prev_open_power
 
