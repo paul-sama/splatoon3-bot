@@ -400,13 +400,33 @@ def get_my_row(my_team):
     return t
 
 
+def get_cn_cp3_stat(_st):
+    if 'PRIVATE' in _st:
+        _st = '私房'
+    elif 'X_MATCH)' in _st:
+        _st = 'X比赛'
+    elif 'RA)O' in _st:
+        _st = '开放'
+    elif 'RA)C' in _st:
+        _st = '挑战'
+    elif 'MATCHING' in _st:
+        _st = '匹配中'
+    elif 'COOP' in _st:
+        _st = '打工'
+    elif 'REGULAR)' in _st:
+        _st = '涂地'
+    elif _st == 'ONLINE':
+        _st = '在线'
+    return _st
+
+
 def get_friends(splt, lang='zh-CN'):
     data = utils.gen_graphql_body(utils.translate_rid['FriendsList'])
     res = splt._request(data)
     if not res:
         return 'No friends found!'
 
-    msg = f'''#### 在线好友 {dt.now():%Y-%m-%d %H:%M:%S}
+    msg = f'''#### 在线好友 HKT {dt.now():%Y-%m-%d %H:%M:%S}
 ||||||
 |---:|---|:---|:---|---|
 '''
@@ -415,21 +435,7 @@ def get_friends(splt, lang='zh-CN'):
         if f.get('onlineState') == 'OFFLINE':
             continue
         _state = fmt_sp3_state(f)
-
-        if 'PRIVATE' in _state:
-            _state = '私房'
-        elif 'X_MATCH)' in _state:
-            _state = 'X比赛'
-        elif 'RA)O' in _state:
-            _state = '开放'
-        elif 'RA)C' in _state:
-            _state = '挑战'
-        elif 'MATCHING' in _state:
-            _state = '匹配中'
-        elif 'COOP' in _state:
-            _state = '打工'
-        elif _state == 'ONLINE':
-            _state = '在线'
+        _state = get_cn_cp3_stat(_state)
 
         _dict[_state] += 1
         n = f['playerName'] or f.get('nickname')
@@ -445,4 +451,89 @@ def get_friends(splt, lang='zh-CN'):
     for k, v in _dict.items():
         msg += f'||||{k}| {v}|\n'
     msg += '||\n'
+    return msg
+
+
+def get_ns_friends(splt):
+    res = splt.app_ns_friend_list() or {}
+    res = res.get('result')
+    if not res:
+        logger.info(res)
+        return 'No friends found!'
+
+    get_sp3 = False
+
+    for f in res.get('friends') or []:
+        if (f.get('presence') or {}).get('state') != 'ONLINE':
+            continue
+        if f['presence']['game'].get('name') == 'Splatoon 3':
+            get_sp3 = True
+            break
+
+    dict_sp3 = {}
+    _dict_sp3 = defaultdict(int)
+    if get_sp3:
+        data = utils.gen_graphql_body(utils.translate_rid['FriendsList'])
+        sp3_res = splt._request(data) or []
+        if sp3_res:
+            for f in sp3_res['data']['friends']['nodes']:
+                if f.get('onlineState') == 'OFFLINE':
+                    continue
+                _state = fmt_sp3_state(f)
+                if _state == 'ONLINE':
+                    continue
+                _state = get_cn_cp3_stat(_state)
+                dict_sp3[f.get('nickname')] = _state
+                _dict_sp3[_state] += 1
+
+    msg = f'''#### NS在线好友 HKT {dt.now():%Y-%m-%d %H:%M:%S}
+|||||
+|---:|---|---|:---|
+'''
+    _dict = defaultdict(int)
+    for f in res.get('friends') or []:
+        if (f.get('presence') or {}).get('state') != 'ONLINE' and f.get('isFavoriteFriend') is False:
+            continue
+        u_name = f.get('name') or ''
+        img_str = f'''<img height="40" src="{f['imageUri']}"/>'''
+        msg += f'|{u_name}|{img_str}'
+        if (f.get('presence') or {}).get('state') == 'ONLINE':
+            _game_name = f['presence']['game'].get('name') or ''
+            _game_name = _game_name.replace('The Legend of Zelda: Tears of the Kingdom', 'TOTK')
+            msg += f"|{_game_name}"
+            _dict[_game_name] += 1
+            if f['presence']['game'].get('totalPlayTime'):
+                msg += f"({int(f['presence']['game'].get('totalPlayTime')/60)}h)|"
+            if f.get('name') in dict_sp3:
+                msg += f" {dict_sp3[f.get('name')]}|"
+            else:
+                msg += '|'
+        else:
+            t = (f.get('presence') or {}).get('logoutAt') or 0
+            if t:
+                delt = str(dt.utcnow() - dt.utcfromtimestamp(t))
+                tt = delt
+                if tt.startswith('0'):
+                    tt = tt.split(', ')[-1]
+                tt = tt.split('.')[0][:-3].replace(':', 'h')
+                msg += f" |(offline about {tt})||"
+            else:
+                msg += f" |({(f.get('presence') or {}).get('state', 'offline')})||"
+        msg += '\n'
+    st = ''
+    _dict['total online'] = sum(_dict.values())
+    _dict['total'] = len(res.get('friends') or [])
+    for k, v in _dict.items():
+        st += f'|||{k}| {v}|\n'
+
+    if _dict_sp3:
+        _dict_sp3['total sp3'] = sum(_dict_sp3.values())
+        st += '|||||\n'
+        for k, v in _dict_sp3.items():
+            st += f'|||{k}| {v}|\n'
+
+    msg = f'''
+{msg}|||||
+{st}
+'''
     return msg

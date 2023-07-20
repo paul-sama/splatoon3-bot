@@ -102,11 +102,11 @@ async def friends(bot: Bot, event: Event):
     await bot_send(bot, event, msg, parse_mode='Markdown', image_width=600)
 
 
-@on_command("ns_friends", block=True).handle()
+@on_command("ns_friends", aliases={'ns'}, block=True).handle()
 @check_session_handler
 async def ns_friends(bot: Bot, event: Event):
     msg = get_ns_friends_msg(event.get_user_id())
-    await bot_send(bot, event, msg, parse_mode='Markdown')
+    await bot_send(bot, event, msg, parse_mode='Markdown', image_width=680)
 
 
 @on_command("x_top", block=True).handle()
