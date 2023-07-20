@@ -90,11 +90,16 @@ async def me(bot: Bot, event: Event):
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
-@on_command("friends", block=True).handle()
+@on_command("friends", aliases={'f', 'fr'}, block=True).handle()
 @check_session_handler
 async def friends(bot: Bot, event: Event):
-    msg = get_friends_msg(event.get_user_id())
-    await bot_send(bot, event, msg, parse_mode='Markdown')
+    get_text = False
+    cmd_lst = event.get_plaintext().strip().split()
+    if 't' in cmd_lst or 'text' in cmd_lst:
+        get_text = True
+
+    msg = get_friends_msg(event.get_user_id(), get_text)
+    await bot_send(bot, event, msg, parse_mode='Markdown', image_width=600)
 
 
 @on_command("ns_friends", block=True).handle()

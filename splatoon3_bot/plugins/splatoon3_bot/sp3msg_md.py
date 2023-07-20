@@ -1,6 +1,6 @@
 
 from datetime import timedelta, datetime as dt
-from .sp3msg import get_battle_msg_title, set_statics, logger, utils, get_top_str
+from .sp3msg import get_battle_msg_title, set_statics, logger, utils, get_top_str, defaultdict, fmt_sp3_state
 
 
 def get_row_text(p, battle_show_type='1'):
@@ -398,3 +398,51 @@ def get_my_row(my_team):
 
     t = f"{ak:>2}|{k_str:>5}k| {d:>2}d|{ration:>4.1f}|{re['special']:>3}sp| {p['paint']:>4}p "
     return t
+
+
+def get_friends(splt, lang='zh-CN'):
+    data = utils.gen_graphql_body(utils.translate_rid['FriendsList'])
+    res = splt._request(data)
+    if not res:
+        return 'No friends found!'
+
+    msg = f'''#### 在线好友 {dt.now():%Y-%m-%d %H:%M:%S}
+||||||
+|---:|---|:---|:---|---|
+'''
+    _dict = defaultdict(int)
+    for f in res['data']['friends']['nodes']:
+        if f.get('onlineState') == 'OFFLINE':
+            continue
+        _state = fmt_sp3_state(f)
+
+        if 'PRIVATE' in _state:
+            _state = '私房'
+        elif 'X_MATCH)' in _state:
+            _state = 'X比赛'
+        elif 'RA)O' in _state:
+            _state = '开放'
+        elif 'RA)C' in _state:
+            _state = '挑战'
+        elif 'MATCHING' in _state:
+            _state = '匹配中'
+        elif 'COOP' in _state:
+            _state = '打工'
+        elif _state == 'ONLINE':
+            _state = '在线'
+
+        _dict[_state] += 1
+        n = f['playerName'] or f.get('nickname')
+        img = f'''<img height="40" src="{f['userIcon']['url']}"/>'''
+        if f['playerName'] and f['playerName'] != f['nickname']:
+            n = f'{f["playerName"]}|{img}|{f["nickname"]}'
+        else:
+            n = f'{n}|{img}|'
+        msg += f'''|{n}| {_state}|\n'''
+
+    msg += '||\n'
+    _dict['TOTAL'] = sum(_dict.values())
+    for k, v in _dict.items():
+        msg += f'||||{k}| {v}|\n'
+    msg += '||\n'
+    return msg

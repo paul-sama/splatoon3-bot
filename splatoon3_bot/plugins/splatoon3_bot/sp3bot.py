@@ -13,7 +13,9 @@ from .splat import Splatoon, API_URL
 from .sp3msg import (
     get_battle_msg, get_coop_msg, get_summary, get_statics, get_friends, get_ns_friends, get_x_top, get_my_schedule
 )
-from .sp3msg_md import get_battle_msg as get_battle_msg_md, get_coop_msg as get_coop_msg_md, get_history
+from .sp3msg_md import (
+    get_battle_msg as get_battle_msg_md, get_coop_msg as get_coop_msg_md, get_history, get_friends as get_friends_md
+)
 from .splatnet_image import get_app_screenshot
 from .utils import bot_send, INTERVAL
 
@@ -218,10 +220,13 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
         data['last_group_msg_id'] = message_id
 
 
-def get_friends_msg(user_id):
+def get_friends_msg(user_id, text=False):
     user = get_or_set_user(user_id=user_id)
     splt = Splatoon(user_id, user.session_token)
-    msg = get_friends(splt, lang=user.acc_loc)
+    if text:
+        msg = get_friends(splt, lang=user.acc_loc)
+    else:
+        msg = get_friends_md(splt, lang=user.acc_loc)
     logger.debug(msg)
     return msg
 
