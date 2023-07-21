@@ -1,0 +1,606 @@
+import io
+import os
+import re
+import textwrap
+from io import BytesIO
+import urllib3
+from PIL import Image, ImageDraw, ImageFont, ImageOps
+
+from ..data import imageDB
+from ..utils import *
+
+# 根路径
+cur_path = os.path.join(os.path.dirname(__file__), "..")
+
+# 图片文件夹
+image_folder = os.path.join(cur_path, "staticData", "ImageData")
+# 武器文件夹
+weapon_folder = os.path.join(cur_path, "staticData", "weapon")
+# 字体
+ttf_path = os.path.join(cur_path, "staticData", "SplatoonFontFix.otf")
+ttf_path_chinese = os.path.join(cur_path, "staticData", "Text.ttf")
+
+http = urllib3.PoolManager()
+
+
+# 图片转base64
+def image_to_base64(image):
+    buffered = BytesIO()
+    image.save(buffered, format="PNG")
+    return buffered.getvalue()
+
+
+# 取文件
+def get_file(name, format_name="png"):
+    img = Image.open(os.path.join(image_folder, "{}.{}".format(name, format_name)))
+    return img
+
+
+# 获取武器
+def get_weapon(name):
+    return Image.open(os.path.join(weapon_folder, "{}".format(name)))
+
+
+# cf 网站读文件
+def get_cf_file_url(url):
+    r = cf_http_get(url)
+    return r.content
+
+
+# 向数据库新增或读取素材图片二进制文件
+def get_save_file(img: ImageInfo):
+    res = imageDB.get_img_data(img.name)
+    if not res:
+        image_data = get_cf_file_url(img.url)
+        if len(image_data) != 0:
+            logger.info("[ImageDB] new image {}".format(img.name))
+            imageDB.add_or_modify_IMAGE_DATA(img.name, image_data, img.zh_name, img.source_type)
+        return Image.open(io.BytesIO(image_data))
+    else:
+        return Image.open(io.BytesIO(res.get("image_data")))
+
+
+# 取文件路径
+def get_file_path(name, format_name="png"):
+    return os.path.join(image_folder, "{}.{}".format(name, format_name))
+
+
+# 圆角处理
+def circle_corner(img, radii):
+    """
+    圆角处理
+    :param img: 源图象。
+    :param radii: 半径，如：30。
+    :return: 返回一个圆角处理后的图象。
+    """
+    # 原图
+    img = img.convert("RGBA")
+    w, h = img.size
+
+    if w < 2 * radii:
+        radii = w // 2
+    if h < 2 * radii:
+        radii = h // 2
+
+    # 画圆（用于分离4个角）
+    circle = Image.new("L", (radii * 2, radii * 2), 0)  # 创建一个黑色背景的画布
+    draw = ImageDraw.Draw(circle)
+    draw.ellipse((0, 0, radii * 2, radii * 2), fill=255)  # 画白色圆形
+
+    # 画4个角（将整圆分离为4个部分）
+    alpha = Image.new("L", img.size, 255)
+    left_top = circle.crop((0, 0, radii, radii))
+    # x轴翻转
+    left_down = ImageOps.flip(left_top)
+    # y轴翻转
+    right_top = ImageOps.mirror(left_top)
+    # x轴翻转
+    right_down = ImageOps.flip(right_top)
+
+    alpha.paste(left_top, (0, 0))  # 左上角
+    alpha.paste(right_top, (w - radii, 0))  # 右上角
+    alpha.paste(right_down, (w - radii, h - radii))  # 右下角
+    alpha.paste(left_down, (0, h - radii))  # 左下角
+
+    img.putalpha(alpha)  # 白色区域透明可见，黑色区域不可见
+    return img
+
+
+# 图片 平铺填充
+def tiled_fill(big_image, small_image):
+    big_image_w, big_image_h = big_image.size
+    small_image_w, small_image_h = small_image.size
+    for left in range(0, big_image_w, small_image_w):  # 横纵两个方向上用两个for循环实现平铺效果
+        for top in range(0, big_image_h, small_image_h):
+            paste_with_a(big_image, small_image, (left, top))
+    return big_image
+
+
+# 绘制文字 带自动换行
+def drawer_text(drawer: ImageDraw, text, text_start_pos, text_width, font_color=(255, 255, 255), font_size=30):
+    # 文本分割
+    def add_long_text(_text, _text_width) -> [str]:
+        punc_pattern = "[,.，。》、—”]+"
+        text_list = textwrap.wrap(_text, width=_text_width)
+        write_text = []
+        for _i, _line in enumerate(text_list):
+            write_text.append(_line)
+            punc = re.search(punc_pattern, _line)
+            if punc:
+                # 如果有标点符号开头
+                if punc.start() == 0:
+                    _line = write_text.pop(-1)
+                    former = write_text.pop(-1)
+                    former += punc.group()
+                    write_text.append(former)
+                    _line = _line[punc.end() :]
+                    if len(_line) > 0:
+                        write_text.append(_line)
+        return write_text
+
+    ttf = ImageFont.truetype(ttf_path_chinese, font_size)
+    para = add_long_text(text, text_width)
+    # 绘制每一行文本
+    height = 0
+    width = 0
+    line_space = 12
+    for i, line in enumerate(para):
+        drawer.text((text_start_pos[0], (line_space + font_size) * i + text_start_pos[1]), line, font_color, ttf)
+        w, h = ttf.getsize(line)
+        height += h + line_space
+        # 取最长w
+        if w > width:
+            width = w
+    return width, height
+
+
+# 绘制文字 帮助卡片
+def drawer_help_card(pre: str, order_list: [str], desc_list: [str]):
+    text_width = 50
+    width = 0
+    height = 10
+    font_size = 30
+    # 创建一张纯透明图片 用来存放卡片
+    background = Image.new("RGBA", (1200, 1000), (0, 0, 0, 0))
+    drawer = ImageDraw.Draw(background)
+    # pre
+    text = pre
+    pre_pos = (width, height)
+    w, h = drawer_text(drawer, text, pre_pos, text_width)
+    width += w + 10
+    # order_list
+    if len(order_list) > 0:
+        for i, order in enumerate(order_list):
+            text_bg = get_translucent_name_bg(order, 60, font_size)
+            text_bg_size = text_bg.size
+            text_bg_pos = (width, height - 8)
+            paste_with_a(background, text_bg, text_bg_pos)
+            width += text_bg_size[0] + 3
+        width = pre_pos[0] + 50
+        height += font_size + 25
+    # desc
+    if len(desc_list) > 0:
+        for i, desc in enumerate(desc_list):
+            text = desc
+            text_pos = (width, height)
+            w, h = drawer_text(drawer, text, text_pos, text_width, font_size=25)
+            height += h + 5
+    return background, height
+
+
+# 图像粘贴 加上a通道参数 使圆角透明
+def paste_with_a(image_background, image_pasted, pos):
+    _, _, _, a = image_pasted.convert("RGBA").split()
+    image_background.paste(image_pasted, pos, mask=a)
+
+
+# 绘制 地图名称及文字底图
+def get_stage_name_bg(stage_name, font_size=24):
+    ttf = ImageFont.truetype(ttf_path_chinese, font_size)
+    w, h = ttf.getsize(stage_name)
+    stage_name_bg_size = (w + 20, h + 10)
+    # 新建画布
+    stage_name_bg = Image.new("RGBA", stage_name_bg_size, (34, 34, 34))
+    # 圆角化
+    stage_name_bg = circle_corner(stage_name_bg, radii=font_size // 2)
+    # # 绘制文字
+    drawer = ImageDraw.Draw(stage_name_bg)
+    # 文字居中绘制
+    text_pos = ((stage_name_bg_size[0] - w) // 2, (stage_name_bg_size[1] - h) // 2)
+    drawer.text(text_pos, stage_name, font=ttf, fill=(255, 255, 255))
+    return stage_name_bg
+
+
+# 绘制 半透明文字背景
+def get_translucent_name_bg(text, transparency, font_size=24, bg_color=None):
+    ttf = ImageFont.truetype(ttf_path_chinese, font_size)
+    w, h = ttf.getsize(text)
+    # 文字背景
+    text_bg_size = (w + 20, h + 20)
+    text_bg = get_file("filleted_corner").resize(text_bg_size).convert("RGBA")
+    if bg_color is not None:
+        text_bg = circle_corner(Image.new("RGBA", text_bg_size, bg_color), radii=20)
+    text_bg = circle_corner(text_bg, radii=text_bg_size[1] // 2)
+    # 调整透明度
+    text_bg = change_image_alpha(text_bg, transparency)
+    drawer = ImageDraw.Draw(text_bg)
+    # 文字居中绘制
+    text_pos = ((text_bg_size[0] - w) / 2, (text_bg_size[1] - h) / 2)
+    drawer.text(text_pos, text, font=ttf, fill=(255, 255, 255))
+    return text_bg
+
+
+# 绘制 时间表头
+def get_time_head_bg(time_head_bg_size, date_time, start_time, end_time):
+    # 绘制背景
+    time_head_bg = get_file("time_head_bg").resize(time_head_bg_size)
+    # 绘制开始，结束时间 文字居中绘制
+    ttf = ImageFont.truetype(ttf_path, 40)
+    time_head_text = "{}  {} - {}".format(date_time, start_time, end_time)
+    w, h = ttf.getsize(time_head_text)
+    time_head_text_pos = (
+        (time_head_bg_size[0] - w) / 2,
+        (time_head_bg_size[1] - h) / 2 - 12,
+    )
+    drawer = ImageDraw.Draw(time_head_bg)
+    drawer.text(time_head_text_pos, time_head_text, font=ttf, fill=(255, 255))
+    return time_head_bg
+
+
+# 是否存在祭典   祭典的结构需要遍历判断
+def have_festival(_festivals):
+    for v in _festivals:
+        if v["festMatchSetting"] is not None:
+            return True
+    return False
+
+
+# 现在是否是祭典
+def now_is_festival(_festivals):
+    now = datetime.datetime.now()
+    for v in _festivals:
+        if v["festMatchSetting"] is not None:
+            # 如果祭典有参数 且现在时间位于这个区间
+            st = time_converter(v["startTime"])
+            et = time_converter(v["endTime"])
+            if st < now < et:
+                return True
+    return False
+
+
+# 绘制 一排 地图卡片
+def get_stage_card(
+    stage1,
+    stage2,
+    contest_mode,
+    contest_name,
+    game_mode,
+    start_time="",
+    end_time="",
+    desc="",
+    img_size=(1024, 340),
+):
+    image_background = circle_corner(get_file("bg").resize(img_size), radii=20)
+
+    # 绘制两张地图
+    # 计算尺寸，加载图片
+    stage_size = (int(img_size[0] * 0.48), int(img_size[1] * 0.7))
+    image_left = get_save_file(stage1).resize(stage_size, Image.ANTIALIAS)
+    image_right = get_save_file(stage2).resize(stage_size, Image.ANTIALIAS)
+    # 定义圆角 蒙版
+    image_alpha = circle_corner(image_left, radii=16)
+
+    # 计算地图间隔
+    width_between_stages = int((img_size[0] - 2 * stage_size[0]) / 3)
+    # 绘制第一张地图
+    # 图片左上点位
+    start_stage_pos = (
+        width_between_stages,
+        int((img_size[1] - stage_size[1]) / 8 * 7) - 20,
+    )
+    image_background.paste(image_left, start_stage_pos, mask=image_alpha)
+    # 绘制第二张地图
+    # 图片左上点位
+    next_stage_pos = (
+        start_stage_pos[0] + width_between_stages + stage_size[0],
+        start_stage_pos[1],
+    )
+    image_background.paste(image_right, next_stage_pos, mask=image_alpha)
+
+    # 绘制地图中文名及文字背景
+    # 左半地图名
+    stage_name_bg = get_stage_name_bg(stage1.zh_name, 30)
+    stage_name_bg_size = stage_name_bg.size
+    # X:地图x点位+一半的地图宽度-文字背景的一半宽度   Y:地图Y点位+一半地图高度-文字背景高度
+    stage_name_bg_pos = (
+        start_stage_pos[0] + stage_size[0] // 2 - stage_name_bg_size[0] // 2,
+        start_stage_pos[1] + stage_size[1] - stage_name_bg_size[1],
+    )
+    paste_with_a(image_background, stage_name_bg, stage_name_bg_pos)
+
+    # 右半地图名
+    stage_name_bg = get_stage_name_bg(stage2.zh_name, 30)
+    stage_name_bg_size = stage_name_bg.size
+    # X:地图x点位+一半的地图宽度-文字背景的一半宽度   Y:地图Y点位+一半地图高度-文字背景高度
+    stage_name_bg_pos = (
+        next_stage_pos[0] + +stage_size[0] // 2 - stage_name_bg_size[0] // 2,
+        next_stage_pos[1] + stage_size[1] - stage_name_bg_size[1],
+    )
+    paste_with_a(image_background, stage_name_bg, stage_name_bg_pos)
+
+    # 中间绘制 模式图标
+    # 中文转英文来取文件
+    image_icon = get_file(contest_name)
+    image_icon_size = image_icon.size
+    # X: 整张卡片宽度/2 - 图标宽度/2    Y: 左地图x点位+地图高度/2 - 图标高度/2
+    stage_mid_pos = (
+        img_size[0] // 2 - image_icon_size[0] // 2,
+        start_stage_pos[1] + stage_size[1] // 2 - image_icon_size[1] // 2,
+    )
+    paste_with_a(image_background, image_icon, stage_mid_pos)
+
+    # 绘制模式文本
+    # 空白尺寸
+    blank_size = (img_size[0], start_stage_pos[1])
+    drawer = ImageDraw.Draw(image_background)
+    # 绘制竞赛模式文字
+    ttf = ImageFont.truetype(ttf_path_chinese, 40)
+    contest_mode_pos = (start_stage_pos[0] + 10, start_stage_pos[1] - 60)
+    drawer.text(contest_mode_pos, contest_mode, font=ttf, fill=(255, 255, 255))
+    # 绘制游戏模式文字
+    game_mode_text = get_trans_game_mode(game_mode)
+    game_mode_text_pos = (blank_size[0] // 3, contest_mode_pos[1])
+    drawer.text(game_mode_text_pos, game_mode_text, font=ttf, fill=(255, 255, 255))
+    # 绘制游戏模式小图标
+    game_mode_img = get_file(game_mode).resize((35, 35), Image.ANTIALIAS)
+    game_mode_img_pos = (game_mode_text_pos[0] - 40, game_mode_text_pos[1] + 10)
+    paste_with_a(image_background, game_mode_img, game_mode_img_pos)
+    # # 绘制开始，结束时间
+    # ttf = ImageFont.truetype(ttf_path, 40)
+    # time_pos = (blank_size[0] * 2 // 3, contest_mode_pos[1] - 10)
+    # drawer.text(
+    #     time_pos, "{} - {}".format(start_time, end_time), font=ttf, fill=(255, 255, 255)
+    # )
+    # 绘制活动模式描述
+    if desc != "":
+        ttf = ImageFont.truetype(ttf_path, 40)
+        desc_pos = (blank_size[0] * 2 // 3, contest_mode_pos[1] - 10)
+        drawer.text(desc_pos, desc, font=ttf, fill=(255, 255, 255))
+
+    return image_background
+
+
+# 绘制一排武器
+def get_weapon_card(weapon: [WeaponData], weapon_card_bg_size, rgb, font_color):
+    # 单张武器背景
+    weapon_bg_size = (150, 230)
+    # 主武器，副武器，大招
+    main_size = (120, 120)
+    sub_size = (55, 55)
+    special_size = (55, 55)
+    # 一排武器的背景
+    weapon_card_bg = circle_corner(Image.new("RGBA", weapon_card_bg_size, rgb), radii=20)
+
+    # 遍历进行贴图
+    for i, v in enumerate(weapon):
+        v: WeaponData
+        # 单张武器背景
+        weapon_bg = Image.new("RGB", weapon_bg_size, rgb)
+        weapon_bg = circle_corner(weapon_bg, radii=20)
+        # 调整透明度
+        weapon_bg = change_image_alpha(weapon_bg, 80)
+        # 主武器
+        main_image_bg = Image.new("RGBA", main_size, (30, 30, 30, 255))
+        main_image = Image.open(io.BytesIO(v.image)).resize(main_size, Image.ANTIALIAS)
+        main_image_bg_pos = ((weapon_bg_size[0] - main_size[0]) // 2, 10)
+        # main_image = circle_corner(main_image, radii=16)
+        # main_image_bg.paste(main_image, (0, 0))
+        # 副武器
+        sub_image_bg = Image.new("RGBA", sub_size, (60, 60, 60, 255))
+        sub_image = Image.open(io.BytesIO(v.sub_image)).resize(sub_size, Image.ANTIALIAS)
+        sub_image_bg_pos = (main_image_bg_pos[0], main_image_bg_pos[1] + main_size[1] + 10)
+        # sub_image = circle_corner(sub_image, radii=16)
+        # sub_image_bg.paste(sub_image, (0, 0))
+        # 大招
+        special_image_bg = Image.new("RGBA", special_size, (30, 30, 30, 255))
+        special_image = Image.open(io.BytesIO(v.special_image)).resize(special_size, Image.ANTIALIAS)
+        special_image_bg_pos = (main_image_bg_pos[0] + main_size[0] - special_size[0], sub_image_bg_pos[1])
+        # special_image = circle_corner(special_image, radii=16)
+        # special_image_bg.paste(special_image, (0, 0))
+        # 贴到单个武器背景
+        # weapon_bg.paste(main_image, main_image_bg_pos)
+        # weapon_bg.paste(sub_image, sub_image_bg_pos)
+        # weapon_bg.paste(special_image, special_image_bg_pos)
+
+        paste_with_a(weapon_bg, main_image, main_image_bg_pos)
+        paste_with_a(weapon_bg, sub_image, sub_image_bg_pos)
+        paste_with_a(weapon_bg, special_image, special_image_bg_pos)
+
+        # 武器名
+        weapon_zh_name = v.zh_name
+        font_size = 16
+        if len(weapon_zh_name) > 8:
+            font_size = 15
+        if len(weapon_zh_name) > 10:
+            font_size = 14
+        font = ImageFont.truetype(ttf_path_chinese, font_size)
+        zh_name_size = font.getsize(weapon_zh_name)
+        # 纯文字不带背景 实现方式
+        dr = ImageDraw.Draw(weapon_bg)
+        zh_name_pos = ((weapon_bg_size[0] - zh_name_size[0]) // 2, weapon_bg_size[1] - zh_name_size[1] - 7)
+        dr.text(zh_name_pos, weapon_zh_name, font=font, fill=font_color)
+        # 带背景文字 实现方式
+        # weapon_zh_name_bg = get_stage_name_bg(weapon_zh_name, font_size)
+        # weapon_zh_name_bg_size = weapon_zh_name_bg.size
+        # zh_name_pos = (
+        #     (weapon_bg_size[0] - weapon_zh_name_bg_size[0]) // 2,
+        #     weapon_bg_size[1] - weapon_zh_name_bg_size[1],
+        # )
+        # paste_with_a(weapon_bg, weapon_zh_name_bg, zh_name_pos)
+
+        # 将武器背景贴到武器区域
+        paste_with_a(
+            weapon_card_bg,
+            weapon_bg,
+            ((weapon_bg_size[0] + 10) * i + 10, (weapon_card_bg_size[1] - weapon_bg_size[1]) // 2),
+        )
+
+    return weapon_card_bg
+
+
+# 绘制 活动地图卡片
+def get_event_card(event, event_card_bg_size):
+    # 背景
+    event_card_bg = get_file("filleted_corner").resize(event_card_bg_size).convert("RGBA")
+    # 调整透明度
+    event_card_bg = change_image_alpha(event_card_bg, 70)
+    # 比赛卡片
+    stage_card_pos = (10, 20)
+    stage = event["leagueMatchSetting"]["vsStages"]
+    stage_card = get_stage_card(
+        ImageInfo(
+            stage[0]["name"],
+            stage[0]["image"]["url"],
+            get_trans_stage(stage[0]["id"]),
+            "对战地图",
+        ),
+        ImageInfo(
+            stage[1]["name"],
+            stage[1]["image"]["url"],
+            get_trans_stage(stage[1]["id"]),
+            "对战地图",
+        ),
+        "活动比赛",
+        "event_bg",
+        event["leagueMatchSetting"]["vsRule"]["rule"],
+    )
+    stage_card_size = stage_card.size
+    paste_with_a(event_card_bg, stage_card, stage_card_pos)
+    # 绘制三个活动时间
+    drawer = ImageDraw.Draw(event_card_bg)
+    ttf = ImageFont.truetype(ttf_path_chinese, 40)
+    pos_h = stage_card_pos[1] + stage_card_size[1] + 20
+    for v in range(3):
+        # 绘制游戏模式小图标
+        game_mode_text = event["leagueMatchSetting"]["vsRule"]["rule"]
+        game_mode_img_size = (35, 35)
+        game_mode_img = get_file(game_mode_text).resize(game_mode_img_size, Image.ANTIALIAS)
+        game_mode_img_pos = (20, pos_h)
+        paste_with_a(event_card_bg, game_mode_img, game_mode_img_pos)
+        # 绘制时间
+        st = event["timePeriods"][v]["startTime"]
+        et = event["timePeriods"][v]["endTime"]
+        time_text_pos = (game_mode_img_pos[0] + game_mode_img_size[0] + 10, pos_h)
+        time_text = "{} {}  {} - {} {}".format(
+            time_converter_yd(st),
+            "周" + dict_weekday_trans.get(time_converter_weekday(st)),
+            time_converter_hm(st),
+            time_converter_yd(et),
+            time_converter_hm(et),
+        )
+        drawer.text(time_text_pos, time_text, font=ttf, fill=(255, 255, 255))
+        # 绘制虚线
+        transverse_line_pos = (game_mode_img_pos[0], game_mode_img_pos[1] + game_mode_img_size[1] + 20)
+        # 开始与结束的xy坐标
+        transverse_line_pos_list = [
+            transverse_line_pos,
+            (transverse_line_pos[0] + event_card_bg_size[0] - 50, transverse_line_pos[1]),
+        ]
+        draw_grid_transverse_line(drawer, transverse_line_pos_list, fill="white", width=3, gap=25)
+        # 绘制 时间状态 文字
+        now = datetime.datetime.now()
+        if time_converter(st) > now:
+            text = "未开始"
+            text_color = (243, 254, 176)
+        elif time_converter(st) < now < time_converter(et):
+            text = "进行中"
+            text_color = (144, 203, 251)
+        elif time_converter(et) < now:
+            text = "已结束"
+            text_color = (165, 170, 163)
+        text_size = ttf.getsize(text)
+        drawer.text(
+            (transverse_line_pos_list[1][0] - text_size[0] - 10, time_text_pos[1]),
+            text,
+            font=ttf,
+            fill=text_color,
+        )
+        # 计算下一行高度
+        pos_h += 80
+    return event_card_bg
+
+
+# 绘制 活动地图描述卡片
+def get_event_desc_card(cht_event_data, event_desc_card_bg_size):
+    # 背景
+    event_desc_card_bg = get_file("filleted_corner").resize(event_desc_card_bg_size).convert("RGBA")
+    # 调整透明度
+    event_desc_card_bg = change_image_alpha(event_desc_card_bg, 60)
+    # 对规则文字分行
+    desc = cht_event_data["desc"]
+    regulation = cht_event_data["regulation"]
+    regulation_list = regulation.split("<br />")
+    # 绘制文本
+    drawer = ImageDraw.Draw(event_desc_card_bg)
+    ttf = ImageFont.truetype(ttf_path_chinese, 30)
+    pos_h = 30
+    for v in regulation_list:
+        if v != "":
+            text_pos = (20, pos_h)
+            drawer.text(text_pos, v, font=ttf, fill=(255, 255, 255))
+        pos_h += 40
+    return event_desc_card_bg
+
+
+# 画虚线 竖线
+def draw_grid_vertical_line(draw, pos_list, fill, width, gap):
+    x_begin, y_begin = pos_list[0]
+    x_end, y_end = pos_list[1]
+    for y in range(y_begin, y_end, gap):
+        draw.line([(x_begin, y), (x_begin, y + gap / 2)], fill=fill, width=width)
+
+
+# 画虚线 横线
+def draw_grid_transverse_line(draw, pos_list, fill, width, gap):
+    x_begin, y_begin = pos_list[0]
+    x_end, y_end = pos_list[1]
+    for x in range(x_begin, x_end, gap):
+        draw.line([(x, y_begin), (x + gap / 2, y_begin)], fill=fill, width=width)
+
+
+# 改变图片不透明度  值为0-100
+def change_image_alpha(image, transparency):
+    image = image.convert("RGBA")
+    alpha = image.split()[-1]
+    alpha = alpha.point(lambda p: p * transparency // 100)
+    new_image = Image.merge("RGBA", image.split()[:-1] + (alpha,))
+    return new_image
+
+
+# 旧版函数 随机武器
+# def old_get_random_weapon(weapon1: [] = None, weapon2: [] = None):
+#     # 取两组随机武器
+#     if weapon1 is None:
+#         weapon1 = random.sample(os.listdir(weapon_folder), k=4)
+#     if weapon2 is None:
+#         weapon2 = random.sample(os.listdir(weapon_folder), k=4)
+#     weapon_size = (122, 158)
+#     image_background = circle_corner(get_file("bg").resize((620, 420)), radii=20)
+#     dr = ImageDraw.Draw(image_background)
+#     font = ImageFont.truetype(ttf_path, 50)
+#     # 绘制中间vs和长横线
+#     dr.text((278, 160), "VS", font=font, fill="#FFFFFF")
+#     dr.line([(18, 210), (270, 210)], fill="#FFFFFF", width=4)
+#     dr.line([(350, 210), (602, 210)], fill="#FFFFFF", width=4)
+#     # 遍历进行贴图
+#     for i in range(4):
+#         image = get_weapon(weapon1[i]).resize(weapon_size, Image.ANTIALIAS)
+#         image_background.paste(image, ((160 * i + 5), 20))
+#         image = get_weapon(weapon2[i]).resize(weapon_size, Image.ANTIALIAS)
+#         image_background.paste(image, ((160 * i + 5), 20 + 220))
+#
+#     return image_background
+
+
+# if __name__ == '__main__':
+#     get_random_weapon().show()
