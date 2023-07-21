@@ -441,7 +441,8 @@ def get_friends(splt, lang='zh-CN'):
         n = f['playerName'] or f.get('nickname')
         img = f'''<img height="40" src="{f['userIcon']['url']}"/>'''
         if f['playerName'] and f['playerName'] != f['nickname']:
-            n = f'{f["playerName"]}|{img}|{f["nickname"]}'
+            nickname = f['nickname'].replace("|", "\|").replace('`', '')
+            n = f'{f["playerName"]}|{img}|{nickname}'
         else:
             n = f'{n}|{img}|'
         msg += f'''|{n}| {_state}|\n'''
