@@ -281,3 +281,20 @@ def get_history_msg(user_id, _type='open'):
     msg = get_history(splt, _type=_type)
     logger.debug(msg)
     return msg
+
+
+def get_friend_code(user_id):
+    user = get_or_set_user(user_id=user_id)
+    if user and user.friend_code:
+        return f'{user.nickname}: {user.friend_code}'
+
+    splt = Splatoon(user_id, user.session_token)
+    res = splt.app_ns_myself() or {}
+    logger.debug(res)
+
+    msg = '.'
+    code = res.get('code')
+    if code:
+        get_or_set_user(user_id=user_id, friend_code=code)
+        msg = f'{res.get("name")}: {code}'
+    return msg

@@ -4,7 +4,7 @@ from nonebot.adapters.onebot.v11 import Bot as QQBot
 
 from .sp3bot import (
     get_user_db_info, get_last_battle_or_coop, get_me, get_friends_msg, get_ns_friends_msg, get_x_top_msg,
-    get_my_schedule_msg, get_screenshot_image, get_history_msg
+    get_my_schedule_msg, get_screenshot_image, get_history_msg, get_friend_code
 )
 from .utils import bot_send, check_session_handler
 
@@ -90,7 +90,7 @@ async def me(bot: Bot, event: Event):
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
-@on_command("friends", aliases={'f', 'fr'}, block=True).handle()
+@on_command("friends", aliases={'fr'}, block=True).handle()
 @check_session_handler
 async def friends(bot: Bot, event: Event):
     get_text = False
@@ -150,4 +150,11 @@ async def history(bot: Bot, event: Event):
             _type = 'fest'
 
     msg = get_history_msg(event.get_user_id(), _type=_type)
+    await bot_send(bot, event, msg, parse_mode='Markdown')
+
+
+@on_command("friend_code", aliases={'fc'}, block=True).handle()
+@check_session_handler
+async def ns_friends(bot: Bot, event: Event):
+    msg = get_friend_code(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown')

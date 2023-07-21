@@ -246,3 +246,38 @@ class Splatoon:
                                headers=headers, json=json_body)
         r = self.app_do_req(method='POST', url=req.url, headers=req.headers, json=json_body)
         return r
+
+    def app_ns_myself(self):
+        self.nso_app_version = iksm.get_nsoapp_version()
+
+        r = self.app_get_token()
+        id_token = r.get('id_token')
+        access_token = r.get('access_token')
+        account_data = self.app_get_nintendo_account_data(access_token)
+        app_access_token = self.app_login_switch_web(id_token, account_data)
+        if not app_access_token:
+            return
+
+        headers = {
+            'User-Agent': f'com.nintendo.znca/{self.nso_app_version} (Android/7.1.2)',
+            'Accept-Encoding': 'gzip',
+            'Accept': 'application/json',
+            'Connection': 'Keep-Alive',
+            'Host': 'api-lp1.znc.srv.nintendo.net',
+            'X-ProductVersion': self.nso_app_version,
+            'Content-Type': 'application/json; charset=utf-8',
+            'Authorization': f"Bearer {app_access_token}", 'X-Platform': 'Android'
+        }
+
+        json_body = {'parameter': {}, 'requestId': str(utils.uuid.uuid4())}
+
+        req = httpx.Request('POST', 'https://api-lp1.znc.srv.nintendo.net/v3/User/ShowSelf',
+                               headers=headers, json=json_body)
+        r = self.app_do_req(method='POST', url=req.url, headers=req.headers, json=json_body)
+        logger.debug(r)
+        name = r['result']['name']
+        my_sw_code = r['result']['links']['friendCode']['id']
+        return {
+            'name': name,
+            'code': my_sw_code
+        }
