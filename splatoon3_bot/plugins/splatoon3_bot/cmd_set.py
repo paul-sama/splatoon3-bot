@@ -28,7 +28,7 @@ matcher_login = on_command("login", block=True)
 @matcher_login.handle()
 async def login(bot: Bot, event: Event, state: T_State):
     if 'group' in event.get_event_name():
-        await matcher_login.finish(MSG_PRIVATE)
+        await matcher_login.finish(MSG_PRIVATE, reply_message=True)
         return
 
     u = get_or_set_user(user_id=event.get_user_id())
@@ -120,6 +120,11 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 
 @on_command("clear_db_info", block=True).handle()
 async def clear_db_info(bot: Bot, event: Event):
+
+    if 'group' in event.get_event_name():
+        await bot_send(bot, event, '请私聊机器人', parse_mode='Markdown')
+        return
+
     user_id = event.get_user_id()
 
     get_or_set_user(
@@ -135,7 +140,7 @@ async def clear_db_info(bot: Bot, event: Event):
         user_info=None,
     )
 
-    msg = "All your data cleared!"
+    msg = "All your data cleared! 已清空账号数据!"
     logger.info(msg)
     await bot.send(event, message=msg)
 

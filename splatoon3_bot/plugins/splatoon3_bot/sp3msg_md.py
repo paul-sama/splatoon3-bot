@@ -165,9 +165,14 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
 
 
 def coop_row(p, mask=False):
-    weapon = f"<img height='18' src='{p['specialWeapon']['image']['url']}'/> |"
-    for w in p['weapons']:
-        weapon += f"<img height='18' src='{w['image']['url']}'/>"
+    try:
+        weapon = f"<img height='18' src='{p['specialWeapon']['image']['url']}'/> |"
+        for w in p['weapons']:
+            weapon += f"<img height='18' src='{w['image']['url']}'/>"
+    except Exception as e:
+        logger.warning(f'coop_row error: {e}')
+        weapon = 'w|'
+
     p_name = p['player']['name']
     if mask:
         p_name = f'~~我是马赛克~~'
