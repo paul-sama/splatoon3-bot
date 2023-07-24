@@ -2,13 +2,29 @@ from ..data import get_festivals_data
 from .image_processer_tools import *
 from ..utils import *
 
-http = urllib3.PoolManager()
-
 
 # 绘制 祭典地图
 def get_festival(festivals):
-    image_background_size = (1000, 670)
-    group_img_size = (1000, 390)
+    festival = festivals[0]
+    flag_festival_close = False
+    # 判断祭典是否结束
+    if festival["state"] == "CLOSED":
+        flag_festival_close = True
+    # 获取翻译
+    _id = festival["__splatoon3ink_id"]
+    trans_cht_festival_data = get_trans_cht_data()["festivals"][_id]
+    # 替换为翻译
+    teams_list = []
+    festival["title"] = trans_cht_festival_data["title"]
+    for v in range(3):
+        festival["teams"][v]["teamName"] = trans_cht_festival_data["teams"][v]["teamName"]
+        teams_list.append(festival["teams"][v])
+
+    # 开始绘图
+    image_background_size = (1100, 700)
+    if flag_festival_close:
+        image_background_size = (1100, 1400)
+    card_size = (1040, 660)
     # 取背景rgb颜色
     bg_rgb = dict_bg_rgb["祭典"]
     # 创建纯色背景
@@ -19,64 +35,17 @@ def get_festival(festivals):
     # 圆角化
     image_background = circle_corner(image_background, radii=16)
 
-    festival = festivals[0]
-    # 获取翻译
-    _id = festival["__splatoon3ink_id"]
-    trans_cht_festival_data = get_trans_cht_data()["festivals"][_id]
-    # 替换为翻译
-    teams_list = []
-    festival["title"] = trans_cht_festival_data["title"]
-    for v in range(3):
-        festival["teams"][v]["teamName"] = trans_cht_festival_data["teams"][v]["teamName"]
-        teams_list.append(festival["teams"][v])
-    # 整理数据
-    title = festival["title"]
-    st = festival["startTime"]
-    et = festival["endTime"]
-    time_text = "{} {}  {} - {} {}  {}".format(
-        time_converter_yd(st),
-        "周" + dict_weekday_trans.get(time_converter_weekday(st)),
-        time_converter_hm(st),
-        time_converter_yd(et),
-        "周" + dict_weekday_trans.get(time_converter_weekday(et)),
-        time_converter_hm(et),
-    )
-    # 绘制标题
-    font_size = 30
-    text_bg = get_translucent_name_bg(title, 80, font_size)
-    text_bg_size = text_bg.size
-    # 贴上文字背景
-    text_bg_pos = ((image_background_size[0] - text_bg_size[0]) // 2, 20)
-    paste_with_a(image_background, text_bg, text_bg_pos)
-    # 绘制阵营图片
-    group_img = get_save_file(ImageInfo(title, festival["image"]["url"], title, "祭典阵营图片")).resize(group_img_size)
-    group_img_pos = (0, text_bg_pos[1] + text_bg_size[1] + 20)
-    paste_with_a(image_background, group_img, group_img_pos)
-    # 绘制阵营名称
-    drawer = ImageDraw.Draw(image_background)
-    pos_w = group_img_size[0] // 6
-    font_size = 24
-    ttf = ImageFont.truetype(ttf_path_chinese, font_size)
-    rectangle_h = 100
-    for k, v in enumerate(teams_list):
-        group_text_bg_rgb = (int(v["color"]["r"] * 100), int(v["color"]["g"] * 100), int(v["color"]["b"] * 100))
-        # 绘制色块对比图
-        satrt_xy = (0 + group_img_size[0] // 3 * k, group_img_pos[1] + group_img_size[1])
-        end_xy = (satrt_xy[0] + group_img_size[0] // 3, satrt_xy[1] + rectangle_h)
-        drawer.rectangle((satrt_xy, end_xy), fill=group_text_bg_rgb)
-        # 绘制阵营名称
-        group_text_bg = get_translucent_name_bg(v["teamName"], 100, font_size, group_text_bg_rgb)
-        w, h = group_text_bg.size
-        group_text_bg_pos = (pos_w - (w // 2), group_img_pos[1] + group_img_size[1] - h - 5)
-        paste_with_a(image_background, group_text_bg, group_text_bg_pos)
-        # 计算下一个
-        pos_w += group_img_size[0] // 3
-    # 绘制时间
-    w, h = ttf.getsize(time_text)
-    # 文字居中绘制
-    time_text_pos = ((image_background_size[0] - w) / 2, group_img_pos[1] + group_img_size[1] + rectangle_h + 20)
-    text_rgb = dict_bg_rgb["祭典时间-金黄"]
-    drawer.text(time_text_pos, time_text, font=ttf, fill=text_rgb)
+    # 绘制组别卡片
+    pos_h = 20
+    team_card = get_festival_team_card(festival, card_size, teams_list)
+    team_card_pos = ((image_background_size[0] - card_size[0]) // 2, pos_h)
+    paste_with_a(image_background, team_card, team_card_pos)
+    pos_h += card_size[1] + 20
+    if flag_festival_close:
+        # 绘制结算卡片
+        result_card = get_festival_result_card(card_size, teams_list)
+        result_card_pos = ((image_background_size[0] - card_size[0]) // 2, pos_h)
+        paste_with_a(image_background, result_card, result_card_pos)
 
     return image_background
 
@@ -227,16 +196,16 @@ def get_stages(schedule, num_list, contest_match=None, rule_match=None):
                     stage = regular[i]["regularMatchSetting"]["vsStages"]
                     regular_card = get_stage_card(
                         ImageInfo(
-                            stage[0]["name"],
-                            stage[0]["image"]["url"],
-                            get_trans_stage(stage[0]["id"]),
-                            "对战地图",
+                            name=stage[0]["name"],
+                            url=stage[0]["image"]["url"],
+                            zh_name=get_trans_stage(stage[0]["id"]),
+                            source_type="对战地图",
                         ),
                         ImageInfo(
-                            stage[1]["name"],
-                            stage[1]["image"]["url"],
-                            get_trans_stage(stage[1]["id"]),
-                            "对战地图",
+                            name=stage[1]["name"],
+                            url=stage[1]["image"]["url"],
+                            zh_name=get_trans_stage(stage[1]["id"]),
+                            source_type="对战地图",
                         ),
                         "一般比赛",
                         "Regular",
@@ -256,16 +225,16 @@ def get_stages(schedule, num_list, contest_match=None, rule_match=None):
                     stage = ranked[i]["bankaraMatchSettings"][0]["vsStages"]
                     ranked_challenge_card = get_stage_card(
                         ImageInfo(
-                            stage[0]["name"],
-                            stage[0]["image"]["url"],
-                            get_trans_stage(stage[0]["id"]),
-                            "对战地图",
+                            name=stage[0]["name"],
+                            url=stage[0]["image"]["url"],
+                            zh_name=get_trans_stage(stage[0]["id"]),
+                            source_type="对战地图",
                         ),
                         ImageInfo(
-                            stage[1]["name"],
-                            stage[1]["image"]["url"],
-                            get_trans_stage(stage[1]["id"]),
-                            "对战地图",
+                            name=stage[1]["name"],
+                            url=stage[1]["image"]["url"],
+                            zh_name=get_trans_stage(stage[1]["id"]),
+                            source_type="对战地图",
                         ),
                         "蛮颓比赛-挑战",
                         "Ranked-Challenge",
@@ -285,16 +254,16 @@ def get_stages(schedule, num_list, contest_match=None, rule_match=None):
                     stage = ranked[i]["bankaraMatchSettings"][1]["vsStages"]
                     ranked_challenge_card = get_stage_card(
                         ImageInfo(
-                            stage[0]["name"],
-                            stage[0]["image"]["url"],
-                            get_trans_stage(stage[0]["id"]),
-                            "对战地图",
+                            name=stage[0]["name"],
+                            url=stage[0]["image"]["url"],
+                            zh_name=get_trans_stage(stage[0]["id"]),
+                            source_type="对战地图",
                         ),
                         ImageInfo(
-                            stage[1]["name"],
-                            stage[1]["image"]["url"],
-                            get_trans_stage(stage[1]["id"]),
-                            "对战地图",
+                            name=stage[1]["name"],
+                            url=stage[1]["image"]["url"],
+                            zh_name=get_trans_stage(stage[1]["id"]),
+                            source_type="对战地图",
                         ),
                         "蛮颓比赛-开放",
                         "Ranked-Open",
@@ -314,16 +283,16 @@ def get_stages(schedule, num_list, contest_match=None, rule_match=None):
                     stage = xschedule[i]["xMatchSetting"]["vsStages"]
                     ranked_challenge_card = get_stage_card(
                         ImageInfo(
-                            stage[0]["name"],
-                            stage[0]["image"]["url"],
-                            get_trans_stage(stage[0]["id"]),
-                            "对战地图",
+                            name=stage[0]["name"],
+                            url=stage[0]["image"]["url"],
+                            zh_name=get_trans_stage(stage[0]["id"]),
+                            source_type="对战地图",
                         ),
                         ImageInfo(
-                            stage[1]["name"],
-                            stage[1]["image"]["url"],
-                            get_trans_stage(stage[1]["id"]),
-                            "对战地图",
+                            name=stage[1]["name"],
+                            url=stage[1]["image"]["url"],
+                            zh_name=get_trans_stage(stage[1]["id"]),
+                            source_type="对战地图",
                         ),
                         "X比赛",
                         "X",

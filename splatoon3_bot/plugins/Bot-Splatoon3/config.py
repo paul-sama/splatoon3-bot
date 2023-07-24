@@ -11,6 +11,8 @@ class Config(BaseModel):
     # 是否允许私聊消息回应，默认允许
     # 该配置项仅影响 onebotV11，实践表明私聊消息过多会导致Bot频繁被风控
     splatoon3_permit_private: bool = True
+    # 指定回复模式，开启后将通过触发词的消息进行回复
+    splatoon3_reply_mode: bool = True
 
 
 # 本地测试时由于不启动 driver，需要将下面两行注释并取消再下一行的注释

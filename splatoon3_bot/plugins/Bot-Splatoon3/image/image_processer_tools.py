@@ -459,16 +459,16 @@ def get_event_card(event, event_card_bg_size):
     stage = event["leagueMatchSetting"]["vsStages"]
     stage_card = get_stage_card(
         ImageInfo(
-            stage[0]["name"],
-            stage[0]["image"]["url"],
-            get_trans_stage(stage[0]["id"]),
-            "对战地图",
+            name=stage[0]["name"],
+            url=stage[0]["image"]["url"],
+            zh_name=get_trans_stage(stage[0]["id"]),
+            source_type="对战地图",
         ),
         ImageInfo(
-            stage[1]["name"],
-            stage[1]["image"]["url"],
-            get_trans_stage(stage[1]["id"]),
-            "对战地图",
+            name=stage[1]["name"],
+            url=stage[1]["image"]["url"],
+            zh_name=get_trans_stage(stage[1]["id"]),
+            source_type="对战地图",
         ),
         "活动比赛",
         "event_bg",
@@ -528,6 +528,190 @@ def get_event_card(event, event_card_bg_size):
         # 计算下一行高度
         pos_h += 80
     return event_card_bg
+
+
+# 绘制 祭典组别卡片
+def get_festival_team_card(festival, card_bg_size: tuple, teams_list: []):
+    group_img_size = (1000, 390)
+    rectangle_h = 100
+    # 取背景rgb颜色
+    bg_rgb = dict_bg_rgb["祭典"]
+    # 组别卡片
+    team_bg = Image.new("RGB", card_bg_size, bg_rgb)
+    team_bg = circle_corner(team_bg, radii=20)
+    # 调整透明度
+    team_bg = change_image_alpha(team_bg, 60)
+    # 整理数据
+    title = festival["title"]
+    st = festival["startTime"]
+    et = festival["endTime"]
+    time_text = "{} {}  {} - {} {}  {}".format(
+        time_converter_yd(st),
+        "周" + dict_weekday_trans.get(time_converter_weekday(st)),
+        time_converter_hm(st),
+        time_converter_yd(et),
+        "周" + dict_weekday_trans.get(time_converter_weekday(et)),
+        time_converter_hm(et),
+    )
+    # 绘制标题
+    font_size = 30
+    text_bg = get_translucent_name_bg(title, 80, font_size)
+    text_bg_size = text_bg.size
+    # 贴上文字背景
+    text_bg_pos = ((card_bg_size[0] - text_bg_size[0]) // 2, 20)
+    paste_with_a(team_bg, text_bg, text_bg_pos)
+    # 存放阵营图片的透明卡片
+    group_card_size = (group_img_size[0], group_img_size[1] + rectangle_h)
+    group_card = Image.new("RGBA", group_card_size, (0, 0, 0, 0))
+
+    # 绘制阵营图片
+    group_img = get_save_file(
+        ImageInfo(name=title, url=festival["image"]["url"], zh_name=title, source_type="祭典阵营图片")
+    ).resize(group_img_size)
+    paste_with_a(group_card, group_img, (0, 0))
+    # 绘制阵营名称
+    drawer = ImageDraw.Draw(group_card)
+    pos_w = group_card_size[0] // 6
+    font_size = 30
+    ttf = ImageFont.truetype(ttf_path_chinese, font_size)
+    for k, v in enumerate(teams_list):
+        group_text_bg_rgb = (int(v["color"]["r"] * 255), int(v["color"]["g"] * 255), int(v["color"]["b"] * 255))
+        # 绘制色块对比图
+        satrt_xy = (group_card_size[0] // 3 * k, group_img_size[1])
+        end_xy = (satrt_xy[0] + group_card_size[0] // 3, satrt_xy[1] + rectangle_h)
+        drawer.rectangle((satrt_xy, end_xy), fill=group_text_bg_rgb)
+        # 绘制阵营名称
+        group_text_bg = get_translucent_name_bg(v["teamName"], 100, font_size, group_text_bg_rgb)
+        w, h = group_text_bg.size
+        group_text_bg_pos = (pos_w - (w // 2), group_img_size[1] - h - 5)
+        paste_with_a(group_card, group_text_bg, group_text_bg_pos)
+        # 计算下一个
+        pos_w += group_card_size[0] // 3
+    group_card = circle_corner(group_card, radii=20)
+    group_card_pos = ((card_bg_size[0] - group_img_size[0]) // 2, text_bg_pos[1] + text_bg_size[1] + 20)
+    paste_with_a(team_bg, group_card, group_card_pos)
+
+    drawer = ImageDraw.Draw(team_bg)
+    # 绘制时间
+    w, h = ttf.getsize(time_text)
+    # 文字居中绘制
+    time_text_pos = ((card_bg_size[0] - w) / 2, group_card_pos[1] + rectangle_h + group_img_size[1] + 20)
+    text_rgb = dict_bg_rgb["祭典时间-金黄"]
+    drawer.text(time_text_pos, time_text, font=ttf, fill=text_rgb)
+
+    return team_bg
+
+
+# 绘制 祭典结算卡片
+def get_festival_result_card(card_bg_size: tuple, teams_list: []):
+    # 背景颜色取获胜队伍的rgb颜色
+    for k, v in enumerate(teams_list):
+        if v["result"]["isWinner"]:
+            bg_rgb = (int(v["color"]["r"] * 255), int(v["color"]["g"] * 255), int(v["color"]["b"] * 255))
+            win_team_name = v["teamName"]
+
+    # 取背景rgb颜色
+    win_rgb = dict_bg_rgb["祭典时间-金黄"]
+    # 结算卡片
+    result_bg = Image.new("RGB", card_bg_size, bg_rgb)
+    result_bg = circle_corner(result_bg, radii=20)
+    # 存放素材的临时卡片
+    temp_card_size = (card_bg_size[0] - 40, card_bg_size[1] - 80)
+    temp_card = Image.new("RGB", temp_card_size, bg_rgb)
+    # 绘制队伍图标
+    for k, v in enumerate(teams_list):
+        team_bg_size = (200, 80)
+        team_icon_size = (70, 70)
+        # 绘制纯色背景
+        team_bg_rgb = (int(v["color"]["r"] * 255), int(v["color"]["g"] * 255), int(v["color"]["b"] * 255))
+        team_bg = Image.new("RGB", team_bg_size, team_bg_rgb)
+        team_bg = circle_corner(team_bg, radii=14)
+        # 绘制图标
+        team_icon = get_save_file(
+            ImageInfo(name=v["teamName"], url=v["image"]["url"], zh_name=v["teamName"], source_type="祭典阵营单图")
+        ).resize(team_icon_size)
+        team_icon_pos = ((team_bg_size[0] - team_icon_size[0]) // 2, (team_bg_size[1] - team_icon_size[1]) // 2)
+        paste_with_a(team_bg, team_icon, team_icon_pos)
+        # 粘贴队伍图标
+        width_space = card_bg_size[0] // 5 + 30
+        team_bg_pos = (300 + width_space * k, 20)
+        paste_with_a(temp_card, team_bg, team_bg_pos)
+    # 绘制每个条目结果
+    list_item_names = ["法螺获得率", "得票率", "开放", "挑战", "三色夺宝攻击"]
+    pos_h = 120
+    font_size = 30
+    ttf = ImageFont.truetype(ttf_path_chinese, font_size)
+    drawer = ImageDraw.Draw(temp_card)
+    for v in range(5):
+        # 绘制条目名称
+        text = list_item_names[v]
+        w, h = ttf.getsize(text)
+        # 文字居中绘制
+        text_pos = (130 + (60 - w) // 2, pos_h + 5)
+        drawer.text(text_pos, text, font=ttf, fill=(255, 255, 255))
+        # 绘制条目结算
+        item_card_size = (card_bg_size[0] // 3 * 2, 50)
+        item_card = get_festival_result_item_card(item_card_size, teams_list, v)
+        item_card_pos = (290, pos_h)
+        paste_with_a(temp_card, item_card, item_card_pos)
+        pos_h += h + 30
+    # 绘制最终冠军
+    font_size = 50
+    ttf = ImageFont.truetype(ttf_path_chinese, font_size)
+    win_text = win_team_name + " 获胜!"
+    w, h = ttf.getsize(win_text)
+    text_pos = ((temp_card_size[0] - w) // 2, pos_h + 30)
+    drawer.text(text_pos, win_text, font=ttf, fill=win_rgb)
+    # 将临时图片容器贴到底图
+    temp_card = circle_corner(temp_card, radii=16)
+    temp_card = change_image_alpha(temp_card, 80)
+    temp_card_pos = ((card_bg_size[0] - temp_card_size[0]) // 2, (card_bg_size[1] - temp_card_size[1]) // 2)
+    paste_with_a(result_bg, temp_card, temp_card_pos)
+
+    return result_bg
+
+
+# 绘制 祭典条目结算卡片
+def get_festival_result_item_card(card_bg_size: tuple, teams_list: [dict], item_index: int):
+    bg_rgb = dict_bg_rgb["祭典结算项目卡片"]
+    item_card = Image.new("RGBA", card_bg_size, bg_rgb)
+    item_card = circle_corner(item_card, radii=30)
+    drawer = ImageDraw.Draw(item_card)
+    font_size = 24
+    ttf = ImageFont.truetype(ttf_path_chinese, font_size)
+
+    # 格式化整理数据,返回 是否是赢家，百分比点数
+    def get_data(index: int, value: dict) -> (bool, str):
+        if index == 0:
+            flag_win = value["result"]["isHoragaiRatioTop"]
+            _percentage = value["result"]["horagaiRatio"]
+        elif index == 1:
+            flag_win = value["result"]["isVoteRatioTop"]
+            _percentage = value["result"]["voteRatio"]
+        elif index == 2:
+            flag_win = value["result"]["isRegularContributionRatioTop"]
+            _percentage = value["result"]["regularContributionRatio"]
+        elif index == 3:
+            flag_win = value["result"]["isChallengeContributionRatioTop"]
+            _percentage = value["result"]["challengeContributionRatio"]
+        elif index == 4:
+            flag_win = value["result"]["isTricolorContributionRatioTop"]
+            _percentage = value["result"]["tricolorContributionRatio"]
+        return flag_win, "{:.2f}%".format(_percentage * 100)
+
+    win_rgb = dict_bg_rgb["祭典时间-金黄"]
+    width_space = card_bg_size[0] // 3 + 10
+    for k, v in enumerate(teams_list):
+        text_rgb = (255, 255, 255)
+        win, percentage = get_data(item_index, v)
+        if win:
+            text_rgb = win_rgb
+        # 绘制百分比
+        w, h = ttf.getsize(percentage)
+        # 文字居中绘制
+        text_pos = (65 + width_space * k, (card_bg_size[1] - h) // 2)
+        drawer.text(text_pos, percentage, font=ttf, fill=text_rgb)
+    return item_card
 
 
 # 绘制 活动地图描述卡片

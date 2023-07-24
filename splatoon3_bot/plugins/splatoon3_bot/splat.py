@@ -107,7 +107,7 @@ class Splatoon:
             else:
                 return res.json()
         except Exception as e:
-            logger.exception(f'_request error: {e}')
+            logger.warning(f'_request error: {e}')
             return None
 
     def get_recent_battles(self, skip_check_token=False):

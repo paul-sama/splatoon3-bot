@@ -98,7 +98,6 @@ def get_random_weapon_image(*args):
 
     # 绘制图片
     image = get_random_weapon(weapon1, weapon2)
-    # 测试时解除注释输出image方便查看
     return image
 
 
