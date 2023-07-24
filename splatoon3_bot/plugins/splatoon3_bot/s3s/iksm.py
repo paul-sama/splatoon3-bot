@@ -180,12 +180,13 @@ def get_gtoken(f_gen_url, session_token, ver):
 	user_nickname = user_info["nickname"]
 	user_lang     = user_info["language"]
 	user_country  = user_info["country"]
+	user_id       = user_info["id"]
 
 	# get access token
 	body = {}
 	try:
 		id_token = id_response["id_token"]
-		f, uuid, timestamp = call_imink_api(id_token, 1, f_gen_url)
+		f, uuid, timestamp = call_imink_api(id_token, 1, f_gen_url, user_id)
 
 		parameter = {
 			'f':          f,
@@ -221,10 +222,11 @@ def get_gtoken(f_gen_url, session_token, ver):
 
 	try:
 		id_token = splatoon_token["result"]["webApiServerCredential"]["accessToken"]
+		coral_user_id = splatoon_token["result"]["user"]["id"]
 	except:
 		# retry once if 9403/9599 error from nintendo
 		try:
-			f, uuid, timestamp = call_imink_api(id_token, 1, f_gen_url)
+			f, uuid, timestamp = call_imink_api(id_token, 1, f_gen_url, user_id)
 			body["parameter"]["f"]         = f
 			body["parameter"]["requestId"] = uuid
 			body["parameter"]["timestamp"] = timestamp
@@ -233,13 +235,14 @@ def get_gtoken(f_gen_url, session_token, ver):
 			r = requests.post(url, headers=app_head, json=body)
 			splatoon_token = json.loads(r.text)
 			id_token = splatoon_token["result"]["webApiServerCredential"]["accessToken"]
+			coral_user_id = splatoon_token["result"]["user"]["id"]
 		except:
 			logger.warning("Error from Nintendo (in Account/Login step):")
 			logger.warning(json.dumps(splatoon_token, indent=2))
 			logger.warning("Re-running the script usually fixes this.")
 			return
 
-		f, uuid, timestamp = call_imink_api(id_token, 2, f_gen_url)
+		f, uuid, timestamp = call_imink_api(id_token, 2, f_gen_url, user_id, coral_user_id=coral_user_id)
 
 	# get web service token
 	app_head = {
@@ -271,7 +274,7 @@ def get_gtoken(f_gen_url, session_token, ver):
 	except:
 		# retry once if 9403/9599 error from nintendo
 		try:
-			f, uuid, timestamp = call_imink_api(id_token, 2, f_gen_url)
+			f, uuid, timestamp = call_imink_api(id_token, 2, f_gen_url, user_id, coral_user_id=coral_user_id)
 			body["parameter"]["f"]         = f
 			body["parameter"]["requestId"] = uuid
 			body["parameter"]["timestamp"] = timestamp
@@ -332,7 +335,7 @@ def get_bullet(web_service_token, web_view_ver, app_user_agent, user_lang, user_
 	return bullet_token
 
 
-def call_imink_api(id_token, step, f_gen_url):
+def call_imink_api(id_token, step, f_gen_url, user_id, coral_user_id=None):
 	'''Passes in an naIdToken to the imink API and fetches the response (comprised of an f token, UUID, and timestamp).'''
 
 	try:
@@ -342,8 +345,12 @@ def call_imink_api(id_token, step, f_gen_url):
 		}
 		api_body = {
 			'token':       id_token,
-			'hashMethod':  step
+			'hash_method':  step,
+			'na_id':       user_id
 		}
+		if step == 2 and coral_user_id is not None:
+			api_body["coral_user_id"] = coral_user_id
+
 		api_response = requests.post(f_gen_url, data=json.dumps(api_body), headers=api_head)
 		resp = json.loads(api_response.text)
 
