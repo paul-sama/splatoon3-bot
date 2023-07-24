@@ -1,4 +1,4 @@
-
+import base64
 from datetime import timedelta, datetime as dt
 from .sp3msg import get_battle_msg_title, set_statics, logger, utils, get_top_str, defaultdict, fmt_sp3_state
 
@@ -294,10 +294,18 @@ def get_group_node_msg(g_node, splt, _type):
     msg = ''
     battle_lst = []
     if _type == 'event':
-        msg = '#### ' + g_node['leagueMatchHistoryGroup']['leagueMatchEvent']['name'] + '\n'
         battle_lst = g_node['historyDetails']['nodes']
+        fst_battle = battle_lst[0]
+        battle_id = fst_battle['id']
+        battle_t = base64.b64decode(battle_id).decode('utf-8').split('_')[0].split(':')[-1]
+        b_t = dt.strptime(battle_t, '%Y%m%dT%H%M%S') + timedelta(hours=8)
+        msg = '#### ' + g_node['leagueMatchHistoryGroup']['leagueMatchEvent']['name'] + f' HKT {b_t:%Y-%m-%d %H:%M:%S}\n'
     elif _type == 'open':
-        msg = f"#### 开放: {g_node['historyDetails']['nodes'][0]['vsRule']['name']}\n"
+        fst_battle = g_node['historyDetails']['nodes'][0]
+        battle_id = fst_battle['id']
+        battle_t = base64.b64decode(battle_id).decode('utf-8').split('_')[0].split(':')[-1]
+        b_t = dt.strptime(battle_t, '%Y%m%dT%H%M%S') + timedelta(hours=8)
+        msg = f"#### 开放: {fst_battle['vsRule']['name']} HKT {b_t:%Y-%m-%d %H:%M:%S}\n"
         battle_lst = []
         stage_lst = []
         for n in g_node['historyDetails']['nodes']:
@@ -311,8 +319,17 @@ def get_group_node_msg(g_node, splt, _type):
                 break
             battle_lst.append(n)
     elif _type == 'fest':
-        msg = f"#### 祭典单排\n"
         battle_lst = g_node['historyDetails']['nodes']
+        b_lst = []
+        for b in battle_lst:
+            if b['vsMode']['id'] == 'VnNNb2RlLTc=':
+                b_lst.append(b)
+        battle_lst = b_lst
+        fst_battle = battle_lst[0]
+        battle_id = fst_battle['id']
+        battle_t = base64.b64decode(battle_id).decode('utf-8').split('_')[0].split(':')[-1]
+        b_t = dt.strptime(battle_t, '%Y%m%dT%H%M%S') + timedelta(hours=8)
+        msg = f"#### 祭典单排 HKT {b_t:%Y-%m-%d %H:%M:%S}\n"
 
     msg += '''
 |  |   ||  ||||||||||
