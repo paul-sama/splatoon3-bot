@@ -446,7 +446,7 @@ def get_friends(splt, lang='zh-CN'):
     data = utils.gen_graphql_body(utils.translate_rid['FriendsList'])
     res = splt._request(data)
     if not res:
-        return 'No friends found!'
+        return '网络错误，请稍后再试.'
 
     msg = f'''#### 在线好友 HKT {dt.now():%Y-%m-%d %H:%M:%S}
 ||||||

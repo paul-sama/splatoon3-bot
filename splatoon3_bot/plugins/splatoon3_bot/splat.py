@@ -7,6 +7,7 @@ from .sp3iksm import A_VERSION, APP_USER_AGENT
 from .s3s import iksm, utils
 
 F_GEN_URL = 'https://api.imink.app/f'
+F_GEN_URL_2 = 'https://nxapi-znca-api.fancy.org.uk/api/znca/f'
 API_URL = 'https://api.lp1.av5ja.srv.nintendo.net'
 WEB_VIEW_VERSION = utils.WEB_VIEW_VERSION
 
@@ -58,7 +59,13 @@ class Splatoon:
             raise Exception(f'{self.user_id} get_bullet error. {r.status_code}')
 
     def set_gtoken_and_bullettoken(self):
-        new_gtoken, acc_name, acc_lang, acc_country = iksm.get_gtoken(F_GEN_URL, self.session_token, A_VERSION)
+        try:
+            new_gtoken, acc_name, acc_lang, acc_country = iksm.get_gtoken(F_GEN_URL, self.session_token, A_VERSION)
+        except Exception as e:
+            logger.warning(f'{self.user_id} set_gtoken_and_bullettoken error. {e}')
+            logger.warning('try another url')
+            new_gtoken, acc_name, acc_lang, acc_country = iksm.get_gtoken(F_GEN_URL_2, self.session_token, A_VERSION)
+
         new_bullettoken = self.get_bullet(new_gtoken, WEB_VIEW_VERSION, APP_USER_AGENT, acc_lang, acc_country)
         self.gtoken = new_gtoken
         self.bullet_token = new_bullettoken

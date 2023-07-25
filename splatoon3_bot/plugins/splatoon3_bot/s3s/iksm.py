@@ -6,10 +6,11 @@ from loguru import logger
 import base64, hashlib, json, os, re, sys
 import requests
 from bs4 import BeautifulSoup
+from ..utils import BOT_VERSION
 
 session = requests.Session()
 S3S_VERSION = "unknown"
-NSOAPP_VERSION = "2.5.2"
+NSOAPP_VERSION = "2.6.0"
 
 # functions in this file & call stack:
 # get_nsoapp_version()
@@ -129,7 +130,7 @@ def get_session_token(session_token_code, auth_code_verifier):
 
 
 def get_gtoken(f_gen_url, session_token, ver):
-	'''Provided the session_token, returns a GameWebToken and account info.'''
+	"""Provided the session_token, returns a GameWebToken and account info."""
 
 	nsoapp_version = get_nsoapp_version()
 
@@ -336,12 +337,17 @@ def get_bullet(web_service_token, web_view_ver, app_user_agent, user_lang, user_
 
 
 def call_imink_api(id_token, step, f_gen_url, user_id, coral_user_id=None):
-	'''Passes in an naIdToken to the imink API and fetches the response (comprised of an f token, UUID, and timestamp).'''
+	"""Passes in an naIdToken to the f API and fetches the response (comprised of an f token, UUID, and timestamp)."""
 
+	api_head = {}
+	api_body = {}
+	api_response = None
 	try:
 		api_head = {
-			'User-Agent':   f'sp3bot/{S3S_VERSION}',
-			'Content-Type': 'application/json; charset=utf-8'
+			'User-Agent':   f'splatoon3_bot/{BOT_VERSION}',
+			'Content-Type': 'application/json; charset=utf-8',
+			'X-znca-Platform': 'Android',
+			'X-znca-Version': NSOAPP_VERSION
 		}
 		api_body = {
 			'token':       id_token,
@@ -349,18 +355,20 @@ def call_imink_api(id_token, step, f_gen_url, user_id, coral_user_id=None):
 			'na_id':       user_id
 		}
 		if step == 2 and coral_user_id is not None:
-			api_body["coral_user_id"] = coral_user_id
+			api_body["coral_user_id"] = str(coral_user_id)
 
 		api_response = requests.post(f_gen_url, data=json.dumps(api_body), headers=api_head)
 		resp = json.loads(api_response.text)
 
+		logger.debug(f"get f generation: \n{f_gen_url}\n{json.dumps(api_head)}\n{json.dumps(api_body)}")
 		f = resp["f"]
 		uuid = resp["request_id"]
 		timestamp = resp["timestamp"]
 		return f, uuid, timestamp
 	except:
 		try: # if api_response never gets set
-			if api_response.text:
+			logger.warning(f"Error during f generation: \n{f_gen_url}\n{json.dumps(api_head)}\n{json.dumps(api_body)}")
+			if api_response and api_response.text:
 				logger.error(f"Error during f generation:\n{json.dumps(json.loads(api_response.text), indent=2, ensure_ascii=False)}")
 			else:
 				logger.error(f"Error during f generation: Error {api_response.status_code}.")
