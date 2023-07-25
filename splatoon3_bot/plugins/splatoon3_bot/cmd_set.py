@@ -1,6 +1,7 @@
 import os
 import json
 from collections import defaultdict
+from datetime import datetime as dt
 
 from nonebot import on_command, logger
 from nonebot.adapters import Event, Bot
@@ -260,14 +261,25 @@ async def sync_now(bot: Bot, event: Event):
 @on_command("report", block=True).handle()
 @check_session_handler
 async def report(bot: Bot, event: Event):
+    cmd_list = event.get_plaintext().strip().split(' ')
+    report_day = ''
+    if len(cmd_list) > 1:
+        report_day = cmd_list[1].strip()
+        try:
+            dt.strptime(report_day, '%Y-%m-%d')
+        except:
+            msg = '日期格式错误，正确格式: /report 2023-07-01 或 /report'
+            await bot_send(bot, event, message=msg, parse_mode='Markdown')
+            return
+
     user_id = event.get_user_id()
     u = get_or_set_user(user_id=user_id)
     user_id = u.id
-    msg = get_report(user_id=user_id)
+    msg = get_report(user_id=user_id, report_day=report_day)
     get_or_set_user(user_id=user_id, report_type=1)
-    if msg:
+    if msg and not report_day:
         msg += f'```\n\n早报订阅成功\n/unsubscribe 取消订阅```'
-    else:
+    elif not msg and not report_day:
         msg = f'```\n数据准备中。。。\n\n早报订阅成功\n/unsubscribe 取消订阅```'
     await bot_send(bot, event, message=msg, parse_mode='Markdown')
 

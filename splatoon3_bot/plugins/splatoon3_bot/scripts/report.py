@@ -176,7 +176,7 @@ def update_user_info_first():
     logger.info(f'update_user_info_first_end: {dt.utcnow() - t}')
 
 
-def get_report(user_id):
+def get_report(user_id, report_day=None):
     msg = '\n喷喷早报\n'
     report_list = model_get_report(user_id=user_id)
 
@@ -187,6 +187,15 @@ def get_report(user_id):
         return
 
     old = report_list[1]
+
+    fst_day = ''
+    if report_day:
+        fst_day = report_list[-1].create_time.strftime('%Y-%m-%d')
+        for r in report_list[1:]:
+            if r.last_play_time.strftime('%Y-%m-%d') < max(report_day, fst_day):
+                old = r
+                break
+
     new = report_list[0]
     s_date = (old.create_time + timedelta(hours=8)).strftime('%Y%m%d')
     e_date = (new.last_play_time + timedelta(hours=8)).strftime('%Y%m%d %H:%M')
@@ -253,5 +262,7 @@ def get_report(user_id):
         msg += f'鳞片: {str_coop}\n'
 
     msg = f'```{msg}```'
+    if report_day and fst_day:
+        msg += f'```\n\n订阅早报: /report\n最早记录: {fst_day}```'
     logger.info(msg)
     return msg
