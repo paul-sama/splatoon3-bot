@@ -190,7 +190,8 @@ class Splatoon:
         return r
 
     def app_login_switch_web(self, id_token, nintendo_profile):
-        nso_f, request_id, timestamp = iksm.call_imink_api(id_token, 1, 'https://api.imink.app/f')
+        user_id = nintendo_profile['id']
+        nso_f, request_id, timestamp = iksm.call_imink_api(id_token, 1, 'https://api.imink.app/f', user_id)
 
         headers = {
             'Host': 'api-lp1.znc.srv.nintendo.net',
