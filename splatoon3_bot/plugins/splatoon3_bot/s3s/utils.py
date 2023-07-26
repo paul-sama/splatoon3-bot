@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 
 SPLATNET3_URL = "https://api.lp1.av5ja.srv.nintendo.net"
 GRAPHQL_URL  = "https://api.lp1.av5ja.srv.nintendo.net/api/graphql"
-WEB_VIEW_VERSION = "4.0.0-d5178440" # fallback
+WEB_VIEW_VERSION = "4.0.0-22ddb0fd" # fallback
 S3S_NAMESPACE = uuid.UUID('b3a2dbf5-2c09-4792-b78c-00b548b70aeb')
 
 # SHA256 hash database for SplatNet 3 GraphQL queries
@@ -21,7 +21,7 @@ translate_rid = {
 	'PrivateBattleHistoriesQuery':       '8e5ae78b194264a6c230e262d069bd28', # INK / blank vars - query1
 	'XBattleHistoriesQuery':             '6796e3cd5dc3ebd51864dc709d899fc5', # INK / blank vars - query1
 	'VsHistoryDetailQuery':              '9ee0099fbe3d8db2a838a75cf42856dd', # INK / req "vsResultId" - query2
-	'CoopHistoryQuery':                  '91b917becd2fa415890f5b47e15ffb15', # SR  / blank vars - query1
+	'CoopHistoryQuery':                  '01fb9793ad92f91892ea713410173260', # SR  / blank vars - query1
 	'CoopHistoryDetailQuery':            '379f0d9b78b531be53044bcac031b34b', # SR  / req "coopHistoryDetailId" - query2
 	'MyOutfitCommonDataEquipmentsQuery': 'd29cd0c2b5e6bac90dd5b817914832f8', # for Lean's seed checker
 	'FriendsList':                       'f0a8ebc384cf5fbac01e8085fbd7c898',
@@ -30,7 +30,7 @@ translate_rid = {
 	'XRankingQuery':                     'd771444f2584d938db8d10055599011d',
 	'ScheduleQuery':                     'd1f062c14f74f758658b2703a5799002',
 	'StageRecordsQuery':                 'f08a932d533845dde86e674e03bbb7d3',
-	'EventBattleHistoriesQuery':         '9744fcf676441873c7c8a51285b6aa4d',
+	'EventBattleHistoriesQuery':         'e7bbaf1fa255305d607351da434b2d0f',
 }
 
 def get_web_view_ver():

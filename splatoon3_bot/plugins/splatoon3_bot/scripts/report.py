@@ -266,7 +266,8 @@ def get_report(user_id, report_day=None):
         msg += f'鳞片: {str_coop}\n'
 
     msg = f'```{msg}```'
-    if report_day and fst_day:
+    u = get_user(user_id=user_id)
+    if report_day and fst_day and not u.report_type:
         msg += f'```\n\n订阅早报: /report```'
     logger.info(msg)
     return msg
