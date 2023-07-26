@@ -178,6 +178,8 @@ def update_user_info_first():
 
 def get_report(user_id, report_day=None):
     msg = '\n喷喷早报\n'
+    if report_day:
+        msg = '\n喷喷小报\n'
     report_list = model_get_report(user_id=user_id)
 
     # for r in report_list:
@@ -263,6 +265,6 @@ def get_report(user_id, report_day=None):
 
     msg = f'```{msg}```'
     if report_day and fst_day:
-        msg += f'```\n\n订阅早报: /report\n最早记录: {fst_day}```'
+        msg += f'```\n\n订阅早报: /report```'
     logger.info(msg)
     return msg
