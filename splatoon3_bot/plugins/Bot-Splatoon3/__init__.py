@@ -372,6 +372,21 @@ async def send_img(bot: Union[V11Bot, V12Bot, TgBot], event: Union[V11MEvent, V1
     # 指定回复模式
     reply_mode = plugin_config.splatoon3_reply_mode
     if isinstance(bot, V11Bot):
+
+        try:
+            group_id = (event.dict() or {}).get('group_id')
+            if group_id:
+                group_id = str(group_id)
+                from ..splatoon3_bot.db_sqlite import model_get_map_group_id_list
+                stop_group_id_lst = model_get_map_group_id_list()
+                logger.debug(f'stop_group_id_lst: {stop_group_id_lst}')
+                if stop_group_id_lst and group_id in stop_group_id_lst:
+                    logger.debug(f'qq群 {group_id} 停用该查地图插件')
+                    return
+
+        except Exception as e:
+            logger.warning(f"QQBot bot map error: {e}")
+
         try:
             await bot.send(event, message=V11MsgSeg.image(file=img, cache=False), reply_message=reply_mode)
         except Exception as e:

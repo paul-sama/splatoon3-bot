@@ -52,6 +52,7 @@ class GroupTable(Base):
     group_name = Column(String(), default='')
     group_type = Column(String(), default='')
     cmd = Column(Text(), nullable=True)
+    bot_map = Column(Integer(), default=1)
     create_time = Column(DateTime(), default=func.now())
     update_time = Column(DateTime(), onupdate=func.now())
 
@@ -336,3 +337,12 @@ def model_get_report(**kwargs):
     report = session.query(Report).filter(*query).order_by(Report.create_time.desc()).all()
     session.close()
     return report
+
+
+def model_get_map_group_id_list():
+    session = DBSession()
+    query = [GroupTable.group_id != '', GroupTable.bot_map == 0]
+    group_id_list = session.query(GroupTable.group_id).filter(*query).all()
+    session.close()
+    id_lst = [i[0] for i in group_id_list]
+    return id_lst
