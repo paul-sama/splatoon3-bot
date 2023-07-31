@@ -3,8 +3,8 @@ from .image_processer_tools import *
 from ..utils import *
 
 
-# 绘制 祭典地图
 def get_festival(festivals):
+    """绘制 祭典地图"""
     festival = festivals[0]
     flag_festival_close = False
     # 判断祭典是否结束
@@ -50,8 +50,8 @@ def get_festival(festivals):
     return image_background
 
 
-# 绘制 活动地图
 def get_events(events):
+    """绘制 活动地图"""
     background_size = (1084, 1100 * len(events))
     event_card_bg_size = (background_size[0] - 40, 640)
     # 取背景rgb颜色
@@ -110,8 +110,8 @@ def get_events(events):
     return image_background
 
 
-# 绘制 竞赛地图
 def get_stages(schedule, num_list, contest_match=None, rule_match=None):
+    """绘制 竞赛地图"""
     # 涂地
     regular = schedule["regularSchedules"]["nodes"]
     # 真格
@@ -331,15 +331,16 @@ def get_stages(schedule, num_list, contest_match=None, rule_match=None):
     return image_background
 
 
-# 绘制 打工地图
 def get_coop_stages(stage, weapon, time, boss, mode):
+    """绘制 打工地图"""
+
     # 校验是否需要绘制小鲑鱼(现在时间处于该打工时间段内)
     def check_coop_fish(_time):
         start_time = _time.split(" - ")[0]
+        now_time = get_time_now_china()
         # 输入时间都缺少年份，需要手动补充一个年份后还原为date对象
-        year = datetime.datetime.now().year
+        year = now_time.year
         start_time = str(year) + "-" + start_time
-        now_time = datetime.datetime.now()
         st = datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M")
         if st < now_time:
             return True
@@ -417,8 +418,8 @@ def get_coop_stages(stage, weapon, time, boss, mode):
     return image_background
 
 
-# 绘制 随机武器
 def get_random_weapon(weapon1: [WeaponData], weapon2: [WeaponData]):
+    """绘制 随机武器"""
     # 底图
     image_background_size = (660, 500)
     image_background = circle_corner(get_file("bg2").resize(image_background_size), radii=20)
@@ -441,8 +442,8 @@ def get_random_weapon(weapon1: [WeaponData], weapon2: [WeaponData]):
     return image_background
 
 
-# 绘制 帮助图片
 def get_help():
+    """绘制 帮助图片"""
     image_background_size = (1200, 2300)
     # 取背景rgb颜色
     bg_rgb = dict_bg_rgb["活动"]

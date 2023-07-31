@@ -14,14 +14,16 @@ festivals_res = None
 festivals_res_save_ymd: str
 
 
-# 取日程数据
 def get_schedule_data():
+    """取日程数据"""
+
     # 校验过期日程
     def check_expire_schedule(schedule):
-        st = datetime.datetime.strptime(schedule["regularSchedules"]["nodes"][0]["startTime"], "%Y-%m-%dT%H:%M:%SZ")
-        ed = datetime.datetime.strptime(schedule["regularSchedules"]["nodes"][0]["endTime"], "%Y-%m-%dT%H:%M:%SZ")
-        nw = datetime.datetime.now() - datetime.timedelta(hours=8)
-        if st < nw < ed:
+        # json取到的时间是utc，本地时间也要取utc后才能比较
+        st = time_converter(schedule["regularSchedules"]["nodes"][0]["startTime"])
+        ed = time_converter(schedule["regularSchedules"]["nodes"][0]["endTime"])
+        now = get_time_now_china()
+        if st < now < ed:
             return False
         return True
 
@@ -36,8 +38,8 @@ def get_schedule_data():
         return schedule_res
 
 
-# 取祭典数据
 def get_festivals_data():
+    """取祭典数据"""
     global festivals_res
     global festivals_res_save_ymd
 
@@ -59,8 +61,9 @@ def get_festivals_data():
         return festivals_res
 
 
-# 取 打工 信息
 def get_coop_info(_all=None):
+    """取 打工 信息"""
+
     # 取地图信息
     def get_stage_image_info(sch):  # sch为schedule[idx]
         return ImageInfo(
@@ -96,7 +99,7 @@ def get_coop_info(_all=None):
     # 校验普通打工时间，是否在特殊打工模式之后
     def check_salmonrun_time(_start_time, _special_mode_start_time):
         # 输入时间都缺少年份，需要手动补充一个年份后还原为date对象
-        year = datetime.datetime.now().year
+        year = get_time_now_china().year
         _start_time = str(year) + "-" + _start_time
         _special_mode_start_time = str(year) + "-" + _special_mode_start_time
         st = datetime.datetime.strptime(_start_time, "%Y-%m-%d %H:%M")
@@ -185,8 +188,8 @@ def get_coop_info(_all=None):
     return stage, weapon, time, boss, mode
 
 
-# 取 装备信息
 def get_weapon_info(list_weapon: list):
+    """取 装备信息"""
     weapon1 = []
     weapon2 = []
     for v in list_weapon:
@@ -235,8 +238,8 @@ def get_weapon_info(list_weapon: list):
     return weapon1, weapon2
 
 
-# 取 图 信息
 def get_stage_info(num_list=None, contest_match=None, rule_match=None):
+    """取 图 信息"""
     if num_list is None:
         num_list = [0]
     schedule = get_schedule_data()
@@ -254,8 +257,8 @@ def get_stage_info(num_list=None, contest_match=None, rule_match=None):
     return schedule, num_list, new_contest_match, new_rule_match
 
 
-# 初始化 browser 并唤起
 async def init_browser() -> Browser:
+    """初始化 browser 并唤起"""
     global _browser
     p = await async_playwright().start()
     if proxy_address:
@@ -267,16 +270,16 @@ async def init_browser() -> Browser:
     return _browser
 
 
-# 获取目前唤起的 browser
 async def get_browser() -> Browser:
+    """获取目前唤起的 browser"""
     global _browser
     if _browser is None or not _browser.is_connected():
         _browser = await init_browser()
     return _browser
 
 
-# 通过 browser 获取 shot_url 中的网页截图
 async def get_screenshot(shot_url, shot_path=None):
+    """通过 browser 获取 shot_url 中的网页截图"""
     # playwright 要求不能有多个 browser 被同时唤起
     browser = await get_browser()
     context = await browser.new_context(viewport={"width": 1480, "height": 900}, locale="zh-CH")

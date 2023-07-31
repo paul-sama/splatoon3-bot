@@ -23,32 +23,32 @@ ttf_path_chinese = os.path.join(cur_path, "staticData", "Text.ttf")
 http = urllib3.PoolManager()
 
 
-# 图片转base64
 def image_to_base64(image):
+    """图片转base64"""
     buffered = BytesIO()
     image.save(buffered, format="PNG")
     return buffered.getvalue()
 
 
-# 取文件
 def get_file(name, format_name="png"):
+    """取文件"""
     img = Image.open(os.path.join(image_folder, "{}.{}".format(name, format_name)))
     return img
 
 
-# 获取武器
 def get_weapon(name):
+    """获取武器"""
     return Image.open(os.path.join(weapon_folder, "{}".format(name)))
 
 
-# cf 网站读文件
 def get_cf_file_url(url):
+    """cf 网站读文件"""
     r = cf_http_get(url)
     return r.content
 
 
-# 向数据库新增或读取素材图片二进制文件
 def get_save_file(img: ImageInfo):
+    """向数据库新增或读取素材图片二进制文件"""
     res = imageDB.get_img_data(img.name)
     if not res:
         image_data = get_cf_file_url(img.url)
@@ -60,13 +60,13 @@ def get_save_file(img: ImageInfo):
         return Image.open(io.BytesIO(res.get("image_data")))
 
 
-# 取文件路径
 def get_file_path(name, format_name="png"):
+    """取文件路径"""
     return os.path.join(image_folder, "{}.{}".format(name, format_name))
 
 
-# 圆角处理
 def circle_corner(img, radii):
+    """圆角处理"""
     """
     圆角处理
     :param img: 源图象。
@@ -106,8 +106,8 @@ def circle_corner(img, radii):
     return img
 
 
-# 图片 平铺填充
 def tiled_fill(big_image, small_image):
+    """图片 平铺填充"""
     big_image_w, big_image_h = big_image.size
     small_image_w, small_image_h = small_image.size
     for left in range(0, big_image_w, small_image_w):  # 横纵两个方向上用两个for循环实现平铺效果
@@ -116,8 +116,9 @@ def tiled_fill(big_image, small_image):
     return big_image
 
 
-# 绘制文字 带自动换行
 def drawer_text(drawer: ImageDraw, text, text_start_pos, text_width, font_color=(255, 255, 255), font_size=30):
+    """绘制文字 带自动换行"""
+
     # 文本分割
     def add_long_text(_text, _text_width) -> [str]:
         punc_pattern = "[,.，。》、—”]+"
@@ -154,8 +155,8 @@ def drawer_text(drawer: ImageDraw, text, text_start_pos, text_width, font_color=
     return width, height
 
 
-# 绘制文字 帮助卡片
 def drawer_help_card(pre: str, order_list: [str], desc_list: [str]):
+    """绘制文字 帮助卡片"""
     text_width = 50
     width = 0
     height = 10
@@ -188,14 +189,14 @@ def drawer_help_card(pre: str, order_list: [str], desc_list: [str]):
     return background, height
 
 
-# 图像粘贴 加上a通道参数 使圆角透明
 def paste_with_a(image_background, image_pasted, pos):
+    """图像粘贴 加上a通道参数 使圆角透明"""
     _, _, _, a = image_pasted.convert("RGBA").split()
     image_background.paste(image_pasted, pos, mask=a)
 
 
-# 绘制 地图名称及文字底图
 def get_stage_name_bg(stage_name, font_size=24):
+    """绘制 地图名称及文字底图"""
     ttf = ImageFont.truetype(ttf_path_chinese, font_size)
     w, h = ttf.getsize(stage_name)
     stage_name_bg_size = (w + 20, h + 10)
@@ -211,8 +212,8 @@ def get_stage_name_bg(stage_name, font_size=24):
     return stage_name_bg
 
 
-# 绘制 半透明文字背景
 def get_translucent_name_bg(text, transparency, font_size=24, bg_color=None):
+    """绘制 半透明文字背景"""
     ttf = ImageFont.truetype(ttf_path_chinese, font_size)
     w, h = ttf.getsize(text)
     # 文字背景
@@ -230,8 +231,8 @@ def get_translucent_name_bg(text, transparency, font_size=24, bg_color=None):
     return text_bg
 
 
-# 绘制 时间表头
 def get_time_head_bg(time_head_bg_size, date_time, start_time, end_time):
+    """绘制 时间表头"""
     # 绘制背景
     time_head_bg = get_file("time_head_bg").resize(time_head_bg_size)
     # 绘制开始，结束时间 文字居中绘制
@@ -247,17 +248,17 @@ def get_time_head_bg(time_head_bg_size, date_time, start_time, end_time):
     return time_head_bg
 
 
-# 是否存在祭典   祭典的结构需要遍历判断
 def have_festival(_festivals):
+    """是否存在祭典   祭典的结构需要遍历判断"""
     for v in _festivals:
         if v["festMatchSetting"] is not None:
             return True
     return False
 
 
-# 现在是否是祭典
 def now_is_festival(_festivals):
-    now = datetime.datetime.now()
+    """现在是否是祭典"""
+    now = get_time_now_china()
     for v in _festivals:
         if v["festMatchSetting"] is not None:
             # 如果祭典有参数 且现在时间位于这个区间
@@ -370,8 +371,8 @@ def get_stage_card(
     return image_background
 
 
-# 绘制一排武器
 def get_weapon_card(weapon: [WeaponData], weapon_card_bg_size, rgb, font_color):
+    """绘制一排武器"""
     # 单张武器背景
     weapon_bg_size = (150, 230)
     # 主武器，副武器，大招
@@ -448,8 +449,8 @@ def get_weapon_card(weapon: [WeaponData], weapon_card_bg_size, rgb, font_color):
     return weapon_card_bg
 
 
-# 绘制 活动地图卡片
 def get_event_card(event, event_card_bg_size):
+    """绘制 活动地图卡片"""
     # 背景
     event_card_bg = get_file("filleted_corner").resize(event_card_bg_size).convert("RGBA")
     # 调整透明度
@@ -508,7 +509,7 @@ def get_event_card(event, event_card_bg_size):
         ]
         draw_grid_transverse_line(drawer, transverse_line_pos_list, fill="white", width=3, gap=25)
         # 绘制 时间状态 文字
-        now = datetime.datetime.now()
+        now = get_time_now_china()
         if time_converter(st) > now:
             text = "未开始"
             text_color = (243, 254, 176)
@@ -530,8 +531,8 @@ def get_event_card(event, event_card_bg_size):
     return event_card_bg
 
 
-# 绘制 祭典组别卡片
 def get_festival_team_card(festival, card_bg_size: tuple, teams_list: []):
+    """绘制 祭典组别卡片"""
     group_img_size = (1000, 390)
     rectangle_h = 100
     # 取背景rgb颜色
@@ -602,8 +603,8 @@ def get_festival_team_card(festival, card_bg_size: tuple, teams_list: []):
     return team_bg
 
 
-# 绘制 祭典结算卡片
 def get_festival_result_card(card_bg_size: tuple, teams_list: []):
+    """绘制 祭典结算卡片"""
     # 背景颜色取获胜队伍的rgb颜色
     for k, v in enumerate(teams_list):
         if v["result"]["isWinner"]:
@@ -671,8 +672,8 @@ def get_festival_result_card(card_bg_size: tuple, teams_list: []):
     return result_bg
 
 
-# 绘制 祭典条目结算卡片
 def get_festival_result_item_card(card_bg_size: tuple, teams_list: [dict], item_index: int):
+    """绘制 祭典条目结算卡片"""
     bg_rgb = dict_bg_rgb["祭典结算项目卡片"]
     item_card = Image.new("RGBA", card_bg_size, bg_rgb)
     item_card = circle_corner(item_card, radii=30)
@@ -714,8 +715,8 @@ def get_festival_result_item_card(card_bg_size: tuple, teams_list: [dict], item_
     return item_card
 
 
-# 绘制 活动地图描述卡片
 def get_event_desc_card(cht_event_data, event_desc_card_bg_size):
+    """绘制 活动地图描述卡片"""
     # 背景
     event_desc_card_bg = get_file("filleted_corner").resize(event_desc_card_bg_size).convert("RGBA")
     # 调整透明度
@@ -736,24 +737,24 @@ def get_event_desc_card(cht_event_data, event_desc_card_bg_size):
     return event_desc_card_bg
 
 
-# 画虚线 竖线
 def draw_grid_vertical_line(draw, pos_list, fill, width, gap):
+    """画虚线 竖线"""
     x_begin, y_begin = pos_list[0]
     x_end, y_end = pos_list[1]
     for y in range(y_begin, y_end, gap):
         draw.line([(x_begin, y), (x_begin, y + gap / 2)], fill=fill, width=width)
 
 
-# 画虚线 横线
 def draw_grid_transverse_line(draw, pos_list, fill, width, gap):
+    """画虚线 横线"""
     x_begin, y_begin = pos_list[0]
     x_end, y_end = pos_list[1]
     for x in range(x_begin, x_end, gap):
         draw.line([(x, y_begin), (x + gap / 2, y_begin)], fill=fill, width=width)
 
 
-# 改变图片不透明度  值为0-100
 def change_image_alpha(image, transparency):
+    """改变图片不透明度  值为0-100"""
     image = image.convert("RGBA")
     alpha = image.split()[-1]
     alpha = alpha.point(lambda p: p * transparency // 100)

@@ -150,7 +150,7 @@ async def history(bot: Bot, event: Event):
             _type = 'fest'
 
     msg = get_history_msg(event.get_user_id(), _type=_type)
-    await bot_send(bot, event, msg, parse_mode='Markdown')
+    await bot_send(bot, event, msg, parse_mode='Markdown', image_width=1000)
 
 
 @on_command("friend_code", aliases={'fc'}, block=True).handle()

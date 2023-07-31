@@ -8,8 +8,8 @@ weapon_url = "https://splatoonwiki.org/wiki/List_of_weapons_in_Splatoon_3"
 base_url = "https://splatoonwiki.org/wiki"
 
 
-# 爬取wiki数据 来重载武器数据，包括：武器图片，副武器图片，大招图片，武器配置信息
 async def reload_weapon_info():
+    """爬取wiki数据 来重载武器数据，包括：武器图片，副武器图片，大招图片，武器配置信息"""
     global weapon_url
     response = await async_http_get(weapon_url)
     soup = BeautifulSoup(response.text, "html.parser")
@@ -78,8 +78,8 @@ async def reload_weapon_info():
     return True
 
 
-# 网页爬取图片信息
 async def get_image_info(imageInfo: ImageInfo):
+    """网页爬取图片信息"""
     global base_url
     url = base_url + "/File:S3_Weapon_{}_{}.png".format(imageInfo.source_type, imageInfo.name.replace(" ", "_"))
     response = await async_http_get(url)
@@ -88,8 +88,8 @@ async def get_image_info(imageInfo: ImageInfo):
     await push_weapon_images(imageInfo)
 
 
-# 向数据库新增 武器图片 二进制文件
 async def push_weapon_images(img: ImageInfo):
+    """向数据库新增 武器图片 二进制文件"""
     res = imageDB.get_weapon_image(img.name, img.source_type)
     if not res:
         image_data = await get_file_url(img.url)
@@ -102,8 +102,8 @@ async def push_weapon_images(img: ImageInfo):
             )
 
 
-# 从网页读获取图片
 async def get_file_url(url):
+    """从网页读获取图片"""
     data = await async_http_get(url).content
     return data
 

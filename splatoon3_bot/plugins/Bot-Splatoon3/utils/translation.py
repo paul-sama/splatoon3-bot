@@ -12,8 +12,8 @@ trans_eng_res_save_ymd: str
 weapon_image_type = ["Main", "Sub", "Special", "Class", "Father_Class"]
 
 
-# 取中文 翻译数据
 def get_trans_cht_data():
+    """取中文 翻译数据"""
     global trans_res
     global trans_res_save_ymd
     if trans_res is None or check_expire_trans(trans_res_save_ymd):
@@ -27,8 +27,8 @@ def get_trans_cht_data():
         return trans_res
 
 
-# 取英文 文本数据
 def get_trans_eng_data():
+    """取英文 文本数据"""
     global trans_eng_res
     global trans_eng_res_save_ymd
     if trans_eng_res is None or check_expire_trans(trans_eng_res_save_ymd):
@@ -42,8 +42,8 @@ def get_trans_eng_data():
         return trans_eng_res
 
 
-# 装备由英文名翻译为中文
 def weapons_trans_eng_to_cht(eng_name):
+    """装备由英文名翻译为中文"""
     # 获取两组语言数据
     cht_data = get_trans_cht_data()
     eng_data = get_trans_eng_data()
@@ -62,16 +62,16 @@ def weapons_trans_eng_to_cht(eng_name):
     return zht_name
 
 
-# 校验过期翻译 记录每日ymd，不同则为false，使其每日刷新一次
 def check_expire_trans(_trans_res_save_ymd):
+    """校验过期翻译 记录每日ymd，不同则为false，使其每日刷新一次"""
     now_ymd = get_time_ymd()
     if now_ymd != _trans_res_save_ymd:
         return True
     return False
 
 
-# 获取地图翻译名
 def get_trans_stage(_id: str):
+    """获取地图翻译名"""
     global trans_res
     zh_name = trans_res["stages"][_id]["name"]
     if zh_name == "":
@@ -79,8 +79,8 @@ def get_trans_stage(_id: str):
     return zh_name
 
 
-# 获取武器翻译名
 def get_trans_weapon(_id: str):
+    """获取武器翻译名"""
     global trans_res
     zh_name = trans_res["weapons"][_id]["name"]
     if zh_name == "":
@@ -88,15 +88,15 @@ def get_trans_weapon(_id: str):
     return zh_name
 
 
-# 用现有翻译字典对游戏模式进行翻译
 def get_trans_game_mode(text):
+    """用现有翻译字典对游戏模式进行翻译"""
     if text in dict_rule_reverse_trans:
         return dict_rule_reverse_trans[text]
     return text
 
 
-# 装备 语义词转换,并返回语义词类别
 def weapon_semantic_word_conversion(word: str):
+    """装备 语义词转换,并返回语义词类别"""
     word_type = weapon_image_type
     # 判断这个语义词是属于 类别，副武器，大招
     if word in dict_weapon_class:
@@ -158,18 +158,28 @@ dict_keyword_replace = {
     ",": "",
     "，": "",
     "涂涂": "涂地",
+    "涂": "涂地",
     "组排": "开放",
     "排排": "开放",
+    "排": "开放",
     "pp": "开放",
     "PP": "开放",
+    "P": "开放",
+    "p": "开放",
     "单排": "挑战",
     "真格": "挑战",
+    "x": "X段",
+    "X": "X段",
     "x段": "X段",
     "X赛": "X段",
     "x赛": "X段",
     "推塔": "塔楼",
+    "塔": "塔楼",
     "抢塔": "塔楼",
     "抢鱼": "鱼虎",
+    "鱼": "鱼虎",
+    "蛤": "蛤蜊",
+    "区": "区域",
     "鲑鱼跑": "工",
     "团队打工": "工",
     "打工": "工",
@@ -177,6 +187,7 @@ dict_keyword_replace = {
     "bigrun": "工",
     "help": "帮助",
     "衣服": "装备",
+    "祭奠": "祭典",
 }
 
 # 规范翻译字典 装备 主武器名称

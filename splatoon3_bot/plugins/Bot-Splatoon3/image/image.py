@@ -10,8 +10,8 @@ from .image_processer_tools import image_to_base64
 time_format_ymdh = "%Y-%m-%dT%H"
 
 
-# 取 打工图片
 def get_coop_stages_image(*args):
+    """取 打工图片"""
     _all = args[0]
     # 获取数据
     stage, weapon, time, boss, mode = get_coop_info(_all)
@@ -20,8 +20,8 @@ def get_coop_stages_image(*args):
     return image
 
 
-# 取 对战图片
 def get_stages_image(*args):
+    """取 对战图片"""
     num_list = args[0]
     contest_match = args[1]
     rule_match = args[2]
@@ -35,15 +35,15 @@ def get_stages_image(*args):
     return image
 
 
-# 取 祭典图片
 def get_festival_image(*args):
+    """取 祭典图片"""
     festivals = get_festivals_data()["JP"]["data"]["festRecords"]["nodes"]
     image = get_festival(festivals)
     return image
 
 
-# 取 活动图片
 def get_events_image(*args):
+    """取 活动图片"""
     schedule = get_schedule_data()
     events = schedule["eventSchedules"]["nodes"]
     # 如果存在活动
@@ -54,14 +54,14 @@ def get_events_image(*args):
         return None
 
 
-# 取 帮助图片
 def get_help_image(*args):
+    """取 帮助图片"""
     image = get_help()
     return image
 
 
-# 取 新版 随机武器图片 不能进行缓存，这个需要实时生成
 def get_random_weapon_image(*args):
+    """取 新版 随机武器图片 不能进行缓存，这个需要实时生成"""
     plain_text = args[0]
     # 判断是否有空格
     list_weapon = []
@@ -101,8 +101,8 @@ def get_random_weapon_image(*args):
     return image
 
 
-# 测试武器数据库能否取到数据
 def get_weapon_info_test():
+    """测试武器数据库能否取到数据"""
     res = imageDB.get_weapon_info("", "", "", "")
     if res is not None:
         return True
@@ -110,10 +110,10 @@ def get_weapon_info_test():
         return False
 
 
-# 计算过期时间 字符串 精确度为 ymdh
 def get_expire_time():
+    """计算过期时间 字符串 精确度为 ymdh"""
     # 计算过期时间
-    time_now = datetime.datetime.now()
+    time_now = get_time_now_china()
     time_now_h = time_now.hour
     # 计算过期时间字符串
     # 判断当前小时是奇数还是偶数
@@ -127,8 +127,8 @@ def get_expire_time():
     return expire_time_str
 
 
-# 向数据库新增或读取图片二进制  缓存图片
 def get_save_temp_image(trigger_word, func, *args):
+    """向数据库新增或读取图片二进制  缓存图片"""
     res = imageDB.get_img_temp(trigger_word)
     image: bytes
     if not res:
@@ -146,7 +146,7 @@ def get_save_temp_image(trigger_word, func, *args):
         image_data = res.get("image_data")
         # 判断时间是否过期
         expire_time = datetime.datetime.strptime(image_expire_time, time_format_ymdh)
-        time_now = datetime.datetime.now()
+        time_now = get_time_now_china()
         if time_now >= expire_time:
             # 重新生成图片并写入
             image_data = func(*args)
@@ -160,8 +160,8 @@ def get_save_temp_image(trigger_word, func, *args):
             return image_to_base64(Image.open(io.BytesIO(image_data)))
 
 
-# 写出武器翻译字典
 def write_weapon_trans_dict():
+    """写出武器翻译字典"""
     weapon_trans_dict = imageDB.get_all_weapon_info()
     if len(weapon_trans_dict) > 0:
         with open("weapon_trans_dict.txt", "a") as file:

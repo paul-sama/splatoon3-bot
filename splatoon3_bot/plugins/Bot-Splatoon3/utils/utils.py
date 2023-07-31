@@ -2,6 +2,8 @@ import datetime
 import cfscrape
 import httpx
 from httpx import Response
+
+from .dataClass import TimeUtil
 from ..config import plugin_config
 
 proxy_address = plugin_config.splatoon3_proxy_address
@@ -22,8 +24,8 @@ dict_bg_rgb = {
 }
 
 
-# cf get
 def cf_http_get(url: str):
+    """cf get"""
     global proxy_address
     # 实例化一个create_scraper对象
     scraper = cfscrape.create_scraper()
@@ -42,8 +44,8 @@ def cf_http_get(url: str):
     return res
 
 
-# async http_get
 async def async_http_get(url: str) -> Response:
+    """async http_get"""
     if proxy_address:
         proxies = "http://{}".format(proxy_address)
         async with httpx.AsyncClient(proxies=proxies) as client:
@@ -55,8 +57,8 @@ async def async_http_get(url: str) -> Response:
             return response
 
 
-# http_get
 def http_get(url: str) -> Response:
+    """http_get"""
     if proxy_address:
         proxies = "http://{}".format(proxy_address)
         response = httpx.get(url, proxies=proxies, timeout=5.0)
@@ -68,47 +70,60 @@ def http_get(url: str) -> Response:
 # 初始化配置参数，将配置参数传递到utils模块
 
 
-# 批量替换文本
 def multiple_replace(text, _dict):
+    """批量替换文本"""
     for key in _dict:
         text = text.replace(key, _dict[key])
     return text
 
 
-# 时间转换 年-月-日 时:分:秒
 def time_converter(time_str) -> datetime:
+    """时间转换 年-月-日 时:分:秒"""
     # convert time to UTC+8
     dt = datetime.datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%SZ")
     dt += datetime.timedelta(hours=8)
     return dt
 
 
-# 时间转换 月-日
 def time_converter_yd(time_str):
+    """时间转换 月-日"""
     dt = time_converter(time_str)
     return datetime.datetime.strftime(dt, "%m.%d")
 
 
-# 时间转换 时:分
 def time_converter_hm(time_str):
+    """时间转换 时:分"""
     dt = time_converter(time_str)
     return datetime.datetime.strftime(dt, "%H:%M")
 
 
-# 时间转换 月-日 时:分
 def time_converter_mdhm(time_str):
+    """时间转换 月-日 时:分"""
     dt = time_converter(time_str)
     return datetime.datetime.strftime(dt, "%m-%d %H:%M")
 
 
-# 时间转换 周几，如周一
 def time_converter_weekday(time_str):
+    """时间转换 周几，如周一"""
     dt = time_converter(time_str)
     weekday = dt.weekday()
     return weekday
 
 
-# 获取年月日
 def get_time_ymd():
-    dt = datetime.datetime.now().strftime("%Y-%m-%d")
+    """获取年月日"""
+    dt = get_time_now_china().strftime("%Y-%m-%d")
     return dt
+
+
+def get_time_y() -> int:
+    """获取年"""
+    year = get_time_now_china().year
+    return year
+
+
+def get_time_now_china() -> datetime.datetime:
+    # 获取utc时间，然后转东8区时间
+    utc_now = datetime.datetime.utcnow()
+    convert_now = TimeUtil.convert_timezone(utc_now, "+8")
+    return convert_now

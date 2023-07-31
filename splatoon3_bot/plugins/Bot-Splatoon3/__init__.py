@@ -1,43 +1,43 @@
-from typing import Union
-
+from typing import Union, Tuple
 from nonebot.adapters.telegram.message import File
-from nonebot.params import Depends, CommandArg
+from nonebot.params import RegexGroup
 from nonebot.plugin import PluginMetadata
-from nonebot.rule import is_type
-from nonebot import on_regex
-
-# onebot11 协议
-from nonebot.adapters.onebot.v11 import Bot as V11Bot
-from nonebot.adapters.onebot.v11 import MessageEvent as V11MEvent
-from nonebot.adapters.onebot.v11 import Message as V11Msg
-from nonebot.adapters.onebot.v11 import MessageSegment as V11MsgSeg
-from nonebot.adapters.onebot.v11 import PrivateMessageEvent as V11PMEvent
-from nonebot.adapters.onebot.v11 import GroupMessageEvent as V11GMEvent
-
-# onebot12 协议
-from nonebot.adapters.onebot.v12 import Bot as V12Bot
-from nonebot.adapters.onebot.v12 import MessageEvent as V12MEvent
-from nonebot.adapters.onebot.v12 import Message as V12Msg
-from nonebot.adapters.onebot.v12 import MessageSegment as V12MsgSeg
-from nonebot.adapters.onebot.v12 import ChannelMessageEvent as V12CMEvent
-from nonebot.adapters.onebot.v12 import PrivateMessageEvent as V12PMEvent
-from nonebot.adapters.onebot.v12 import GroupMessageEvent as V12GMEvent
-
-# telegram 协议
-from nonebot.adapters.telegram import Bot as TgBot
-from nonebot.adapters.telegram.event import MessageEvent as TgEvent
-from nonebot.adapters.telegram import MessageSegment as TgMsgSeg
-
+from nonebot import on_regex, Bot, params
 from nonebot.matcher import Matcher
 from nonebot.permission import SUPERUSER
+from nonebot.typing import T_State
+
+# onebot11 协议
+from nonebot.adapters.onebot.v11 import Bot as V11_Bot
+from nonebot.adapters.onebot.v11 import MessageEvent as V11_ME
+from nonebot.adapters.onebot.v11 import Message as V11_Msg
+from nonebot.adapters.onebot.v11 import MessageSegment as V11_MsgSeg
+from nonebot.adapters.onebot.v11 import PrivateMessageEvent as V11_PME
+from nonebot.adapters.onebot.v11 import GroupMessageEvent as V11_GME
+
+# onebot12 协议
+from nonebot.adapters.onebot.v12 import Bot as V12_Bot
+from nonebot.adapters.onebot.v12 import MessageEvent as V12_ME
+from nonebot.adapters.onebot.v12 import Message as V12_Msg
+from nonebot.adapters.onebot.v12 import MessageSegment as V12_MsgSeg
+from nonebot.adapters.onebot.v12 import ChannelMessageEvent as V12_CME
+from nonebot.adapters.onebot.v12 import PrivateMessageEvent as V12_PME
+from nonebot.adapters.onebot.v12 import GroupMessageEvent as V12_GME
+
+# telegram 协议
+from nonebot.adapters.telegram import Bot as Tg_Bot
+from nonebot.adapters.telegram.event import MessageEvent as Tg_ME
+from nonebot.adapters.telegram import MessageSegment as Tg_MsgSeg
+from nonebot.adapters.telegram.event import PrivateMessageEvent as Tg_PME
+from nonebot.adapters.telegram.event import GroupMessageEvent as Tg_GME
+from nonebot.adapters.telegram.event import ChannelPostEvent as Tg_CME
 
 from .image.image import *
 from .image import image_to_base64
-from .config import plugin_config
+from .config import plugin_config, driver
 from .utils import dict_keyword_replace, multiple_replace
 from .data import get_screenshot, reload_weapon_info, imageDB
 
-# zhenxunbot框架当前使用的是2.0.0rc1版本nb2，对以下插件元信息缺少参数，需要删除usage后面的字段，才能正常加载
 __plugin_meta__ = PluginMetadata(
     name="nonebot-plugin-splatoon3",
     description="一个基于nonebot2框架的splatoon3游戏日程查询插件",
@@ -49,28 +49,77 @@ __plugin_meta__ = PluginMetadata(
     supported_adapters={"~onebot.v11", "~onebot.v12", "~telegram"},
 )
 
-# 初始化插件时清空合成图片缓存表
-imageDB.clean_image_temp()
+BOT = Union[V11_Bot, V12_Bot, Tg_Bot]
+MESSAGE_EVENT = Union[V11_ME, V12_ME, Tg_ME]
 
-# v11判断是否允许私聊
-if plugin_config.splatoon3_permit_private:
-    msg_rule = is_type(V11PMEvent, V11GMEvent, V12PMEvent, V12GMEvent, V12CMEvent, TgEvent)
-else:
-    msg_rule = is_type(V11GMEvent, V12GMEvent, V12CMEvent, TgEvent)
+
+async def _permission_check(bot: BOT, event: MESSAGE_EVENT, state: T_State):
+    """检查消息来源权限"""
+    # 私聊
+    uid: Union[int, str] = 114514
+    gid: Union[int, str] = 114514
+    cid: Union[int, str] = 114514
+    if isinstance(event, (V11_PME, V12_PME, Tg_PME)):
+        if plugin_config.splatoon3_permit_private:
+            if isinstance(event, Tg_PME):
+                uid = event.from_.id
+            elif isinstance(event, (V11_PME, V12_PME)):
+                uid = event.user_id
+            state["_uid_"] = uid
+            return plugin_config.verify_permission(uid)
+        else:
+            return False
+    # 群聊
+    elif isinstance(event, (V11_GME, V12_GME, Tg_GME)):
+        if isinstance(event, Tg_GME):
+            gid = event.chat.id
+            uid = event.get_user_id()
+        elif isinstance(event, (V11_GME, V12_GME)):
+            gid = event.group_id
+            uid = event.user_id
+        state["_gid_"] = gid
+        if plugin_config.verify_permission(gid):
+            # 再判断触发者是否有权限
+            return plugin_config.verify_permission(uid)
+        else:
+            return False
+
+    # 频道
+    elif isinstance(event, (V12_CME, Tg_CME)):
+        if plugin_config.splatoon3_permit_channel:
+            if isinstance(event, Tg_CME):
+                cid = event.chat.id
+                uid = event.get_user_id()
+            elif isinstance(event, V12_CME):
+                cid = event.channel_id
+                uid = event.user_id
+            state["_cid_"] = cid
+            if plugin_config.verify_permission(cid):
+                # 再判断触发者是否有权限
+                return plugin_config.verify_permission(uid)
+            else:
+                return False
+        else:
+            return False
+    # 其他
+    else:
+        state["_uid_"] = "unkown"
+        return plugin_config.splatoon3_permit_unkown_src
+
 
 # 图 触发器  正则内需要涵盖所有的同义词
-matcher_stage_group = on_regex("^[\\/.,，。]?[0-9]*(全部)?下*图+$", priority=9, block=True, rule=msg_rule)
+matcher_stage_group = on_regex("^[\\/.,，。]?[0-9]*(全部)?下*图+$", priority=9, block=True, rule=_permission_check)
 
 
 # 图 触发器处理 二次判断正则前，已经进行了同义词替换，二次正则只需要判断最终词
 @matcher_stage_group.handle()
 async def _(
-    bot: Union[V11Bot, V12Bot, TgBot],
+    bot: BOT,
     matcher: Matcher,
-    event: Union[V11MEvent, V12MEvent, TgEvent],
+    event: MESSAGE_EVENT,
 ):
     plain_text = event.get_message().extract_plain_text().strip()
-    # 触发关键词  同义文本替换
+    # 触发关键词  替换.。\/ 等前缀触发词
     plain_text = multiple_replace(plain_text, dict_keyword_replace)
     logger.info("同义文本替换后触发词为:" + plain_text + "\n")
     # 判断是否满足进一步正则
@@ -117,107 +166,90 @@ async def _(
 
 # 对战 触发器
 matcher_stage = on_regex(
-    "^[\\/.,，。]?[0-9]*(全部)?下*(区域|推塔|抢塔|塔楼|蛤蜊|抢鱼|鱼虎|涂地|涂涂|挑战|单排|真格|开放|组排|排排|pp|PP|X段|x段|X赛|x赛){1,2}$",
+    "^[\\/.,，。]?"
+    "([0-9]*)"
+    "(全部)?"
+    "(下*)"
+    "(区域|区|推塔|抢塔|塔楼|塔|蛤蜊|蛤|抢鱼|鱼虎|鱼|涂地|涂涂|涂|挑战|单排|真格|开放|组排|排排|排|pp|p|PP|P|X段|x段|X赛|x赛|X|x)"
+    "(区域|区|推塔|抢塔|塔楼|塔|蛤蜊|蛤|抢鱼|鱼虎|鱼|涂地|涂涂|涂|挑战|单排|真格|开放|组排|排排|排|pp|p|PP|P|X段|x段|X赛|x赛|X|x)?$",
     priority=9,
     block=True,
-    rule=msg_rule,
+    rule=_permission_check,
 )
 
 
 # 对战 触发器处理
 @matcher_stage.handle()
-async def _(
-    bot: Union[V11Bot, V12Bot, TgBot],
-    matcher: Matcher,
-    event: Union[V11MEvent, V12MEvent, TgEvent],
-):
-    plain_text = event.get_message().extract_plain_text().strip()
-    # 触发关键词  同义文本替换  同时替换.。\/ 等前缀触发词
-    plain_text = multiple_replace(plain_text, dict_keyword_replace)
-    logger.info("同义文本替换后触发词为:" + plain_text)
-    # 判断是否满足进一步正则
-    num_list = []
+async def _(bot: BOT, matcher: Matcher, event: MESSAGE_EVENT, re_tuple: Tuple = RegexGroup()):
+    re_list = []
+    for k, v in enumerate(re_tuple):
+        # 遍历正则匹配字典进行替换文本
+        re_list.append(dict_keyword_replace.get(v, v))
+    logger.info("同义文本替换后触发词组为:" + json.dumps(re_list, ensure_ascii=False))
+    # 输出格式为 ["", null, "下下", "挑战", null] 涉及?匹配且没有提供该值的是null
+    # 索引 全部 下 匹配1 匹配2
+
+    plain_text = ""
+    if re_list[0]:
+        plain_text = plain_text + re_list[0]
+    elif re_list[1]:
+        plain_text = plain_text + re_list[1]
+    elif re_list[2]:
+        plain_text = plain_text + re_list[2]
+    if re_list[3]:
+        plain_text = plain_text + re_list[3]
+    if re_list[4]:
+        plain_text = plain_text + re_list[4]
+
+    num_list: list = []
     contest_match = None
     rule_match = None
-    flag_match = False
-    # 双筛选  规则  竞赛
-    if re.search("^[0-9]*(全部)?(区域|蛤蜊|塔楼|鱼虎)(挑战|开放|X段)$", plain_text):
-        if "全部" in plain_text:
-            num_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        else:
-            if len(plain_text) == 2:
-                num_list = [0]
-            else:
-                num_list = list(set([int(x) for x in plain_text[:-4]]))
-                num_list.sort()
-        stage_mode = plain_text[-4:]
-        contest_match = stage_mode[2:]
-        rule_match = stage_mode[:2]
-        flag_match = True
-    # 双筛选  竞赛  规则
-    elif re.search("^[0-9]*(全部)?(挑战|开放|X段)(区域|蛤蜊|塔楼|鱼虎)$", plain_text):
-        if "全部" in plain_text:
-            num_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        else:
-            if len(plain_text) == 2:
-                num_list = [0]
-            else:
-                num_list = list(set([int(x) for x in plain_text[:-4]]))
-                num_list.sort()
-        stage_mode = plain_text[-4:]
-        contest_match = stage_mode[:2]
-        rule_match = stage_mode[2:]
-        flag_match = True
-    # 单筛选  竞赛
-    elif re.search("^[0-9]*(全部)?(挑战|开放|X段|涂地)$", plain_text):
-        if "全部" in plain_text:
-            num_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        else:
-            if len(plain_text) == 2:
-                num_list = [0]
-            else:
-                num_list = list(set([int(x) for x in plain_text[:-2]]))
-                num_list.sort()
+    flag_match = True
 
-        stage_mode = plain_text[-2:]
-        contest_match = stage_mode
-        rule_match = None
-        flag_match = True
-    # 单筛选 下 竞赛
-    elif re.search("^下{1,11}(挑战|开放|X段|涂地)$", plain_text):
-        re_list = re.findall("下", plain_text)
-        lens = len(re_list)
-        # set是为了去除重复数字
+    # 计算索引列表
+    if re_list[1]:
+        # 含有全部
+        num_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    elif re_list[2]:
+        # 含有 下
+        splits = re_list[2].split("下")  # 返回拆分数组
+        lens = len(splits) - 1  # 返回拆分次数-1
         num_list = list(set([lens]))
         num_list.sort()
-        stage_mode = plain_text[-2:]
-        contest_match = stage_mode
-        rule_match = None
-        flag_match = True
-    # 单筛选  模式
-    elif re.search("^[0-9]*(全部)?(区域|蛤蜊|塔楼|鱼虎)$", plain_text):
-        if "全部" in plain_text:
-            num_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    elif re_list[0]:
+        # 数字索引
+        num_list = list(set([int(x) for x in re_list[0]]))
+        num_list.sort()
+    else:
+        num_list = [0]
+
+    # 计算比赛和规则
+    if re_list[3] and re_list[4]:
+        # 双匹配
+        # 判断第一个参数是比赛还是规则
+        if re_list[3] in dict_contest_trans and re_list[4] in dict_rule_trans:
+            # 比赛 规则
+            contest_match = re_list[3]
+            rule_match = re_list[4]
+        elif re_list[3] in dict_rule_trans and re_list[4] in dict_contest_trans:
+            # 规则 比赛
+            contest_match = re_list[4]
+            rule_match = re_list[3]
         else:
-            if len(plain_text) == 2:
-                num_list = [0]
-            else:
-                num_list = list(set([int(x) for x in plain_text[:-2]]))
-                num_list.sort()
-        stage_mode = plain_text[-2:]
-        rule_match = stage_mode
-        contest_match = None
-        flag_match = True
-    # 单筛选 下 模式
-    elif re.search("^下{1,11}(区域|蛤蜊|塔楼|鱼虎)$", plain_text):
-        re_list = re.findall("下", plain_text)
-        lens = len(re_list)
-        # set是为了去除重复数字
-        num_list = list(set([lens]))
-        stage_mode = plain_text[-2:]
-        contest_match = None
-        rule_match = stage_mode
-        flag_match = True
+            flag_match = False
+    elif re_list[3] and (not re_list[4]):
+        # 单匹配
+        # 判断参数是比赛还是规则
+        if re_list[3] in dict_contest_trans:
+            # 比赛
+            contest_match = re_list[3]
+        elif re_list[3] in dict_rule_trans:
+            # 规则
+            rule_match = re_list[3]
+        else:
+            flag_match = False
+    else:
+        flag_match = False
 
     # 如果有匹配
     if flag_match:
@@ -230,18 +262,20 @@ async def _(
 
 
 # 打工 触发器
-matcher_coop = on_regex("^[\\/.,，。]?(全部)?(工|打工|coop_schedule|鲑鱼跑|bigrun|big run|团队打工)$", priority=9, block=True, rule=msg_rule)
+matcher_coop = on_regex(
+    "^[\\/.,，。]?(全部)?(工|打工|coop_schedule|鲑鱼跑|bigrun|big run|团队打工)$", priority=9, block=True, rule=_permission_check
+)
 
 
 # 打工 触发器处理
 @matcher_coop.handle()
 async def _(
-    bot: Union[V11Bot, V12Bot, TgBot],
+    bot: BOT,
     matcher: Matcher,
-    event: Union[V11MEvent, V12MEvent, TgEvent],
+    event: MESSAGE_EVENT,
 ):
     plain_text = event.get_message().extract_plain_text().strip()
-    # 触发关键词  同义文本替换
+    # 触发关键词  替换.。\/ 等前缀触发词
     plain_text = multiple_replace(plain_text, dict_keyword_replace)
     logger.info("同义文本替换后触发词为:" + plain_text + "\n")
     # 判断是否满足进一步正则
@@ -257,18 +291,18 @@ async def _(
 
 
 # 其他命令 触发器
-matcher_else = on_regex("^[\\/.,，。]?(帮助|help|(随机武器).*|装备|衣服|祭典|活动)$", priority=9, block=True, rule=msg_rule)
+matcher_else = on_regex("^[\\/.,，。]?(帮助|help|(随机武器).*|装备|衣服|祭典|活动)$", priority=9, block=True, rule=_permission_check)
 
 
 # 其他命令 触发器处理
 @matcher_else.handle()
 async def _(
-    bot: Union[V11Bot, V12Bot, TgBot],
+    bot: BOT,
     matcher: Matcher,
-    event: Union[V11MEvent, V12MEvent, TgEvent],
+    event: MESSAGE_EVENT,
 ):
     plain_text = event.get_message().extract_plain_text().strip()
-    # 触发关键词  同义文本替换
+    # 触发关键词  替换.。\/ 等前缀触发词
     plain_text = multiple_replace(plain_text, dict_keyword_replace)
     logger.info("同义文本替换后触发词为:" + plain_text + "\n")
     # 判断是否满足进一步正则
@@ -325,9 +359,9 @@ matcher_admin = on_regex("^[\\/.,，。]?(重载武器数据|更新武器数据|
 # 重载武器数据，包括：武器图片，副武器图片，大招图片，武器配置信息
 @matcher_admin.handle()
 async def _(
-    bot: Union[V11Bot, V12Bot, TgBot],
+    bot: BOT,
     matcher: Matcher,
-    event: Union[V11MEvent, V12MEvent, TgEvent],
+    event: MESSAGE_EVENT,
 ):
     plain_text = event.get_message().extract_plain_text().strip()
     err_msg = "执行失败，错误日志为: "
@@ -352,26 +386,26 @@ async def _(
         await send_msg(bot, event, matcher, msg)
 
 
-# 公用send_msg
-async def send_msg(bot: Union[V11Bot, V12Bot, TgBot], event: Union[V11MEvent, V12MEvent, TgEvent], matcher, msg):
+async def send_msg(bot: BOT, event: MESSAGE_EVENT, matcher, msg):
+    """公用send_msg"""
     # 指定回复模式
     reply_mode = plugin_config.splatoon3_reply_mode
-    if isinstance(bot, V11Bot):
-        await bot.send(event, message=V11MsgSeg.text(msg), reply_message=reply_mode)
-    elif isinstance(bot, V12Bot):
-        await bot.send(event, message=V12MsgSeg.text(msg), reply_message=reply_mode)
-    elif isinstance(bot, TgBot):
+    if isinstance(bot, V11_Bot):
+        await bot.send(event, message=V11_MsgSeg.text(msg), reply_message=reply_mode)
+    elif isinstance(bot, V12_Bot):
+        await bot.send(event, message=V12_MsgSeg.text(msg), reply_message=reply_mode)
+    elif isinstance(bot, Tg_Bot):
         if reply_mode:
             await bot.send(event, msg, reply_to_message_id=event.dict().get("message_id"))
         else:
             await bot.send(event, msg)
 
 
-# 公用send_img
-async def send_img(bot: Union[V11Bot, V12Bot, TgBot], event: Union[V11MEvent, V12MEvent, TgEvent], matcher, img):
+async def send_img(bot: BOT, event: MESSAGE_EVENT, matcher, img):
+    """公用send_img"""
     # 指定回复模式
     reply_mode = plugin_config.splatoon3_reply_mode
-    if isinstance(bot, V11Bot):
+    if isinstance(bot, V11_Bot):
 
         try:
             group_id = (event.dict() or {}).get('group_id')
@@ -381,30 +415,41 @@ async def send_img(bot: Union[V11Bot, V12Bot, TgBot], event: Union[V11MEvent, V1
                 stop_group_id_lst = model_get_map_group_id_list()
                 logger.debug(f'stop_group_id_lst: {stop_group_id_lst}')
                 if stop_group_id_lst and group_id in stop_group_id_lst:
-                    logger.debug(f'qq群 {group_id} 停用该查地图插件')
+                    logger.info(f'qq群 {group_id} 已停用该查地图插件')
                     return
-
         except Exception as e:
             logger.warning(f"QQBot bot map error: {e}")
 
         try:
-            await bot.send(event, message=V11MsgSeg.image(file=img, cache=False), reply_message=reply_mode)
+            await bot.send(event, message=V11_MsgSeg.image(file=img, cache=False), reply_message=reply_mode)
         except Exception as e:
             logger.warning(f"QQBot send error: {e}")
-    elif isinstance(bot, V12Bot):
+    elif isinstance(bot, V12_Bot):
         # onebot12协议需要先上传文件获取file_id后才能发送图片
         try:
             resp = await bot.upload_file(type="data", name="temp.png", data=img)
             file_id = resp["file_id"]
             if file_id:
-                await bot.send(event, message=V12MsgSeg.image(file_id=file_id), reply_message=reply_mode)
+                await bot.send(event, message=V12_MsgSeg.image(file_id=file_id), reply_message=reply_mode)
         except Exception as e:
             logger.warning(f"QQBot send error: {e}")
-    elif isinstance(bot, TgBot):
+    elif isinstance(bot, Tg_Bot):
         if reply_mode:
             await bot.send(event, File.photo(img), reply_to_message_id=event.dict().get("message_id"))
         else:
             await bot.send(event, File.photo(img))
+
+
+@driver.on_startup
+async def startup():
+    # 初始化插件时清空合成图片缓存表
+    imageDB.clean_image_temp()
+
+
+@driver.on_shutdown
+async def shutdown():
+    # 关闭数据库
+    imageDB.close()
 
 
 # # 根据不同onebot协议消息路径分别取用户id
