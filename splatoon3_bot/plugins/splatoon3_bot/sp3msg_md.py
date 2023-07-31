@@ -174,10 +174,11 @@ def coop_row(p, mask=False):
         weapon = 'w|'
 
     p_name = p['player']['name']
+    img_str = f'<img height="18" src="{p["player"]["uniform"]["image"]["url"]}"/>'
     if mask:
         p_name = f'~~我是马赛克~~'
     return f"|x{p['defeatEnemyCount']}| {p['goldenDeliverCount']} |{p['rescuedCount']}d |" \
-           f"{p['deliverCount']} |{p['rescueCount']}r| {p_name}|{weapon}|"
+           f"{p['deliverCount']} |{p['rescueCount']}r| {img_str} {p_name}|{weapon}|"
 
 
 def get_coop_msg(coop_info, data, **kwargs):
@@ -224,8 +225,11 @@ def get_coop_msg(coop_info, data, **kwargs):
 
     king_smell = detail.get("smellMeter")
     king_str = f'{king_smell}/5' if king_smell else ''
+    h_grade = detail['afterGrade']['name'] if detail.get('afterGrade') else ''
+    h_point = detail['afterGradePoint'] or ''
+
     msg = f"""
-#### {detail['afterGrade']['name'] if detail.get('afterGrade') else ''} {detail['afterGradePoint'] or ''} {detail['dangerRate']:.0%} {'🎉 ' if win else ''}+{detail['jobPoint']}({c_point}p) {king_str}
+#### {h_grade} {h_point} {detail['dangerRate']:.0%} {'🎉 ' if win else ''}+{detail['jobPoint']}({c_point}p) {king_str}
 {wave_msg}
 
 #### {total_deliver_cnt}
@@ -245,6 +249,14 @@ def get_coop_msg(coop_info, data, **kwargs):
             nice = '√'
         img_str = f"<img height='18' src='{e['enemy']['image']['url']}'/>"
         msg += f"""|{e.get('teamDefeatCount') or ''} |{e['defeatCount'] or ''} |{e['popCount'] or ''} | {img_str} {(e.get('enemy') or {}).get('name') or ''} {nice}|\n"""
+
+    try:
+        date_play = dt.strptime(detail['playedTime'], '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=8)
+        str_time = date_play.strftime('%y-%m-%d %H:%M:%S')
+        msg += f"\n##### HKT {str_time}"
+    except Exception as e:
+        pass
+
     # logger.info(msg)
     return msg
 

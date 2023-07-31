@@ -14,7 +14,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '0.7.8'
+BOT_VERSION = '0.7.9'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -27,7 +27,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
             width = kwargs.get('image_width')
         # 打工
         if 'W1 ' in message and 'duration: ' not in message:
-            width = 550
+            width = 570
         img_data = await md_to_pic(message, width=width, css_path=f'{DIR_RESOURCE}/md.css')
 
     if kwargs.get('photo'):
