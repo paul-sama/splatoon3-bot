@@ -451,6 +451,8 @@ def get_cn_cp3_stat(_st):
         _st = '涂地'
     elif _st == 'ONLINE':
         _st = '在线'
+    elif 'LEAGUE' in _st:
+        _st = '活动'
     return _st
 
 
@@ -530,6 +532,7 @@ def get_ns_friends(splt):
         if (f.get('presence') or {}).get('state') != 'ONLINE' and f.get('isFavoriteFriend') is False:
             continue
         u_name = f.get('name') or ''
+        u_name = u_name.replace("|", "\|")
         img_str = f'''<img height="40" src="{f['imageUri']}"/>'''
         msg += f'|{u_name}|{img_str}'
         if (f.get('presence') or {}).get('state') == 'ONLINE':
@@ -539,6 +542,8 @@ def get_ns_friends(splt):
             _dict[_game_name] += 1
             if f['presence']['game'].get('totalPlayTime'):
                 msg += f"({int(f['presence']['game'].get('totalPlayTime')/60)}h)|"
+            else:
+                msg += '|'
             if f.get('name') in dict_sp3:
                 msg += f" {dict_sp3[f.get('name')]}|"
             else:

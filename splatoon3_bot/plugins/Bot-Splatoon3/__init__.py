@@ -156,6 +156,8 @@ async def _(
         flag_match = True
     # 如果有匹配
     if flag_match:
+        if len(num_list) >= 2:
+            await send_msg(bot, event, matcher, "开始努力作图，请稍等~")
         # 传递函数指针
         func = get_stages_image
         # 获取图片
@@ -253,6 +255,8 @@ async def _(bot: BOT, matcher: Matcher, event: MESSAGE_EVENT, re_tuple: Tuple = 
 
     # 如果有匹配
     if flag_match:
+        if len(num_list) >= 3:
+            await send_msg(bot, event, matcher, "开始努力作图，请稍等~")
         # 传递函数指针
         func = get_stages_image
         # 获取图片
@@ -391,6 +395,19 @@ async def send_msg(bot: BOT, event: MESSAGE_EVENT, matcher, msg):
     # 指定回复模式
     reply_mode = plugin_config.splatoon3_reply_mode
     if isinstance(bot, V11_Bot):
+        try:
+            group_id = (event.dict() or {}).get('group_id')
+            if group_id:
+                group_id = str(group_id)
+                from ..splatoon3_bot.db_sqlite import model_get_map_group_id_list
+                stop_group_id_lst = model_get_map_group_id_list()
+                logger.debug(f'stop_group_id_lst: {stop_group_id_lst}')
+                if stop_group_id_lst and group_id in stop_group_id_lst:
+                    logger.info(f'qq群 {group_id} 已停用该查地图插件')
+                    return
+        except Exception as e:
+            logger.warning(f"QQBot bot map error: {e}")
+
         await bot.send(event, message=V11_MsgSeg.text(msg), reply_message=reply_mode)
     elif isinstance(bot, V12_Bot):
         await bot.send(event, message=V12_MsgSeg.text(msg), reply_message=reply_mode)
