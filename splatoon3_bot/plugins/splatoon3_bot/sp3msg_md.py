@@ -161,6 +161,38 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
         str_time = ''
     msg += f"\n#### duration: {duration}s, {str_time}, {score} {b_process} {str_open_power_inline}"
 
+    succ = 0
+    if 'current_statics' in kwargs:
+        current_statics = kwargs['current_statics']
+        set_statics(current_statics=current_statics, judgement=judgement, point=point, battle_detail=battle_detail)
+        succ = current_statics['successive']
+
+    if abs(succ) >= 3:
+        if succ > 0:
+            msg += f', {succ}连胜'
+        else:
+            msg += f', {abs(succ)}连败'
+
+    dict_a = {'GOLD': '🏅️', 'SILVER': '🥈', 'BRONZE': '🥉'}
+    award_list = [f"{dict_a.get(a['rank'], '')}{a['name']}" for a in battle_detail['awards']]
+    msg += ('\n ' + ' '.join(award_list) + '\n')
+
+    # push mode
+    if 'current_statics' in kwargs:
+        current_statics = kwargs['current_statics']
+        total = current_statics.get('TOTAL') or 0
+        win = current_statics.get('WIN') or 0
+        lose = total - win
+        if total:
+            str_static = f'{win}-{lose}'
+            k = current_statics.get('K') or 0
+            a = current_statics.get('A') or 0
+            d = current_statics.get('D') or 0
+            if k or a or d:
+                str_static += f' {k}+{a}k/{d}d'
+            # 2-1 9+2k/8d
+            msg += f'\n#### {str_static}'
+
     return msg
 
 
