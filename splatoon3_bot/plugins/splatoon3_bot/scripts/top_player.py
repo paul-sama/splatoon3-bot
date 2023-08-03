@@ -27,14 +27,14 @@ def parse_x_row(n, top_type, x_type, top_id):
     write_top_player(row)
 
 
-def get_x_items(top_id, splt):
+async def get_x_items(top_id, splt):
     """获取X排行榜第一屏数据"""
     _d = utils.gen_graphql_body('d5e4924c05891208466fcba260d682e7', varname='id', varvalue=top_id)
-    res = splt._request(_d)
+    res = await splt._request(_d)
     return res
 
 
-def get_top_x(data_row, top_id, x_type, mode_hash, splt=None):
+async def get_top_x(data_row, top_id, x_type, mode_hash, splt=None):
     logger.info(f'get_top_x: {top_id}, {x_type}')
     res = data_row
     if not res:
@@ -55,7 +55,7 @@ def get_top_x(data_row, top_id, x_type, mode_hash, splt=None):
             "variables": {'cursor': cursor, 'first': 25, 'page': 1, 'id': top_id}
         }
         _d = json.dumps(_d)
-        _res = splt._request(_d)
+        _res = await splt._request(_d)
         for n in _res['data']['node'][f'xRanking{x_type}']['edges']:
             parse_x_row(n, top_type, x_type, top_id)
 
@@ -71,7 +71,7 @@ def get_top_x(data_row, top_id, x_type, mode_hash, splt=None):
             "variables": {'cursor': None, 'first': 25, 'page': page, 'id': top_id}
         }
         _d = json.dumps(_d)
-        _res = splt._request(_d)
+        _res = await splt._request(_d)
 
         for n in _res['data']['node'][f'xRanking{x_type}']['edges']:
             parse_x_row(n, top_type, x_type, top_id)
@@ -86,7 +86,7 @@ def get_top_x(data_row, top_id, x_type, mode_hash, splt=None):
                 "variables": {'cursor': cursor, 'first': 25, 'page': page, 'id': top_id}
             }
             _d = json.dumps(_d)
-            _res = splt._request(_d)
+            _res = await splt._request(_d)
             for n in _res['data']['node'][f'xRanking{x_type}']['edges']:
                 parse_x_row(n, top_type, x_type, top_id)
 
@@ -98,9 +98,9 @@ def get_top_x(data_row, top_id, x_type, mode_hash, splt=None):
                 break
 
 
-def parse_x_data(top_id, splt):
+async def parse_x_data(top_id, splt):
     clean_top_player(top_id)
-    first_rows = get_x_items(top_id, splt)
+    first_rows = await get_x_items(top_id, splt)
 
     for _t in (
             ('Ar', '6de3895bd90b5fa5220b5e9355981e16'),
@@ -110,14 +110,14 @@ def parse_x_data(top_id, splt):
     ):
         x_type, hash_mode = _t
         try:
-            get_top_x(first_rows, top_id, x_type, hash_mode, splt)
+            await get_top_x(first_rows, top_id, x_type, hash_mode, splt)
         except Exception as ex:
             logger.exception(f'get_top_x error: {top_id}, {x_type}, {ex}')
             continue
         time.sleep(5)
 
 
-def get_x_player():
+async def get_x_player():
     logger.info(f'get x player start')
     s = time.time()
 
@@ -136,6 +136,6 @@ def get_x_player():
     # for top_id in ('WFJhbmtpbmdTZWFzb24tcDoy', 'WFJhbmtpbmdTZWFzb24tYToy'):  # season-2
     # for top_id in ('WFJhbmtpbmdTZWFzb24tcDoz', 'WFJhbmtpbmdTZWFzb24tYToz'):  #season-3
     for top_id in ('WFJhbmtpbmdTZWFzb24tcDo0', 'WFJhbmtpbmdTZWFzb24tYTo0'):  #season-4
-        parse_x_data(top_id, splt)
+        await parse_x_data(top_id, splt)
 
     logger.info(f'get x player end. {time.time() - s}')

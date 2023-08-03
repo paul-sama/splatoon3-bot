@@ -14,7 +14,7 @@ from ..utils import DIR_RESOURCE, os
 logger = logger.bind(report=True)
 
 
-def set_user_info(user_id, skip_report=False):
+async def set_user_info(user_id, skip_report=False):
     u = get_user(user_id=user_id)
     if not u or not u.session_token:
         return
@@ -22,11 +22,11 @@ def set_user_info(user_id, skip_report=False):
     user_id = u.user_id_qq or u.user_id_tg or u.id
     splt = Splatoon(user_id, u.session_token)
 
-    splt.test_page()
+    await splt.test_page()
     time.sleep(1)
-    splt.test_page()
+    await splt.test_page()
 
-    res_summary = splt.get_summary()
+    res_summary = await splt.get_summary()
     history = res_summary['data']['playHistory']
     player = res_summary['data']['currentPlayer']
     first_play_time = history['gameStartTime']
@@ -34,13 +34,13 @@ def set_user_info(user_id, skip_report=False):
     nickname = player['name']
 
     # get last battle
-    res_battle = splt.get_recent_battles(skip_check_token=True)
+    res_battle = await splt.get_recent_battles(skip_check_token=True)
     b_info = res_battle['data']['latestBattleHistories']['historyGroups']['nodes'][0]['historyDetails']['nodes'][0]
     battle_t = base64.b64decode(b_info['id']).decode('utf-8').split('_')[0].split(':')[-1]
     player_code = base64.b64decode(b_info['player']['id']).decode('utf-8').split(':')[-1][2:]
 
     # get last coop
-    res_coop = splt.get_coops()
+    res_coop = await splt.get_coops()
     coop_id = res_coop['data']['coopResult']['historyGroups']['nodes'][0]['historyDetails']['nodes'][0]['id']
     coop_t = base64.b64decode(coop_id).decode('utf-8').split('_')[0].split(':')[-1]
 
@@ -58,7 +58,7 @@ def set_user_info(user_id, skip_report=False):
     set_db_info(**_dict)
 
     if last_play_time.date() >= (dt.utcnow() - timedelta(days=1)).date() and skip_report is False:
-        set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code)
+        await set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code)
 
         if not u.report_type:
             return
@@ -75,8 +75,8 @@ def set_user_info(user_id, skip_report=False):
                 f.write(msg)
 
 
-def set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code):
-    all_data = splt.get_all_res()
+async def set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code):
+    all_data = await splt.get_all_res()
 
     history = res_summary['data']['playHistory']
     player = res_summary['data']['currentPlayer']
@@ -144,7 +144,7 @@ def set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code)
     model_add_report(**_report)
 
 
-def update_user_info():
+async def update_user_info():
     t = dt.utcnow()
     users = get_all_user()
     for u in users:
@@ -152,7 +152,7 @@ def update_user_info():
             continue
 
         try:
-            set_user_info(u.id)
+            await set_user_info(u.id)
         except Exception as e:
             logger.warning(e)
             logger.warning(f'update_user_info_failed: {u.id}, {u.user_id_qq or u.user_id_tg}, {u.username}')
@@ -160,7 +160,7 @@ def update_user_info():
     logger.info(f'update_user_info_end: {dt.utcnow() - t}')
 
 
-def update_user_info_first():
+async def update_user_info_first():
     t = dt.utcnow()
     users = get_all_user()
     for u in users:
@@ -168,7 +168,7 @@ def update_user_info_first():
             continue
 
         try:
-            set_user_info(u.id, skip_report=True)
+            await set_user_info(u.id, skip_report=True)
         except Exception as e:
             logger.warning(e)
             logger.warning(f'update_user_info_first_failed: {u.id}, {u.user_id_qq or u.user_id_tg}, {u.username}')

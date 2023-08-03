@@ -62,12 +62,12 @@ def get_row_text_image(p, mask=False):
     return t
 
 
-def get_battle_msg(b_info, battle_detail, **kwargs):
+async def get_battle_msg(b_info, battle_detail, **kwargs):
     logger.debug(f'get_battle_msg kwargs: {kwargs}')
     mode = b_info['vsMode']['mode']
     judgement = b_info['judgement']
     battle_detail = battle_detail['data']['vsHistoryDetail'] or {}
-    title, point, b_process = get_battle_msg_title(b_info, battle_detail, **kwargs)
+    title, point, b_process = await get_battle_msg_title(b_info, battle_detail, **kwargs)
 
     get_image = kwargs.get('get_image')
     mask = kwargs.get('mask')
@@ -130,7 +130,7 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
                 prev_id = (battle_detail.get('previousHistoryDetail') or {}).get('id')
                 splt = kwargs.get('splt')
                 if splt:
-                    prev_info = splt.get_battle_detail(prev_id)
+                    prev_info = await splt.get_battle_detail(prev_id)
                     if prev_info:
                         prev_detail = prev_info.get('data', {}).get('vsHistoryDetail') or {}
                         prev_open_power = ((prev_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
@@ -293,7 +293,7 @@ def get_coop_msg(coop_info, data, **kwargs):
     return msg
 
 
-def get_history(splt, _type='open'):
+async def get_history(splt, _type='open'):
     logger.info(f'get history {_type}')
     data = None
     if _type == 'event':
@@ -303,7 +303,7 @@ def get_history(splt, _type='open'):
     elif _type == 'fest':
         data = utils.gen_graphql_body(utils.translate_rid['RegularBattleHistoriesQuery'])
 
-    res = splt._request(data)
+    res = await splt._request(data)
     if not res:
         return 'No battle found!'
 
@@ -325,7 +325,7 @@ def get_history(splt, _type='open'):
         event_h = new_event_h
 
     for g_node in event_h:
-        msg += get_group_node_msg(g_node, splt, _type)
+        msg += await get_group_node_msg(g_node, splt, _type)
         break
 
     # logger.info(msg)
@@ -334,7 +334,7 @@ def get_history(splt, _type='open'):
     return msg
 
 
-def get_group_node_msg(g_node, splt, _type):
+async def get_group_node_msg(g_node, splt, _type):
     msg = ''
     battle_lst = []
     if _type == 'event':
@@ -386,7 +386,7 @@ def get_group_node_msg(g_node, splt, _type):
         _id = b['id']
         dict_p[_id] = {}
         _data = utils.gen_graphql_body(utils.translate_rid['VsHistoryDetailQuery'], varname='vsResultId', varvalue=_id)
-        battle_detail = splt._request(_data)
+        battle_detail = await splt._request(_data)
         if not battle_detail:
             continue
         cur_power = 0
@@ -488,9 +488,9 @@ def get_cn_cp3_stat(_st):
     return _st
 
 
-def get_friends(splt, lang='zh-CN'):
+async def get_friends(splt, lang='zh-CN'):
     data = utils.gen_graphql_body(utils.translate_rid['FriendsList'])
-    res = splt._request(data)
+    res = await splt._request(data)
     if not res:
         return '网络错误，请稍后再试.'
 
@@ -523,7 +523,7 @@ def get_friends(splt, lang='zh-CN'):
     return msg
 
 
-def get_ns_friends(splt):
+async def get_ns_friends(splt):
     res = splt.app_ns_friend_list() or {}
     res = res.get('result')
     if not res:
@@ -543,7 +543,7 @@ def get_ns_friends(splt):
     _dict_sp3 = defaultdict(int)
     if get_sp3:
         data = utils.gen_graphql_body(utils.translate_rid['FriendsList'])
-        sp3_res = splt._request(data) or []
+        sp3_res = await splt._request(data) or []
         if sp3_res:
             for f in sp3_res['data']['friends']['nodes']:
                 if f.get('onlineState') == 'OFFLINE':

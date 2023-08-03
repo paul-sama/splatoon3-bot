@@ -41,17 +41,17 @@ user_info: {user.user_info}
     return msg
 
 
-def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
+async def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
     try:
         if is_battle:
-            battle_detail = splt.get_battle_detail(_id)
+            battle_detail = await splt.get_battle_detail(_id)
             kwargs['splt'] = splt
             if kwargs.get('get_pic') or kwargs.get('get_image'):
-                msg = get_battle_msg_md(extra_info, battle_detail, **kwargs)
+                msg = await get_battle_msg_md(extra_info, battle_detail, **kwargs)
             else:
-                msg = get_battle_msg(extra_info, battle_detail, **kwargs)
+                msg = await get_battle_msg(extra_info, battle_detail, **kwargs)
         else:
-            coo_detail = splt.get_coop_detail(_id)
+            coo_detail = await splt.get_coop_detail(_id)
             if kwargs.get('get_pic') or kwargs.get('get_image'):
                 msg = get_coop_msg_md(extra_info, coo_detail, **kwargs)
             else:
@@ -68,7 +68,7 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
     splt = Splatoon(user.id, user.session_token)
 
     # get last battle
-    res = splt.get_recent_battles(skip_check_token=True if for_push else False)
+    res = await splt.get_recent_battles(skip_check_token=True if for_push else False)
     if not res:
         return f'`网络错误，请稍后再试.`'
 
@@ -81,7 +81,7 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
         # played battle in 1 minute, no need to get coop
         res = None
     else:
-        res = splt.get_coops()
+        res = await splt.get_coops()
     try:
         coop_info = {
             'coop_point': res['data']['coopResult']['pointCard']['regularPoint'],
@@ -115,8 +115,8 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
             user_info = json.loads(user.user_info)
         except:
             user_info = {}
-        msg = get_last_msg(splt, battle_id, b_info, battle_show_type=user_info.get('battle_show_type'), get_pic=get_pic,
-                           get_image=get_image, mask=mask)
+        msg = await get_last_msg(splt, battle_id, b_info, battle_show_type=user_info.get('battle_show_type'),
+                                 get_pic=get_pic, get_image=get_image, mask=mask)
         return msg
     else:
         if for_push:
@@ -131,16 +131,16 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
                 pic = None
             return pic
 
-        msg = get_last_msg(splt, coop_id, coop_info, False, get_pic=get_pic, get_image=get_image, mask=mask)
+        msg = await get_last_msg(splt, coop_id, coop_info, False, get_pic=get_pic, get_image=get_image, mask=mask)
         return msg
 
 
-def get_me(user_id):
+async def get_me(user_id):
     user = get_user(user_id=user_id)
     splt = Splatoon(user.id, user.session_token)
-    res = splt.get_summary()
-    all_res = splt.get_all_res()
-    coop = splt.get_coop_summary()
+    res = await splt.get_summary()
+    all_res = await splt.get_all_res()
+    coop = await splt.get_coop_summary()
     try:
         msg = get_summary(res, all_res, coop, lang=user.acc_loc)
     except Exception as e:
@@ -203,7 +203,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
     db_user_info['battle_id'] = battle_id
     get_or_set_user(user_id=user.id, user_info=json.dumps(db_user_info), push_cnt=0)
     splt = Splatoon(user_id, user.session_token)
-    msg = get_last_msg(splt, battle_id, _info, is_battle, battle_show_type=db_user_info.get('battle_show_type'), **data)
+    msg = await get_last_msg(splt, battle_id, _info, is_battle, battle_show_type=db_user_info.get('battle_show_type'), **data)
 
     image_width = 630 if get_image else 1000
     r = await bot_send(bot, event, message=msg, parse_mode='Markdown', reply_to_message_id=None, image_width=image_width)
@@ -221,13 +221,13 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
         data['last_group_msg_id'] = message_id
 
 
-def get_friends_msg(user_id, text=False):
+async def get_friends_msg(user_id, text=False):
     user = get_or_set_user(user_id=user_id)
     splt = Splatoon(user_id, user.session_token)
     if text:
-        msg = get_friends(splt, lang=user.acc_loc)
+        msg = await get_friends(splt, lang=user.acc_loc)
     else:
-        msg = get_friends_md(splt, lang=user.acc_loc)
+        msg = await get_friends_md(splt, lang=user.acc_loc)
     logger.debug(msg)
     return msg
 
@@ -240,7 +240,7 @@ def get_ns_friends_msg(user_id):
     return msg
 
 
-def get_x_top_msg():
+async def get_x_top_msg():
     users = get_all_user()
     splt = None
     for u in users:
@@ -248,15 +248,15 @@ def get_x_top_msg():
             user_id = u.user_id_qq or u.user_id_tg or u.id
             splt = Splatoon(user_id, u.session_token)
             break
-    msg = get_x_top(splt)
+    msg = await get_x_top(splt)
     logger.debug(msg)
     return msg
 
 
-def get_my_schedule_msg(user_id):
+async def get_my_schedule_msg(user_id):
     user = get_or_set_user(user_id=user_id)
     splt = Splatoon(user_id, user.session_token)
-    msg = get_my_schedule(splt)
+    msg = await get_my_schedule(splt)
     # logger.debug(msg)
     return msg
 
@@ -265,7 +265,7 @@ async def get_screenshot_image(user_id, key=None):
 
     user = get_or_set_user(user_id=user_id)
     splt = Splatoon(user_id, user.session_token)
-    splt.test_page()
+    await splt.test_page()
     user = get_or_set_user(user_id=user_id)
     try:
         img = await get_app_screenshot(user.gtoken, key)
@@ -275,10 +275,10 @@ async def get_screenshot_image(user_id, key=None):
     return img
 
 
-def get_history_msg(user_id, _type='open'):
+async def get_history_msg(user_id, _type='open'):
     user = get_or_set_user(user_id=user_id)
     splt = Splatoon(user_id, user.session_token)
-    msg = get_history(splt, _type=_type)
+    msg = await get_history(splt, _type=_type)
     logger.debug(msg)
     return msg
 

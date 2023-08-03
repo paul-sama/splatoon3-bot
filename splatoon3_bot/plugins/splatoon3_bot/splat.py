@@ -1,5 +1,6 @@
 import time
 import httpx
+from httpx import AsyncClient
 from loguru import logger
 from .db_sqlite import get_or_set_user
 from .sp3iksm import A_VERSION, APP_USER_AGENT
@@ -32,7 +33,7 @@ class Splatoon:
         self.nso_app_version = ''
         self.req_session = ''
 
-    def get_bullet(self, web_service_token, web_view_ver, app_user_agent, user_lang, user_country):
+    async def get_bullet(self, web_service_token, web_view_ver, app_user_agent, user_lang, user_country):
         """Returns a bulletToken."""
 
         app_head = {
@@ -50,7 +51,8 @@ class Splatoon:
             '_gtoken': web_service_token  # X-GameWebToken
         }
         url = f"{API_URL}/api/bullet_tokens"
-        r = httpx.post(url, headers=app_head, cookies=app_cookies)
+        async with AsyncClient() as client:
+            r = await client.post(url, headers=app_head, cookies=app_cookies)
         try:
             return r.json()['bulletToken']
         except Exception as e:
@@ -58,7 +60,7 @@ class Splatoon:
             logger.warning(r.text)
             raise Exception(f'{self.user_id} get_bullet error. {r.status_code}')
 
-    def set_gtoken_and_bullettoken(self):
+    async def set_gtoken_and_bullettoken(self):
         try:
             new_gtoken, acc_name, acc_lang, acc_country = iksm.get_gtoken(F_GEN_URL, self.session_token, A_VERSION)
         except Exception as e:
@@ -66,7 +68,7 @@ class Splatoon:
             logger.warning('try another url')
             new_gtoken, acc_name, acc_lang, acc_country = iksm.get_gtoken(F_GEN_URL_2, self.session_token, A_VERSION)
 
-        new_bullettoken = self.get_bullet(new_gtoken, WEB_VIEW_VERSION, APP_USER_AGENT, acc_lang, acc_country)
+        new_bullettoken = await self.get_bullet(new_gtoken, WEB_VIEW_VERSION, APP_USER_AGENT, acc_lang, acc_country)
         self.gtoken = new_gtoken
         self.bullet_token = new_bullettoken
         logger.info(f'{self.user_id} tokens updated.')
@@ -90,66 +92,68 @@ class Splatoon:
         }
         return graphql_head
 
-    def test_page(self):
+    async def test_page(self):
         data = utils.gen_graphql_body(utils.translate_rid["HomeQuery"])
         # t = time.time()
-        test = httpx.post(utils.GRAPHQL_URL, data=data,
-                             headers=self.headbutt(self.bullet_token), cookies=dict(_gtoken=self.gtoken))
+        async with AsyncClient() as client:
+            test = await client.post(utils.GRAPHQL_URL, data=data,
+                                     headers=self.headbutt(self.bullet_token), cookies=dict(_gtoken=self.gtoken))
         # logger.debug(f'_test_page: {time.time() - t:.3f}s')
         if test.status_code != 200:
             logger.info(f'{self.user_id} tokens expired.')
-            self.set_gtoken_and_bullettoken()
+            await self.set_gtoken_and_bullettoken()
 
-    def _request(self, data, skip_check_token=False):
+    async def _request(self, data, skip_check_token=False):
         try:
             if not skip_check_token:
-                self.test_page()
+                await self.test_page()
             t = time.time()
-            res = httpx.post(utils.GRAPHQL_URL, data=data,
-                                headers=self.headbutt(self.bullet_token), cookies=dict(_gtoken=self.gtoken))
+            async with AsyncClient() as client:
+                res = await client.post(utils.GRAPHQL_URL, data=data,
+                                        headers=self.headbutt(self.bullet_token), cookies=dict(_gtoken=self.gtoken))
             logger.debug(f'_request: {time.time() - t:.3f}s')
             if res.status_code != 200:
                 logger.info(f'{self.user_id} tokens expired.')
-                self.set_gtoken_and_bullettoken()
+                await self.set_gtoken_and_bullettoken()
             else:
                 return res.json()
         except Exception as e:
-            logger.warning(f'_request error: {e}')
+            logger.exception(f'_request error: {e}')
             return None
 
-    def get_recent_battles(self, skip_check_token=False):
+    async def get_recent_battles(self, skip_check_token=False):
         data = utils.gen_graphql_body(utils.translate_rid['LatestBattleHistoriesQuery'])
-        res = self._request(data, skip_check_token)
+        res = await self._request(data, skip_check_token)
         return res
 
-    def get_battle_detail(self, battle_id, skip_check_token=True):
+    async def get_battle_detail(self, battle_id, skip_check_token=True):
         data = utils.gen_graphql_body(utils.translate_rid['VsHistoryDetailQuery'], "vsResultId", battle_id)
-        res = self._request(data, skip_check_token)
+        res = await self._request(data, skip_check_token)
         return res
 
-    def get_coops(self, skip_check_token=True):
+    async def get_coops(self, skip_check_token=True):
         data = utils.gen_graphql_body(utils.translate_rid['CoopHistoryQuery'])
-        res = self._request(data, skip_check_token)
+        res = await self._request(data, skip_check_token)
         return res
 
-    def get_coop_detail(self, battle_id, skip_check_token=True):
+    async def get_coop_detail(self, battle_id, skip_check_token=True):
         data = utils.gen_graphql_body(utils.translate_rid['CoopHistoryDetailQuery'], "coopHistoryDetailId", battle_id)
-        res = self._request(data, skip_check_token)
+        res = await self._request(data, skip_check_token)
         return res
 
-    def get_summary(self, skip_check_token=False):
+    async def get_summary(self, skip_check_token=False):
         data = utils.gen_graphql_body(utils.translate_rid['HistorySummary'])
-        res = self._request(data, skip_check_token)
+        res = await self._request(data, skip_check_token)
         return res
 
-    def get_all_res(self, skip_check_token=True):
+    async def get_all_res(self, skip_check_token=True):
         data = utils.gen_graphql_body(utils.translate_rid['TotalQuery'])
-        res = self._request(data, skip_check_token)
+        res = await self._request(data, skip_check_token)
         return res
 
-    def get_coop_summary(self, skip_check_token=True):
+    async def get_coop_summary(self, skip_check_token=True):
         data = utils.gen_graphql_body(utils.translate_rid['CoopHistoryQuery'])
-        res = self._request(data, skip_check_token)
+        res = await self._request(data, skip_check_token)
         return res
 
     @staticmethod

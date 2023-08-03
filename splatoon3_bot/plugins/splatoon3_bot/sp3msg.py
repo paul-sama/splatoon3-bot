@@ -109,7 +109,7 @@ def get_row_text(p, battle_show_type='1'):
     return t
 
 
-def get_point(**kwargs):
+async def get_point(**kwargs):
     try:
         point = 0
         b_process = ''
@@ -128,7 +128,7 @@ def get_point(**kwargs):
             # challenge
             splt = kwargs.get('splt')
             data = utils.gen_graphql_body(utils.translate_rid['BankaraBattleHistoriesQuery'])
-            bankara_info = splt._request(data, skip_check_token=True)
+            bankara_info = await splt._request(data, skip_check_token=True)
             hg = bankara_info['data']['bankaraBattleHistories']['historyGroups']['nodes'][0]
             point = hg['bankaraMatchChallenge']['earnedUdemaePoint'] or 0
             bankara_detail = hg['bankaraMatchChallenge'] or {}
@@ -151,7 +151,7 @@ def get_point(**kwargs):
     return point, b_process
 
 
-def get_x_power(**kwargs):
+async def get_x_power(**kwargs):
     try:
         power = ''
         x_process = ''
@@ -160,7 +160,7 @@ def get_x_power(**kwargs):
         b_info = kwargs['b_info']
 
         data = utils.gen_graphql_body(utils.translate_rid['XBattleHistoriesQuery'])
-        res = splt._request(data, skip_check_token=True)
+        res = await splt._request(data, skip_check_token=True)
         hg = res['data']['xBattleHistories']['historyGroups']['nodes'][0]
         x_info = hg['xMatchMeasurement']
         if x_info['state'] == 'COMPLETED':
@@ -216,7 +216,7 @@ def set_statics(**kwargs):
         logger.exception(e)
 
 
-def get_battle_msg_title(b_info, battle_detail, **kwargs):
+async def get_battle_msg_title(b_info, battle_detail, **kwargs):
     mode = b_info['vsMode']['mode']
     rule = b_info['vsRule']['name']
     judgement = b_info['judgement']
@@ -226,9 +226,9 @@ def get_battle_msg_title(b_info, battle_detail, **kwargs):
     point = 0
     b_process = ''
     if bankara_match:
-        point, b_process = get_point(bankara_match=bankara_match, b_info=b_info, splt=kwargs.get('splt'))
+        point, b_process = await get_point(bankara_match=bankara_match, b_info=b_info, splt=kwargs.get('splt'))
     elif battle_detail.get('xMatch'):
-        point, b_process = get_x_power(battle_detail=battle_detail, b_info=b_info, splt=kwargs.get('splt'))
+        point, b_process = await get_x_power(battle_detail=battle_detail, b_info=b_info, splt=kwargs.get('splt'))
 
     str_point = ''
     if bankara_match:
@@ -267,11 +267,11 @@ def get_battle_msg_title(b_info, battle_detail, **kwargs):
     return title, point, b_process
 
 
-def get_battle_msg(b_info, battle_detail, **kwargs):
+async def get_battle_msg(b_info, battle_detail, **kwargs):
     mode = b_info['vsMode']['mode']
     judgement = b_info['judgement']
     battle_detail = battle_detail['data']['vsHistoryDetail'] or {}
-    title, point, b_process = get_battle_msg_title(b_info, battle_detail, **kwargs)
+    title, point, b_process = await get_battle_msg_title(b_info, battle_detail, **kwargs)
 
     # title
     msg = title
@@ -320,7 +320,7 @@ def get_battle_msg(b_info, battle_detail, **kwargs):
                 prev_id = (battle_detail.get('previousHistoryDetail') or {}).get('id')
                 splt = kwargs.get('splt')
                 if splt:
-                    prev_info = splt.get_battle_detail(prev_id)
+                    prev_info = await splt.get_battle_detail(prev_id)
                     if prev_info:
                         prev_detail = prev_info.get('data', {}).get('vsHistoryDetail') or {}
                         prev_open_power = ((prev_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
@@ -613,9 +613,9 @@ def wide_chars(s):
     return sum(unicodedata.east_asian_width(x) in ('F', 'W') for x in s)
 
 
-def get_friends(splt, lang='zh-CN'):
+async def get_friends(splt, lang='zh-CN'):
     data = utils.gen_graphql_body(utils.translate_rid['FriendsList'])
-    res = splt._request(data)
+    res = await splt._request(data)
     if not res:
         return 'No friends found!'
 
@@ -638,8 +638,8 @@ def get_friends(splt, lang='zh-CN'):
     return msg
 
 
-def get_ns_friends(splt):
-    res = splt.app_ns_friend_list() or {}
+async def get_ns_friends(splt):
+    res = await splt.app_ns_friend_list() or {}
     res = res.get('result')
     if not res:
         logger.info(res)
@@ -658,7 +658,7 @@ def get_ns_friends(splt):
     _dict_sp3 = defaultdict(int)
     if get_sp3:
         data = utils.gen_graphql_body(utils.translate_rid['FriendsList'])
-        sp3_res = splt._request(data) or []
+        sp3_res = await splt._request(data) or []
         if sp3_res:
             for f in sp3_res['data']['friends']['nodes']:
                 if f.get('onlineState') == 'OFFLINE':
@@ -729,10 +729,10 @@ def region_x_top(x):
 '''
 
 
-def get_x_top(splt):
+async def get_x_top(splt):
     sha = utils.translate_rid['XRankingQuery']
-    res = splt._request(utils.gen_graphql_body(sha, varname='region', varvalue='PACIFIC'))
-    res_a = splt._request(utils.gen_graphql_body(sha, varname='region', varvalue='ATLANTIC'), skip_check_token=True)
+    res = await splt._request(utils.gen_graphql_body(sha, varname='region', varvalue='PACIFIC'))
+    res_a = await splt._request(utils.gen_graphql_body(sha, varname='region', varvalue='ATLANTIC'), skip_check_token=True)
     if not res:
         return 'No X found!'
 
@@ -762,16 +762,16 @@ def get_r(_dict, stage_id, rule_id):
     return f'{rate:.2%}'
 
 
-def get_my_schedule(splt):
+async def get_my_schedule(splt):
     data = utils.gen_graphql_body(utils.translate_rid['ScheduleQuery'])
-    res = splt._request(data)
+    res = await splt._request(data)
     if not res:
         return 'No schedule found!'
     if res['data'].get('currentFest'):
         return 'Fest schedule found!'
 
     data = utils.gen_graphql_body(utils.translate_rid['StageRecordsQuery'])
-    stage_record = splt._request(data, skip_check_token=True)
+    stage_record = await splt._request(data, skip_check_token=True)
 
     dict_stage = {}
     for s in stage_record['data']['stageRecords']['nodes']:

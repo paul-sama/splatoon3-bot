@@ -33,16 +33,16 @@ async def cron_job(bot: Bot):
         return
 
     # parse x rank player at 2:40
-    if now.hour == 2 and now.minute == 40 and isinstance(bot, TGBot):
-        threading.Thread(target=get_x_player).start()
+    if now.hour == 2 and now.minute == 40:
+        threading.Thread(target=asyncio.run, args=(get_x_player(),)).start()
 
     # update gtoken at 7:00
-    if now.hour == 7 and now.minute == 00 and isinstance(bot, TGBot):
-        threading.Thread(target=update_user_info_first).start()
+    if now.hour == 7 and now.minute == 0:
+        threading.Thread(target=asyncio.run, args=(update_user_info_first(),)).start()
 
     # report at 8:00
     if now.hour == 8 and now.minute == 0:
-        threading.Thread(target=update_user_info).start()
+        threading.Thread(target=asyncio.run, args=(update_user_info(),)).start()
 
     # run every 2 hours
     if not (now.hour % 2 == 0 and now.minute == 3):

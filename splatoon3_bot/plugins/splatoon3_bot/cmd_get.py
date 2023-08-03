@@ -86,7 +86,7 @@ async def last(bot: Bot, event: Event):
 async def me(bot: Bot, event: Event):
     user_id = event.get_user_id()
 
-    msg = get_me(user_id)
+    msg = await get_me(user_id)
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
@@ -98,27 +98,27 @@ async def friends(bot: Bot, event: Event):
     if 't' in cmd_lst or 'text' in cmd_lst:
         get_text = True
 
-    msg = get_friends_msg(event.get_user_id(), get_text)
+    msg = await get_friends_msg(event.get_user_id(), get_text)
     await bot_send(bot, event, msg, parse_mode='Markdown', image_width=600)
 
 
 @on_command("ns_friends", aliases={'ns'}, block=True).handle()
 @check_session_handler
 async def ns_friends(bot: Bot, event: Event):
-    msg = get_ns_friends_msg(event.get_user_id())
+    msg = await get_ns_friends_msg(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown', image_width=680)
 
 
 @on_command("x_top", block=True).handle()
 async def x_top(bot: Bot, event: Event):
-    msg = get_x_top_msg()
+    msg = await get_x_top_msg()
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
 @on_command("my_schedule", block=True).handle()
 @check_session_handler
 async def schedule(bot: Bot, event: Event):
-    msg = get_my_schedule_msg(event.get_user_id())
+    msg = await get_my_schedule_msg(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
@@ -150,12 +150,12 @@ async def history(bot: Bot, event: Event):
         if 'f' in cmd_lst or 'fest' in cmd_lst:
             _type = 'fest'
 
-    msg = get_history_msg(event.get_user_id(), _type=_type)
+    msg = await get_history_msg(event.get_user_id(), _type=_type)
     await bot_send(bot, event, msg, parse_mode='Markdown', image_width=1000)
 
 
 @on_command("friend_code", aliases={'fc'}, block=True).handle()
 @check_session_handler
-async def ns_friends(bot: Bot, event: Event):
+async def friend_code(bot: Bot, event: Event):
     msg = get_friend_code(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown')

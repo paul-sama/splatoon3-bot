@@ -116,7 +116,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
     await bot.send(event, message=msg)
 
     user = get_user(user_id=user_id)
-    Splatoon(user.id, user.session_token).set_gtoken_and_bullettoken()
+    await Splatoon(user.id, user.session_token).set_gtoken_and_bullettoken()
 
 
 @on_command("clear_db_info", block=True).handle()
