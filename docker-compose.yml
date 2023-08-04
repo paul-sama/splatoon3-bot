@@ -1,0 +1,12 @@
+version: "3"
+services:
+  splatoon3_bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: splatoon3_bot
+    restart: unless-stopped
+    volumes:
+      - ./.env:/app/.env
+    ports:
+      - 8080:8080
