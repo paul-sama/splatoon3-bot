@@ -177,6 +177,20 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
     award_list = [f"{dict_a.get(a['rank'], '')}{a['name']}" for a in battle_detail['awards']]
     msg += ('\n ' + ' '.join(award_list) + '\n')
 
+    if mode == 'FEST':
+        msg += f'\n#### {b_info["player"]["festGrade"]}'
+        fest_power = (battle_detail.get('festMatch') or {}).get('myFestPower')
+        if fest_power:
+            current_statics = {}
+            if 'current_statics' in kwargs:
+                current_statics = kwargs['current_statics']
+            last_power = current_statics.get('fest_power') or 0
+            current_statics['fest_power'] = fest_power
+            if last_power:
+                diff = fest_power - last_power
+                msg += f' {diff:+.2f}'
+            msg += f'({fest_power:.2f})'
+
     # push mode
     if 'current_statics' in kwargs:
         current_statics = kwargs['current_statics']
@@ -485,6 +499,12 @@ def get_cn_cp3_stat(_st):
         _st = '在线'
     elif 'LEAGUE' in _st:
         _st = '活动'
+    elif 'FEST)O' in _st:
+        _st = '祭典开放'
+    elif 'FEST)C' in _st:
+        _st = '祭典挑战'
+    elif 'FEST)3' in _st:
+        _st = '祭典三色'
     return _st
 
 
