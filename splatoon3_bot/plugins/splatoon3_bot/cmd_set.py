@@ -61,7 +61,8 @@ Log in, right click the "Select this account" button, copy the link address, and
         elif isinstance(bot, QQBot):
             msg = f'''在浏览器中打开下面链接
 {url}
-登陆后，右键账号后面的红色按钮，复制链接后发送给机器人 (两分钟内有效)
+登陆后，右键账号后面的红色按钮 (手机端长按复制)
+复制链接后发送给机器人 (两分钟内有效！)
 '''
         if msg:
             await bot.send(event, message=msg)
@@ -105,8 +106,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 /set_api_key - set stat.ink api_key, bot will sync your data to stat.ink
 """
     if isinstance(bot, QQBot):
-        msg = f"""
-登录成功！机器人现在可以从App获取你的数据。
+        msg = f"""登录成功！机器人现在可以从App获取你的数据。
 /me - 显示你的信息
 /friends - 显示在线的喷喷好友
 /last - 显示最近一场对战或打工
@@ -206,7 +206,7 @@ async def set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     if isinstance(bot, QQBot):
         msg = '''请从 https://stat.ink/profile 页面复制你的 api_key 后发送给机器人
 注册stat.ink账号后，无需其他操作，设置api_key
-机器人会每2小时检查并同步你的数据到 stat.ink (App最多保存最近50场对战数据)
+机器人会每2小时检查并同步你的数据到 stat.ink (App最多保存最近50*5场对战和50场打工数据)
         '''
     await bot_send(bot, event, message=msg)
 

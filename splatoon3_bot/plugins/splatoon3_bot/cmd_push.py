@@ -28,6 +28,13 @@ async def start_push(bot: Bot, event: Event, state: T_State):
     if 'i' in cmd_lst or 'image' in cmd_lst:
         get_image = True
 
+    # QQ 默认image
+    if isinstance(bot, QQBot):
+        get_image = True
+
+    if 't' in cmd_lst or 'text' in cmd_lst:
+        get_image = False
+
     if user and user.push or scheduler.get_job(f'{user_id}_push'):
         logger.info(f'remove job {user_id}_push')
         try:
@@ -62,8 +69,11 @@ async def start_push(bot: Bot, event: Event, state: T_State):
     )
     msg = f'Start push! check new data(battle or coop) every {INTERVAL} seconds. /stop_push to stop'
     if isinstance(bot, QQBot):
-        str_i = '图片' if get_image else ''
-        msg = f'开启{str_i}推送模式，每10秒钟查询一次最新数据(对战或打工)\n/stop_push 停止推送'
+        str_i = '图片' if get_image else '文字'
+        str_help = ''
+        if get_image:
+            str_help = '\n*注：默认推送图片,可加参数 t或text 推送文字消息'
+        msg = f'开启{str_i}推送模式，每10秒钟查询一次最新数据(对战或打工){str_help}\n/stop_push 停止推送'
     await bot_send(bot, event, msg)
 
 

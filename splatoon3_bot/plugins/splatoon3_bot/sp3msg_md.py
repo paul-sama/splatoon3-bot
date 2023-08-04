@@ -110,7 +110,7 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
     str_open_power = ''
     str_max_open_power = ''
     last_power = ''
-    if not mask and (battle_detail.get('bankaraMatch') or {}).get('mode') == 'OPEN' or battle_detail.get('leagueMatch'):
+    if not mask and ((battle_detail.get('bankaraMatch') or {}).get('mode') == 'OPEN' or battle_detail.get('leagueMatch')):
         open_power = ((battle_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
         if battle_detail.get('leagueMatch'):
             open_power = battle_detail['leagueMatch'].get('myLeaguePower') or 0

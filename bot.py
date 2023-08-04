@@ -33,9 +33,9 @@ driver.register_adapter(QQAdapter)
 nonebot.load_builtin_plugins("echo")  # 内置插件
 nonebot.load_plugins("splatoon3_bot/plugins")  # 本地插件
 
-nonebot.logger.add("logs/splatoon3-bot.log", level="DEBUG", encoding="utf-8", rotation="500 MB")
-nonebot.logger.add("logs/cron_job.log", filter=lambda record: "cron" in record["extra"], rotation="500 MB")
-nonebot.logger.add("logs/report.log", filter=lambda record: "report" in record["extra"], rotation="500 MB")
+nonebot.logger.add("logs/splatoon3-bot.log", level="DEBUG", encoding="utf-8", rotation="1 week")
+nonebot.logger.add("logs/cron_job.log", filter=lambda record: "cron" in record["extra"], rotation="100 MB")
+nonebot.logger.add("logs/report.log", filter=lambda record: "report" in record["extra"], rotation="100 MB")
 
 
 if __name__ == "__main__":
