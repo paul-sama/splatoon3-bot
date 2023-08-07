@@ -9,9 +9,6 @@ from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.telegram.message import File
 from nonebot.adapters.onebot.v11 import Bot as QQBot
 from nonebot.typing import T_State
-from nonebot.permission import SUPERUSER
-from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
-from nonebot.rule import to_me
 
 from .db_sqlite import set_db_info, get_user, get_or_set_user
 from .sp3iksm import log_in, login_2, A_VERSION
@@ -299,7 +296,7 @@ async def unsubscribe(bot: Bot, event: Event):
 
 
 #日程查询插件
-@on_command("日程查询插件", block=True, permission=SUPERUSER | GROUP_OWNER | GROUP_ADMIN, rule=to_me()).handle()
+@on_command("日程查询插件", block=True).handle()
 async def splatoon3_plugin_set(bot: Bot, event: Event):
     if 'group' not in event.get_event_name():
         await bot_send(bot, event, '请在群聊中使用')

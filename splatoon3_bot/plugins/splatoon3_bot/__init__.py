@@ -67,7 +67,10 @@ async def _help(bot: Bot, event: Event):
         await bot_send(bot, event, message=MSG_HELP, disable_web_page_preview=True)
 
     elif isinstance(bot, QQBot):
-        await bot_send(bot, event, message=MSG_HELP_QQ)
+        msg = MSG_HELP_QQ
+        if 'group' in event.get_event_name():
+            msg = msg.replace('更多指令', '/日程查询插件 关闭\n\n更多指令')
+        await bot_send(bot, event, message=msg)
 
 
 @get_driver().on_startup
