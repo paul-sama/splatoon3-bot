@@ -120,6 +120,20 @@ class Report(Base):
     create_time = Column(DateTime(), default=func.now())
 
 
+class UserFriendTable(Base):
+    __tablename__ = 'user_friend'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(), nullable=False)
+    friend_id = Column(String(), nullable=False)
+    player_name = Column(String(), default='')
+    nickname = Column(String(), default='')
+    game_name = Column(String(), default='')
+    user_icon = Column(String(), default='')
+    create_time = Column(DateTime(), default=func.now())
+    update_time = Column(DateTime(), onupdate=func.now())
+
+
 engine = create_engine(database_uri, connect_args={"check_same_thread": False})
 
 Base.metadata.create_all(engine)
@@ -346,3 +360,35 @@ def model_get_map_group_id_list():
     session.close()
     id_lst = [i[0] for i in group_id_list]
     return id_lst
+
+
+def model_get_user_friend(nickname):
+    session = DBSession()
+    user = session.query(UserFriendTable).filter(UserFriendTable.game_name == nickname).first()
+    session.close()
+    return user
+
+
+def model_set_user_friend(data_lst):
+    session = DBSession()
+    for r in data_lst:
+        user = session.query(UserFriendTable).filter(UserFriendTable.friend_id == r[1]).first()
+        game_name = r[2] or r[3]
+        if user:
+            user.player_name = r[2]
+            user.nickname = r[3]
+            user.game_name = game_name
+            user.user_icon = r[4]
+        else:
+            _dict = {
+                'friend_id': r[1],
+                'player_name': r[2],
+                'nickname': r[3],
+                'game_name': game_name,
+                'user_icon': r[4],
+            }
+            new_user = UserFriendTable(**_dict)
+            session.add(new_user)
+
+    session.commit()
+    session.close()

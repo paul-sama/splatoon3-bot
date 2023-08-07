@@ -13,6 +13,7 @@ from nonebot.adapters.onebot.v11 import Bot as QQBot
 from .db_sqlite import get_or_set_user, get_all_user
 from .scripts.top_player import get_x_player
 from .scripts.report import update_user_info, update_user_info_first
+from .scripts.user_friend import task_get_user_friend
 
 
 logger = logger.bind(cron=True)
@@ -43,6 +44,10 @@ async def cron_job(bot: Bot):
     # report at 8:00
     if now.hour == 8 and now.minute == 0:
         threading.Thread(target=asyncio.run, args=(update_user_info(),)).start()
+
+    # run every 3 hours
+    if now.hour % 3 == 0 and now.minute == 0:
+        threading.Thread(target=asyncio.run, args=(task_get_user_friend(),)).start()
 
     # run every 2 hours
     if not (now.hour % 2 == 0 and now.minute == 3):
