@@ -293,3 +293,32 @@ async def unsubscribe(bot: Bot, event: Event):
     get_or_set_user(user_id=event.get_user_id(), report_type=0)
     msg = f'```\n取消订阅成功\n/report 订阅早报```'
     await bot_send(bot, event, message=msg, parse_mode='Markdown')
+
+
+#日程查询插件
+@on_command("日程查询插件", block=True).handle()
+async def splatoon3_plugin_set(bot: Bot, event: Event):
+    if 'group' not in event.get_event_name():
+        await bot_send(bot, event, '请在群聊中使用')
+        return
+
+    cmd = event.get_plaintext().strip().replace('日程查询插件', '').strip()
+    bot_map = 1
+    if '关闭' in cmd:
+        bot_map = 0
+
+    from .db_sqlite import DBSession, GroupTable
+    group_id = (event.dict() or {}).get('group_id')
+    logger.info(f'splatoon3_plugin_set {group_id}, {bot_map}')
+
+    msg = '无效的指令'
+    if group_id:
+        with DBSession() as session:
+            group = session.query(GroupTable).filter(GroupTable.group_id == group_id).first()
+            if group:
+                group.bot_map = bot_map
+                session.commit()
+                str_map = '开启' if bot_map else '关闭'
+                msg = f'设置成功: 日程查询插件 {str_map}'
+
+    await bot_send(bot, event, message=msg)
