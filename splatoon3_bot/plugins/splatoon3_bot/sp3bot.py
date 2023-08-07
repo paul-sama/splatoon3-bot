@@ -170,6 +170,15 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
         logger.info(f'push_latest_battle: {user.username}, {job_id}')
 
     data = job_data or {}
+
+    # QQ 群聊2分钟内撤回
+    if isinstance(bot, QQBot) and push_cnt == 10 and job_data.get('group_id'):
+        if data.get('last_group_msg_id'):
+            try:
+                await bot.call_api('delete_msg', message_id=data['last_group_msg_id'])
+            except Exception as e:
+                logger.warning(f'push_latest_battle delete_msg failed\n{e}')
+
     get_image = data.get('get_image', False)
     try:
         res = await get_last_battle_or_coop(user_id, for_push=True, get_image=get_image)
