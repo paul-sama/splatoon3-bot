@@ -381,6 +381,7 @@ def model_set_user_friend(data_lst):
             user.user_icon = r[4]
         else:
             _dict = {
+                'user_id': '',
                 'friend_id': r[1],
                 'player_name': r[2],
                 'nickname': r[3],
