@@ -76,7 +76,7 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
     msg = '#### ' + title.replace('`', '')
     if get_image:
         msg += '''|||||||||
-|---|---:|---:|---:|---|---|---|---|
+|---|---:|---:|---:|---:|---:|---:|---|
     '''
     else:
         msg += '''|||||||
@@ -286,7 +286,7 @@ def get_coop_msg(coop_info, data, **kwargs):
     for p in detail['memberResults']:
         msg += f"""{coop_row(p, mask)}\n"""
     msg += '''\n|        | |||
-|-------:|--|--|--|
+|-------:|--:|--:|--|
 '''
     for e in detail['enemyResults']:
         c = str(e.get('teamDefeatCount') or 0)
