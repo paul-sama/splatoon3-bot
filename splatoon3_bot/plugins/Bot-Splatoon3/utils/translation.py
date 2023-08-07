@@ -1,27 +1,37 @@
+import datetime
 import json
 import random
 
 from nonebot.log import logger
-from .utils import get_time_ymd, cf_http_get
+from .utils import get_time_ymd, cf_http_get, time_format_ymdh, get_time_now_china, get_expire_time
 
 trans_res = None
 trans_eng_res = None
-trans_res_save_ymd: str
-trans_eng_res_save_ymd: str
+trans_res_expire_ymd: str
+trans_eng_res_expire_ymd: str
 # 武器图片类型
 weapon_image_type = ["Main", "Sub", "Special", "Class", "Father_Class"]
+
+
+def check_expire_trans(_trans_res_expire_ymd):
+    """校验过期翻译 过期时间为两小时"""
+    expire_time = datetime.datetime.strptime(_trans_res_expire_ymd, time_format_ymdh)
+    time_now = get_time_now_china()
+    if time_now >= expire_time:
+        return True
+    return False
 
 
 def get_trans_cht_data():
     """取中文 翻译数据"""
     global trans_res
-    global trans_res_save_ymd
-    if trans_res is None or check_expire_trans(trans_res_save_ymd):
+    global trans_res_expire_ymd
+    if trans_res is None or check_expire_trans(trans_res_expire_ymd):
         logger.info("重新请求:中文翻译文本")
         result = cf_http_get("https://splatoon3.ink/data/locale/zh-CN.json").text
         trans_res = json.loads(result)
         # 刷新储存时 时间
-        trans_res_save_ymd = get_time_ymd()
+        trans_res_expire_ymd = get_expire_time()
         return trans_res
     else:
         return trans_res
@@ -30,13 +40,13 @@ def get_trans_cht_data():
 def get_trans_eng_data():
     """取英文 文本数据"""
     global trans_eng_res
-    global trans_eng_res_save_ymd
-    if trans_eng_res is None or check_expire_trans(trans_eng_res_save_ymd):
+    global trans_eng_res_expire_ymd
+    if trans_eng_res is None or check_expire_trans(trans_eng_res_expire_ymd):
         logger.info("重新请求:英文文本")
         result = cf_http_get("https://splatoon3.ink/data/locale/en-GB.json").text
         trans_eng_res = json.loads(result)
         # 刷新储存时 时间
-        trans_eng_res_save_ymd = get_time_ymd()
+        trans_eng_res_expire_ymd = get_expire_time()
         return trans_eng_res
     else:
         return trans_eng_res
@@ -60,14 +70,6 @@ def weapons_trans_eng_to_cht(eng_name):
     if key != "":
         zht_name = cht_weapons[key]["name"]
     return zht_name
-
-
-def check_expire_trans(_trans_res_save_ymd):
-    """校验过期翻译 记录每日ymd，不同则为false，使其每日刷新一次"""
-    now_ymd = get_time_ymd()
-    if now_ymd != _trans_res_save_ymd:
-        return True
-    return False
 
 
 def get_trans_stage(_id: str):
@@ -122,8 +124,6 @@ dict_rule_reverse_trans = {
     "TURF_WAR": "占地对战",
 }
 
-# 中文转英文名文件
-dict_eng_file_trans = {}
 
 # 星期翻译
 dict_weekday_trans = {

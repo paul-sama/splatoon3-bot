@@ -7,8 +7,6 @@ from ..data import (
 from .image_processer import *
 from .image_processer_tools import image_to_base64
 
-time_format_ymdh = "%Y-%m-%dT%H"
-
 
 def get_coop_stages_image(*args):
     """取 打工图片"""
@@ -108,23 +106,6 @@ def get_weapon_info_test():
         return True
     else:
         return False
-
-
-def get_expire_time():
-    """计算过期时间 字符串 精确度为 ymdh"""
-    # 计算过期时间
-    time_now = get_time_now_china()
-    time_now_h = time_now.hour
-    # 计算过期时间字符串
-    # 判断当前小时是奇数还是偶数
-    expire_time: datetime
-    if (time_now_h % 2) == 0:
-        # 偶数
-        expire_time = time_now + datetime.timedelta(hours=2)
-    else:
-        expire_time = time_now + datetime.timedelta(hours=1)
-    expire_time_str = expire_time.strftime(time_format_ymdh).strip()
-    return expire_time_str
 
 
 def get_save_temp_image(trigger_word, func, *args):

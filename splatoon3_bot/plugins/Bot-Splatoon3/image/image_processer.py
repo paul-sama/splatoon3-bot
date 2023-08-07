@@ -15,9 +15,11 @@ def get_festival(festivals):
     trans_cht_festival_data = get_trans_cht_data()["festivals"][_id]
     # 替换为翻译
     teams_list = []
-    festival["title"] = trans_cht_festival_data["title"]
+    festival["title"] = trans_cht_festival_data.get("title", festival["title"])
     for v in range(3):
-        festival["teams"][v]["teamName"] = trans_cht_festival_data["teams"][v]["teamName"]
+        festival["teams"][v]["teamName"] = trans_cht_festival_data["teams"][v].get(
+            "teamName", festival["teams"][v]["teamName"]
+        )
         teams_list.append(festival["teams"][v])
 
     # 开始绘图
@@ -71,9 +73,9 @@ def get_events(events):
         _id = cht_event_data["id"]
         trans_cht_event_data = get_trans_cht_data()["events"][_id]
         # 替换为翻译文本
-        cht_event_data["name"] = trans_cht_event_data["name"]
-        cht_event_data["desc"] = trans_cht_event_data["desc"]
-        cht_event_data["regulation"] = trans_cht_event_data["regulation"]
+        cht_event_data["name"] = trans_cht_event_data.get("name", cht_event_data["name"])
+        cht_event_data["desc"] = trans_cht_event_data.get("desc", cht_event_data["desc"])
+        cht_event_data["regulation"] = trans_cht_event_data.get("regulation", cht_event_data["regulation"])
 
         # 顶部活动标志(大号)
         pos_h += 20

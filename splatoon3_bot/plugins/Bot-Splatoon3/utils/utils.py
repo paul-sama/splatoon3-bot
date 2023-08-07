@@ -7,6 +7,7 @@ from .dataClass import TimeUtil
 from ..config import plugin_config
 
 proxy_address = plugin_config.splatoon3_proxy_address
+time_format_ymdh = "%Y-%m-%dT%H"
 
 # 背景 rgb颜色
 dict_bg_rgb = {
@@ -67,14 +68,28 @@ def http_get(url: str) -> Response:
     return response
 
 
-# 初始化配置参数，将配置参数传递到utils模块
-
-
 def multiple_replace(text, _dict):
     """批量替换文本"""
     for key in _dict:
         text = text.replace(key, _dict[key])
     return text
+
+
+def get_expire_time() -> str:
+    """计算过期时间 字符串 精确度为 ymdh"""
+    # 计算过期时间
+    time_now = get_time_now_china()
+    time_now_h = time_now.hour
+    # 计算过期时间字符串
+    # 判断当前小时是奇数还是偶数
+    expire_time: datetime
+    if (time_now_h % 2) == 0:
+        # 偶数
+        expire_time = time_now + datetime.timedelta(hours=2)
+    else:
+        expire_time = time_now + datetime.timedelta(hours=1)
+    expire_time_str = expire_time.strftime(time_format_ymdh).strip()
+    return expire_time_str
 
 
 def time_converter(time_str) -> datetime:
@@ -123,6 +138,7 @@ def get_time_y() -> int:
 
 
 def get_time_now_china() -> datetime.datetime:
+    """获取中国所在东八区时间"""
     # 获取utc时间，然后转东8区时间
     utc_now = datetime.datetime.utcnow()
     convert_now = TimeUtil.convert_timezone(utc_now, "+8")
