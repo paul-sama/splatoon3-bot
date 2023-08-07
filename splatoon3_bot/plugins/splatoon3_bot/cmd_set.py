@@ -304,7 +304,7 @@ async def splatoon3_plugin_set(bot: Bot, event: Event):
 
     cmd = event.get_plaintext().strip().replace('日程查询插件', '').strip()
     bot_map = 1
-    if '关闭' in cmd:
+    if '关' in cmd:
         bot_map = 0
 
     from .db_sqlite import DBSession, GroupTable

@@ -14,7 +14,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '0.8.8'
+BOT_VERSION = '0.8.9'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -54,17 +54,18 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         return
 
     if isinstance(bot, QQBot):
-        message = message.replace('`', '').replace('*', '').replace('\_', '_').strip()
+        message = message.replace('\_', '_').strip()
         if 'group' in event.get_event_name():
-            # QQ机器人被风控，群聊消息太长会被吞掉，未被风控可取消截断
-            message = message.replace('https://github.com/paul-sama/splatoon3-bot', '')
             if '开放' in message:
+                # /me 截断
                 message = message.split('2022-')[0].split('2023-')[0].strip()
             if 'duration: ' in message:
+                message = message.replace('`', '').replace('*', '')
                 message, duration = message.split('duration: ')
                 duration = duration.strip().split('\n')[0]
                 message = message + f'\nduration: {duration}'
             if '\nW1' in message:
+                message = message.replace('`', '').replace('*', '')
                 message = message.split('\n\n')[0].strip()
 
             if 'reply_to_message_id' not in kwargs:

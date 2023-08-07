@@ -88,7 +88,7 @@ async def send_user_msg(bot, users):
                     else:
                         ret = await bot.send_message(chat_id=u.user_id_tg, text=msg, parse_mode='Markdown')
                 elif isinstance(bot, QQBot):
-                    msg = msg.replace('`', '').strip()
+                    msg = msg.replace('```', '').strip()
                     ret = await bot.send_private_msg(user_id=u.user_id_qq, message=msg)
                 if ret:
                     logger.debug(f"{u.id} send message: {ret}")
