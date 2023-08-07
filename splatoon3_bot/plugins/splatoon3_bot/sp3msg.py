@@ -65,7 +65,7 @@ def get_top_str(p_id):
     player_code = (base64.b64decode(p_id).decode('utf-8') or '').split(':u-')[-1]
     top_str = ''
     r = get_top_player(player_code)
-    if r and r[0] and r[0]:
+    if r and r[0] and r[1]:
         top_str = f'X{r[0]}({r[1]})'
         return top_str
     return top_str

@@ -1,6 +1,7 @@
 import base64
 from datetime import timedelta, datetime as dt
 from .sp3msg import get_battle_msg_title, set_statics, logger, utils, get_top_str, defaultdict, fmt_sp3_state
+from .db_sqlite import model_get_user_friend, model_get_login_user
 
 
 def get_row_text(p, battle_show_type='1'):
@@ -36,6 +37,23 @@ def get_row_text(p, battle_show_type='1'):
     return t
 
 
+def get_user_name_color(nick_name, p_id):
+    u_str = nick_name
+    r = model_get_user_friend(nick_name)
+
+    # 用户好友蓝色
+    if r:
+        u_str = f'<span style="color:skyblue">{nick_name}</span>'
+
+    player_code = (base64.b64decode(p_id).decode('utf-8') or '').split(':u-')[-1]
+    r_l = model_get_login_user(player_code)
+
+    # 登录用户绿色
+    if r_l:
+        u_str = f'<span style="color:green">{u_str}</span>'
+    return u_str
+
+
 def get_row_text_image(p, mask=False):
     re = p['result']
     if not re:
@@ -51,9 +69,12 @@ def get_row_text_image(p, mask=False):
     elif mask:
         name = f'~~我是马赛克~~'
 
+    if not p.get('isMyself'):
+        name = get_user_name_color(name, p['id'])
+
     top_str = get_top_str(p['id'])
     if top_str:
-        name = name.strip() + f' `{top_str}`'
+        name = name.strip() + f' <span style="color:red">`{top_str}`</span">'
 
     weapon_img = ((p.get('weapon') or {}).get('image') or {}).get('url') or ''
     w_str = f'<img height="40" src="{weapon_img}"/>'
@@ -223,6 +244,10 @@ def coop_row(p, mask=False):
     img_str = f'<img height="18" src="{p["player"]["uniform"]["image"]["url"]}"/>'
     if mask:
         p_name = f'~~我是马赛克~~'
+
+    if not p["player"].get('isMyself'):
+        p_name = get_user_name_color(p_name, p["player"]['id'])
+
     return f"|x{p['defeatEnemyCount']}| {p['goldenDeliverCount']} |{p['rescuedCount']}d |" \
            f"{p['deliverCount']} |{p['rescueCount']}r| {img_str} {p_name}|{weapon}|"
 

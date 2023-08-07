@@ -362,6 +362,13 @@ def model_get_map_group_id_list():
     return id_lst
 
 
+def model_get_login_user(player_code):
+    session = DBSession()
+    user = session.query(UserTable).filter(UserTable.user_id_sp == player_code).first()
+    session.close()
+    return user
+
+
 def model_get_user_friend(nickname):
     session = DBSession()
     user = session.query(UserFriendTable).filter(UserFriendTable.game_name == nickname).first()
