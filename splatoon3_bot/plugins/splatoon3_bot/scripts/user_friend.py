@@ -20,11 +20,11 @@ async def task_get_user_friend():
         try:
             r = await get_friends(u.id)
             r_lst.extend(r)
+            model_set_user_friend(r_lst)
         except Exception as e:
             logger.warning(e)
 
     logger.info(f'get friends: {len(r_lst)}')
-    model_set_user_friend(r_lst)
 
     logger.debug(f'task_get_user_friend end: {(dt.utcnow() - t).seconds}')
 
