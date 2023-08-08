@@ -14,7 +14,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '0.9.1'
+BOT_VERSION = '0.9.2'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -58,7 +58,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         if 'group' in event.get_event_name():
             if '开放' in message:
                 # /me 截断
-                message = message.split('2022-')[0].split('2023-')[0].strip()
+                message = message.replace('```', '').split('2022-')[0].split('2023-')[0].strip()
             if 'duration: ' in message:
                 message = message.replace('`', '').replace('*', '')
                 message, duration = message.split('duration: ')
