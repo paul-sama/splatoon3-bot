@@ -24,7 +24,12 @@ def get_row_text(p, battle_show_type='1'):
     weapon_img = ((p.get('weapon') or {}).get('image2d') or {}).get('url') or ''
     weapon = f"<img height='{a}' src='{weapon_img}'/>"
     weapon += f"<img height='{b}' src='{p['weapon']['subWeapon']['image']['url']}'/>"
-    weapon += f"<img height='{b}' src='{p['weapon']['specialWeapon']['image']['url']}'/>"
+
+    r = model_get_user_friend(p['name'])
+    if r:
+        weapon += f"<img height='{b}' src='{r.user_icon}'/>"
+    else:
+        weapon += f"<img height='{b}' src='{p['weapon']['specialWeapon']['image']['url']}'/>"
 
     img_bg = (p.get('nameplate') or {}).get('background', {}).get('image', {}).get('url', '') or ''
     name = f"{name}|{byname}|{name_id}|<img height='{a}' src='{img_bg}'/>|"
@@ -129,7 +134,8 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
     str_open_power = ''
     str_max_open_power = ''
     last_power = ''
-    if not mask and ((battle_detail.get('bankaraMatch') or {}).get('mode') == 'OPEN' or battle_detail.get('leagueMatch')):
+    if (not mask and get_image and
+            ((battle_detail.get('bankaraMatch') or {}).get('mode') == 'OPEN' or battle_detail.get('leagueMatch'))):
         open_power = ((battle_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
         if battle_detail.get('leagueMatch'):
             open_power = battle_detail['leagueMatch'].get('myLeaguePower') or 0
