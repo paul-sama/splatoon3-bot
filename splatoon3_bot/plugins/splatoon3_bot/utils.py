@@ -54,18 +54,19 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         return
 
     if isinstance(bot, QQBot):
-        message = message.replace('\_', '_').strip()
+        message = message.replace('```', '').replace('\_', '_').strip()
+        if 'duration: ' in message or '\nW1' in message:
+            message = message.replace('`', '').replace('*', '')
+
         if 'group' in event.get_event_name():
             if '开放' in message:
                 # /me 截断
-                message = message.replace('```', '').split('2022-')[0].split('2023-')[0].strip()
+                message = message.split('2022-')[0].split('2023-')[0].strip()
             if 'duration: ' in message:
-                message = message.replace('`', '').replace('*', '')
                 message, duration = message.split('duration: ')
                 duration = duration.strip().split('\n')[0]
                 message = message + f'\nduration: {duration}'
             if '\nW1' in message:
-                message = message.replace('`', '').replace('*', '')
                 message = message.split('\n\n')[0].strip()
 
             if 'reply_to_message_id' not in kwargs:
