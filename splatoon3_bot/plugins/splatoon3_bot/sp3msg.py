@@ -167,9 +167,7 @@ async def get_x_power(**kwargs):
             last_x_power = battle_detail['xMatch'].get('lastXPower') or 0
             cur_x_power = x_info.get('xPowerAfter') or 0
             xp = cur_x_power - last_x_power
-            power = f'{xp:.2f} ({cur_x_power:.2f})'
-            if xp > 0:
-                power = f'+{power} ({cur_x_power:.2f})'
+            power = f'{xp:+.2f} ({cur_x_power:.2f})'
         x_process = f"{x_info.get('winCount') or 0}-{x_info.get('loseCount') or 0}"
 
     except Exception as e:
@@ -260,6 +258,9 @@ async def get_battle_msg_title(b_info, battle_detail, **kwargs):
         bankara_match = ((battle_detail.get('leagueMatch') or {}).get('leagueMatchEvent') or {}).get('name')
         if bankara_match:
             bankara_match = f'({bankara_match})'
+
+    if kwargs.get('mask'):
+        str_point = ''
 
     # BANKARA(OPEN) 真格蛤蜊 WIN S+9 +8p
     # FEST(OPEN) 占地对战 WIN  +2051

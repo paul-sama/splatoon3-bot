@@ -231,7 +231,7 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
     return msg
 
 
-def coop_row(p, mask=False):
+def coop_row(p, mask=False, is_myself=False):
     try:
         weapon = f"<img height='18' src='{p['specialWeapon']['image']['url']}'/> |"
         for w in p['weapons']:
@@ -242,10 +242,11 @@ def coop_row(p, mask=False):
 
     p_name = p['player']['name']
     img_str = f'<img height="18" src="{p["player"]["uniform"]["image"]["url"]}"/>'
+
     if mask:
         p_name = f'~~我是马赛克~~'
 
-    if not p["player"].get('isMyself'):
+    if not is_myself:
         p_name = get_user_name_color(p_name, p["player"]['id'])
 
     return f"|x{p['defeatEnemyCount']}| {p['goldenDeliverCount']} |{p['rescuedCount']}d |" \
@@ -306,10 +307,10 @@ def get_coop_msg(coop_info, data, **kwargs):
 #### {total_deliver_cnt}
 |  |   ||  |||||
 | --: |--:|--:|--:|--|--|--|--|
-{coop_row(my)}
+{coop_row(my, is_myself=True)}
 """
     for p in detail['memberResults']:
-        msg += f"""{coop_row(p, mask)}\n"""
+        msg += f"""{coop_row(p, mask=mask)}\n"""
     msg += '''\n|        | |||
 |-------:|--:|--:|--|
 '''
