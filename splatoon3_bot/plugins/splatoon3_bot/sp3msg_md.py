@@ -50,7 +50,7 @@ def get_user_name_color(nick_name, p_id):
 
     # 登录用户绿色
     if r_l:
-        u_str = f'<span style="color:green">{u_str}</span>'
+        u_str = f'<span style="color:green">{nick_name}</span>'
     return u_str
 
 
