@@ -14,7 +14,7 @@ async def task_get_user_friend():
     users = get_all_user()
     r_lst = []
     for u in users:
-        if not u or not u.session_token or not u.nickname:
+        if not u or not u.session_token:
             continue
 
         try:
