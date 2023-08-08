@@ -61,8 +61,7 @@ https://docs.qq.com/sheet/DUkZHRWtCUkR0d2Nr?tab=BB08J2
 '''
 
 
-def get_top_str(p_id):
-    player_code = (base64.b64decode(p_id).decode('utf-8') or '').split(':u-')[-1]
+def get_top_str(player_code):
     top_str = ''
     r = get_top_player(player_code)
     if r and r[0] and r[1]:
@@ -99,7 +98,8 @@ def get_row_text(p, battle_show_type='1'):
     name = name.replace('`', '`\``')
     t = f"`{ak:>2}{k_str:>5}k {d:>2}d{ration:>4.1f}{re['special']:>3}sp {p['paint']:>4}p {name}`\n"
 
-    top_str = get_top_str(p['id'])
+    player_code = (base64.b64decode(p['id']).decode('utf-8') or '').split(':u-')[-1]
+    top_str = get_top_str(player_code)
     if top_str:
         t = t.strip() + f' *{top_str}*\n'
 

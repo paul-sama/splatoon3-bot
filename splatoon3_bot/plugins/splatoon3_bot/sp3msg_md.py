@@ -37,20 +37,17 @@ def get_row_text(p, battle_show_type='1'):
     return t
 
 
-def get_user_name_color(nick_name, p_id):
+def get_user_name_color(nick_name, player_code):
+    r_l = model_get_login_user(player_code)
+    # 登录用户绿色
+    if r_l:
+        return f'<span style="color:green">{nick_name}</span>'
+
     u_str = nick_name
     r = model_get_user_friend(nick_name)
-
     # 用户好友蓝色
     if r:
         u_str = f'<span style="color:skyblue">{nick_name}</span>'
-
-    player_code = (base64.b64decode(p_id).decode('utf-8') or '').split(':u-')[-1]
-    r_l = model_get_login_user(player_code)
-
-    # 登录用户绿色
-    if r_l:
-        u_str = f'<span style="color:green">{nick_name}</span>'
     return u_str
 
 
@@ -69,10 +66,11 @@ def get_row_text_image(p, mask=False):
     elif mask:
         name = f'~~我是马赛克~~'
 
+    player_code = (base64.b64decode(p['id']).decode('utf-8') or '').split(':u-')[-1]
     if not p.get('isMyself'):
-        name = get_user_name_color(name, p['id'])
+        name = get_user_name_color(name, player_code)
 
-    top_str = get_top_str(p['id'])
+    top_str = get_top_str(player_code)
     if top_str:
         name = name.strip() + f' <span style="color:red">`{top_str}`</span">'
 
