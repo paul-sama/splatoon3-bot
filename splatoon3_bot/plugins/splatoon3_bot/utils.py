@@ -14,7 +14,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '0.9.3'
+BOT_VERSION = '0.9.4'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -55,7 +55,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         return rr
 
     if isinstance(bot, QQBot):
-        message = message.replace('```', '').replace('\_', '_').strip()
+        message = message.replace('```', '').replace('\_', '_').strip().strip('`')
         if 'duration: ' in message or '\nW1' in message:
             message = message.replace('`', '').replace('*', '')
 
