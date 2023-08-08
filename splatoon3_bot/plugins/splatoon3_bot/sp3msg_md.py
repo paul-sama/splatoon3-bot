@@ -251,7 +251,8 @@ def coop_row(p, mask=False, is_myself=False):
         p_name = f'~~我是马赛克~~'
 
     if not is_myself:
-        p_name = get_user_name_color(p_name, p["player"]['id'])
+        player_code = (base64.b64decode(p["player"]['id']).decode('utf-8') or '').split(':u-')[-1]
+        p_name = get_user_name_color(p_name, player_code)
 
     return f"|x{p['defeatEnemyCount']}| {p['goldenDeliverCount']} |{p['rescuedCount']}d |" \
            f"{p['deliverCount']} |{p['rescueCount']}r| {img_str} {p_name}|{weapon}|"
