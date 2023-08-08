@@ -56,7 +56,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
 
     if isinstance(bot, QQBot):
         message = message.replace('```', '').replace('\_', '_').strip().strip('`')
-        if 'duration: ' in message or '\nW1' in message:
+        if 'duration: ' in message or 'W1 ' in message:
             message = message.replace('`', '').replace('*', '')
 
         if 'group' in event.get_event_name():
