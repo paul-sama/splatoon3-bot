@@ -24,12 +24,11 @@ def get_row_text(p, battle_show_type='1'):
     weapon_img = ((p.get('weapon') or {}).get('image2d') or {}).get('url') or ''
     weapon = f"<img height='{a}' src='{weapon_img}'/>"
     weapon += f"<img height='{b}' src='{p['weapon']['subWeapon']['image']['url']}'/>"
+    weapon += f"<img height='{b}' src='{p['weapon']['specialWeapon']['image']['url']}'/>"
 
     r = model_get_user_friend(p['name'])
     if r:
-        weapon += f"<img height='{b}' src='{r.user_icon}'/>"
-    else:
-        weapon += f"<img height='{b}' src='{p['weapon']['specialWeapon']['image']['url']}'/>"
+        weapon += f"<img height='{a}' style='position:absolute;left:10px' src='{r.user_icon}'/>"
 
     img_bg = (p.get('nameplate') or {}).get('background', {}).get('image', {}).get('url', '') or ''
     name = f"{name}|{byname}|{name_id}|<img height='{a}' src='{img_bg}'/>|"
@@ -52,7 +51,8 @@ def get_user_name_color(nick_name, player_code):
     r = model_get_user_friend(nick_name)
     # 用户好友蓝色
     if r:
-        u_str = f'<span style="color:skyblue">{nick_name}</span>'
+        img = f"<img height='35' style='position:absolute;right:20px' src='{r.user_icon}'/>"
+        u_str = f'<span style="color:skyblue">{nick_name} {img}</span>'
     return u_str
 
 
