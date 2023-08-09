@@ -51,7 +51,7 @@ def get_user_name_color(nick_name, player_code):
     r = model_get_user_friend(nick_name)
     # 用户好友蓝色
     if r:
-        img = f"<img height='35' style='position:absolute;right:20px' src='{r.user_icon}'/>"
+        img = f"<img height='36px' style='position:absolute;right:20px;margin-top:-6px' src='{r.user_icon}'/>"
         u_str = f'<span style="color:skyblue">{nick_name} {img}</span>'
     return u_str
 
