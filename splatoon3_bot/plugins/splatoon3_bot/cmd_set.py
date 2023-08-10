@@ -219,8 +219,9 @@ async def get_set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
         await matcher_set_api_key.finish("错误信息")
         return
 
+    user_id = event.get_user_id()
     logger.info(f'set_api_key: {api_key}')
-    get_or_set_user(user_id=event.get_user_id(), api_key=api_key)
+    get_or_set_user(user_id=user_id, api_key=api_key)
 
     msg = f'''set_api_key success, bot will check every 2 hours and post your data to stat.ink.
 first sync will be in minutes.
@@ -230,9 +231,8 @@ first sync will be in minutes.
     await bot_send(bot, event, message=msg)
 
     update_s3si_ts()
-    user_id = event.get_user_id()
-    _thread = threading.Thread(target=asyncio.run, args=(thread_function(user_id),))
-    _thread.start()
+
+    threading.Thread(target=thread_function, args=(user_id,)).start()
 
 
 @on_command("sync_now", block=True).handle()

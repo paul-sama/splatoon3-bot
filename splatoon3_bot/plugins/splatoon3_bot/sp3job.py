@@ -3,6 +3,7 @@ import json
 import subprocess
 import asyncio
 import threading
+import concurrent.futures
 
 from collections import defaultdict
 from datetime import datetime as dt
@@ -55,14 +56,12 @@ async def cron_job(bot: Bot):
 
     update_s3si_ts()
 
-    for u in users:
-        if not u.api_key or not u.session_token:
-            continue
-        # if (isinstance(bot, TGBot) and not u.user_id_tg) or (isinstance(bot, QQBot) and not u.user_id_qq):
-        #     continue
+    u_id_lst = [u.id for u in users if u.session_token and u.api_key]
+    if not u_id_lst:
+        return
 
-        _thread = threading.Thread(target=asyncio.run, args=(thread_function(u.id),))
-        _thread.start()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        executor.map(thread_function, u_id_lst)
 
 
 async def send_user_msg(bot, users):
@@ -100,7 +99,7 @@ async def send_user_msg(bot, users):
                 logger.error(f"{u.id}, send_user_msg: {e}, {msg}")
 
 
-async def thread_function(user_id):
+def thread_function(user_id):
     u = get_or_set_user(user_id=user_id)
     logger.debug(f"get user: {u.username}, have api_key: {u.api_key}")
 

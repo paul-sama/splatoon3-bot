@@ -9,6 +9,9 @@ logger = logger.bind(report=True)
 
 
 async def task_get_user_friend():
+    if dt.now().hour == 6:
+        return
+
     logger.debug(f'task_get_user_friend start')
     t = dt.utcnow()
     users = get_all_user()
