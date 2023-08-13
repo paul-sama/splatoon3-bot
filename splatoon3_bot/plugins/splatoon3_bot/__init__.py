@@ -12,6 +12,7 @@ from .utils import bot_send
 from .cmd_get import *
 from .cmd_push import *
 from .cmd_set import *
+from .bot_comment import *
 
 
 @on_startswith(("/", "、"), priority=1, block=False).handle()

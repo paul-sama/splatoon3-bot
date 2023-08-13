@@ -134,6 +134,24 @@ class UserFriendTable(Base):
     update_time = Column(DateTime(), onupdate=func.now())
 
 
+class CommentTable(Base):
+    __tablename__ = 'comment'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    bot_type = Column(String(), nullable=False)
+    user_id = Column(String(), nullable=False)
+    user_name = Column(String(), default='')
+    user_icon = Column(String(), default='')
+    group_id = Column(String(), default='')
+    group_name = Column(String(), default='')
+    group_icon = Column(String(), default='')
+    message = Column(Text(), default='')
+    is_login = Column(Integer(), default=0)
+    is_delete = Column(Integer(), default=0)
+    create_time = Column(DateTime(), default=func.now())
+    update_time = Column(DateTime(), onupdate=func.now())
+
+
 engine = create_engine(database_uri, connect_args={"check_same_thread": False})
 
 Base.metadata.create_all(engine)
@@ -400,3 +418,31 @@ def model_set_user_friend(data_lst):
 
     session.commit()
     session.close()
+
+
+def model_add_comment(**kwargs):
+    logger.debug(f'model_add_report: {kwargs}')
+    _dict = {
+        'bot_type': kwargs.get('bot_type') or 'qq',
+        'user_id': kwargs.get('user_id'),
+        'user_name': kwargs.get('user_name'),
+        'user_icon': kwargs.get('user_icon'),
+        'group_id': kwargs.get('group_id'),
+        'group_name': kwargs.get('group_name'),
+        'group_icon': kwargs.get('group_icon'),
+        'message': kwargs.get('message'),
+        'create_time': datetime.datetime.now(),
+    }
+    session = DBSession()
+    new_report = CommentTable(**_dict)
+    session.add(new_report)
+    session.commit()
+    session.close()
+
+
+def model_get_comment():
+    session = DBSession()
+    query = [CommentTable.is_delete != 1]
+    comment = session.query(CommentTable).filter(*query).order_by(CommentTable.create_time).all()
+    session.close()
+    return comment
