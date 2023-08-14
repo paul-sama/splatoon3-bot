@@ -484,7 +484,7 @@ async def get_group_node_msg(g_node, splt, _type):
         jud = n.get('judgement') or ''
         if jud not in ('WIN', 'LOSE'):
             jud = 'DRAW'
-        row = f"|{jud}| {str_p}| {weapon_str}|{my_str}| {duration}s|{score}| {n['vsStage']['name'][:8]}"
+        row = f"|{jud}| {str_p}| {weapon_str}|{my_str}| {duration}s|{score}| {n['vsStage']['name'][:7]}"
 
         msg += row + '\n'
     msg += '||\n'
