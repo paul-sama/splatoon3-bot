@@ -316,16 +316,24 @@ def get_coop_msg(coop_info, data, **kwargs):
 """
     for p in detail['memberResults']:
         msg += f"""{coop_row(p, mask=mask)}\n"""
-    msg += '''\n|        | |||
-|-------:|--:|--:|--|
+    msg += '''\n|        | ||
+|-------|--:|--|
 '''
     for e in detail['enemyResults']:
-        c = str(e.get('teamDefeatCount') or 0)
         nice = ''
-        if e.get('popCount') <= int(c):
+        if e.get('popCount', 0) <= int(str(e.get('teamDefeatCount') or 0)):
             nice = '√'
+        boss_cnt = e.get('teamDefeatCount') or 0
+        boss_pop = e['popCount'] or ''
+        if e.get('defeatCount'):
+            boss_cnt = f'{boss_cnt}({e["defeatCount"]})'
         img_str = f"<img height='18' src='{e['enemy']['image']['url']}'/>"
-        msg += f"""|{e.get('teamDefeatCount') or ''} |{e['defeatCount'] or ''} |{e['popCount'] or ''} | {img_str} {(e.get('enemy') or {}).get('name') or ''} {nice}|\n"""
+        boss_name = f"{img_str} {(e.get('enemy') or {}).get('name') or ''}"
+        if nice:
+            boss_cnt = f'<span style="color: green">{boss_cnt}</span>'
+            boss_pop = f'<span style="color: green">{boss_pop}</span>'
+            boss_name = f'<span style="color: green">{boss_name}</span>'
+        msg += f"""|{boss_cnt} |{boss_pop} | {boss_name}|\n"""
 
     try:
         date_play = dt.strptime(detail['playedTime'], '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=8)
