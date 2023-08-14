@@ -78,7 +78,7 @@ def get_coop_info(_all=None):
         # for _i in range(4) 是循环执行4次，不是多余的代码
         return [
             ImageInfo(
-                name=sch["setting"]["weapons"][_i]["name"],
+                name=sch["setting"]["weapons"][_i]["name"] + "_" + sch["setting"]["weapons"][_i]["__splatoon3ink_id"],
                 url=sch["setting"]["weapons"][_i]["image"]["url"],
                 zh_name=get_trans_weapon(sch["setting"]["weapons"][_i]["__splatoon3ink_id"]),
                 source_type="武器",
