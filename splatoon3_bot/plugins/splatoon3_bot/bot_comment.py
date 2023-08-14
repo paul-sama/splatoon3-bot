@@ -60,5 +60,6 @@ async def get_comment_table(bot_id):
         cmt = c.message.strip().replace('\n', ' ').replace('|', '\|')
         msg += f"|{group_name}|{user_name}|{cmt}|\n"
 
-    logger.info(f'get_comment_table: {msg}')
+    msg += '||\n\n 群聊 at机器人添加留言'
+    # logger.info(f'get_comment_table: {msg}')
     return msg
