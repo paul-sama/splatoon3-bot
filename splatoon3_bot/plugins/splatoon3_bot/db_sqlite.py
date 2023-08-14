@@ -389,7 +389,9 @@ def model_get_login_user(player_code):
 
 def model_get_user_friend(nickname):
     session = DBSession()
-    user = session.query(UserFriendTable).filter(UserFriendTable.game_name == nickname).first()
+    user = session.query(UserFriendTable).filter(
+        UserFriendTable.game_name == nickname
+    ).order_by(UserFriendTable.create_time.desc()).first()
     session.close()
     return user
 
