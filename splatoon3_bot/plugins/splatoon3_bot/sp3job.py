@@ -54,7 +54,7 @@ async def cron_job(bot: Bot):
     if not (now.hour % 2 == 0 and now.minute == 3):
         return
 
-    update_s3si_ts()
+    threading.Thread(target=update_s3si_ts, args=()).start()
 
     u_id_lst = [u.id for u in users if u.session_token and u.api_key]
     if not u_id_lst:
