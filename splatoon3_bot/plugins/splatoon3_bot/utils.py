@@ -60,7 +60,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
             if '开放' in message:
                 coop_lst = message.split('2022-')[-1].split('2023-')[-1].strip().split('\n')
                 # /me 截断
-                message = message.split('2022-')[0].split('2023-')[0].strip()
+                message = message.split('2022-')[0].split('2023-')[0].strip() + '\n'
                 for l in coop_lst:
                     if '打工次数' in l or '头目鲑鱼' in l:
                         message += '\n' + l
