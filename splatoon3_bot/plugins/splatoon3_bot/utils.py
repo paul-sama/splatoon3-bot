@@ -14,7 +14,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '0.9.9'
+BOT_VERSION = '1.0.0'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -46,9 +46,6 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
                 rr = await bot.send(event, message=message)
             except Exception as e:
                 logger.warning(f'QQBot send error: {e}')
-                if 'group' in event.get_event_name():
-                    message += Message('\n群消息发送失败，bot被风控，请私聊使用或稍后再试')
-                    await bot.send_private_msg(user_id=event.get_user_id(), message=message)
 
         elif isinstance(bot, TGBot):
             rr = await bot.send(event, File.photo(img_data))
@@ -61,8 +58,13 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
 
         if 'group' in event.get_event_name():
             if '开放' in message:
+                coop_lst = message.split('2022-')[-1].split('2023-')[-1].strip().split('\n')
                 # /me 截断
                 message = message.split('2022-')[0].split('2023-')[0].strip()
+                for l in coop_lst:
+                    if '打工次数' in l or '头目鲑鱼' in l:
+                        message += '\n' + l
+
             if 'duration: ' in message:
                 message, duration = message.split('duration: ')
                 duration = duration.strip().split('\n')[0]
@@ -81,15 +83,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         r = await bot.send(event, message, **kwargs)
     except Exception as e:
         r = None
-        if 'group' in event.get_event_name() and isinstance(bot, QQBot):
-            message += '\n\n' + '群消息发送失败，bot被风控，请私聊使用或稍后再试'
-            try:
-                await bot.send_private_msg(user_id=event.get_user_id(), message=message)
-            except Exception as e:
-                logger.error(message)
-                logger.error(e)
-            return r
-        logger.error(f'bot_send error: {e}, {message}')
+        logger.exception(f'bot_send error: {e}, {message}')
 
     return r
 
