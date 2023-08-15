@@ -498,15 +498,27 @@ def get_summary(data, all_data, coop, lang='zh-CN'):
         card = coop['pointCard']
         p = coop['scale']
         name = f"{coop['regularGrade']['name']} {coop['regularGradePoint']}"
+        boss_per_cnt = ''
+        if card['defeatBossCount']:
+            boss_per_cnt = f"({card['playCount'] / card['defeatBossCount']:.2f})"
+        gdpc = ''
+        dpc = ''
+        rpc = ''
+        ppc = ''
+        if card['playCount']:
+            gdpc = f"({card['goldenDeliverCount'] / card['playCount']:.2f})"
+            dpc = f"({card['deliverCount'] / card['playCount']:.2f})"
+            rpc = f"({card['rescueCount'] / card['playCount']:.2f})"
+            ppc = f"({card['totalPoint'] / card['playCount']:.2f})"
         coop_msg = f"""
 {name}
 {dict_lang['CoopHistory.regular_point']}: {card['regularPoint']}
 {dict_lang['CoopHistory.play_count']}: {card['playCount']}
-{dict_lang['CoopHistory.golden_deliver_count']}: {card['goldenDeliverCount']}
-{dict_lang['CoopHistory.deliver_count']}: {card['deliverCount']}
-{dict_lang['CoopHistory.defeat_boss_count']}: {card['defeatBossCount']}
-{dict_lang['CoopHistory.rescue_count']}: {card['rescueCount']}
-{dict_lang['CoopHistory.total_point']}: {card['totalPoint']}
+{dict_lang['CoopHistory.golden_deliver_count']}: {card['goldenDeliverCount']} {gdpc}
+{dict_lang['CoopHistory.deliver_count']}: {card['deliverCount']} {dpc}
+{dict_lang['CoopHistory.defeat_boss_count']}: {card['defeatBossCount']} {boss_per_cnt}
+{dict_lang['CoopHistory.rescue_count']}: {card['rescueCount']} {rpc}
+{dict_lang['CoopHistory.total_point']}: {card['totalPoint']} {ppc}
 {dict_lang['CoopHistory.scale']}: 🥉{p['bronze']} 🥈{p['silver']} 🏅️{p['gold']}
 """
 
