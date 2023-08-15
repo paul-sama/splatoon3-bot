@@ -70,19 +70,20 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
     # get last battle
     res = await splt.get_recent_battles(skip_check_token=True if for_push else False)
     if not res:
-        return f'`网络错误，请稍后再试.`'
+        # token 每两小时更新，再次尝试一次
+        res = await splt.get_recent_battles()
+        if not res:
+            return f'`网络错误，请稍后再试.`'
 
     b_info = res['data']['latestBattleHistories']['historyGroups']['nodes'][0]['historyDetails']['nodes'][idx]
     battle_id = b_info['id']
     battle_t = base64.b64decode(battle_id).decode('utf-8').split('_')[0].split(':')[-1]
 
     # get last coop
-    if (dt.utcnow() - dt.strptime(battle_t, '%Y%m%dT%H%M%S')).seconds < 60:
-        # played battle in 1 minute, no need to get coop
-        res = None
-    else:
-        res = await splt.get_coops()
+    res = await splt.get_coops()
     try:
+        # token 每两小时更新，再次尝试一次
+        if not res: res = await splt.get_coops()
         coop_info = {
             'coop_point': res['data']['coopResult']['pointCard']['regularPoint'],
             'coop_eggs': res['data']['coopResult']['historyGroups']['nodes'][0]['highestResult'].get('jobScore') or 0
