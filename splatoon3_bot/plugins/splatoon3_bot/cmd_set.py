@@ -285,6 +285,8 @@ async def report(bot: Bot, event: Event):
         msg += f'```\n\n早报订阅成功\n/unsubscribe 取消订阅```'
     elif not msg and not report_day:
         msg = f'```\n数据准备中。。。\n\n早报订阅成功\n/unsubscribe 取消订阅```'
+    elif not msg and report_day:
+        msg = f'```\n数据准备中。。。```'
     await bot_send(bot, event, message=msg, parse_mode='Markdown')
 
 
