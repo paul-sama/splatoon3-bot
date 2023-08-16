@@ -116,6 +116,9 @@ def thread_function(user_id):
 
 
 def update_s3si_ts():
+    t = dt.now()
+    logger.debug(f'update_s3si_ts start')
+
     dir_plugin = os.path.abspath(os.path.join(__file__, os.pardir))
     path_folder = f'{dir_plugin}/resource'
     if not os.path.exists(path_folder):
@@ -147,6 +150,8 @@ def update_s3si_ts():
     dir_user_configs = f'{s3s_folder}/user_configs'
     if not os.path.exists(dir_user_configs):
         os.mkdir(dir_user_configs)
+
+    logger.debug(f'update_s3si_ts end, {(dt.now() - t).seconds}s')
 
 
 def exported_to_stat_ink(user_id, session_token, api_key, user_lang):

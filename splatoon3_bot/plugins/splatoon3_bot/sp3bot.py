@@ -205,7 +205,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
                 if data.get('current_statics') and data['current_statics'].get('TOTAL'):
                     msg += get_statics(data['current_statics'])
                 logger.info(f'{user.username}, {msg}')
-                await bot_send(bot, event, message=msg)
+                await bot_send(bot, event, message=msg, parse_mode='Markdown')
                 return
             return
 
