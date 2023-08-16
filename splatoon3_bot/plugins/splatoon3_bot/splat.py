@@ -67,7 +67,7 @@ class Splatoon:
         except Exception as e:
             logger.warning(f'{self.user_id} set_gtoken_and_bullettoken error. {e}')
             if self.user:
-                logger.warning(f'{self.user.id}, {self.user.username}, {self.user.nickname}')
+                logger.warning(f'invalid_token_user: {self.user.id}, {self.user.username}, {self.user.nickname}')
             logger.warning('try another url')
             new_gtoken, acc_name, acc_lang, acc_country = iksm.get_gtoken(F_GEN_URL_2, self.session_token, A_VERSION)
 
