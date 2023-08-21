@@ -13,12 +13,9 @@ async def get_app_screenshot(gtoken, key='', url='', mask=False):
         cookies = COOKIES[:]
         cookies[0]['value'] = gtoken
         height = 1000
-        for _k in ('对战', '武器', '鲑鱼跑'):
+        for _k in ('对战', '武器', '鲑鱼跑', '徽章'):
             if _k in key:
-                height = 2000
-        for _k in ('徽章',):
-            if _k in key:
-                height = 1500
+                height = 2500
         if mask:
             height = 740
         if url and 'coop' in url:
