@@ -36,9 +36,23 @@ async def get_app_screenshot(gtoken, key='', url='', mask=False):
                         pass
         else:
             await page.goto(f"{API_URL}/?lang=zh-CN")
-        key = [] if not key else key.split(' ')
-        for k in key:
-            await page.get_by_text(k, exact=True).nth(0).click()
+            # await page.wait_for_timeout(1000)
+            url = f"{API_URL}/history_record/summary"
+            if '对战' in key:
+                url = f"{API_URL}/schedules"
+            if '武器' in key:
+                url = f"{API_URL}/weapon_record"
+            if '鲑鱼跑' in key:
+                url = f"{API_URL}/coop"
+            if '徽章' in key:
+                url = f"{API_URL}/history_record/badge"
+
+            await page.goto(f"{url}?lang=zh-CN")
+
+        # key = [] if not key else key.split(' ')
+        # for k in key:
+        #     await page.get_by_text(k, exact=True).nth(0).click()
+
         await page.wait_for_timeout(6000)
         img_raw = await page.screenshot(full_page=True)
 
