@@ -50,11 +50,12 @@ async def cron_job(bot: Bot):
     if now.hour % 3 == 0 and now.minute == 0:
         threading.Thread(target=asyncio.run, args=(task_get_user_friend(),)).start()
 
+    if now.hour % 2 == 0 and now.minute == 0:
+        threading.Thread(target=update_s3si_ts, args=()).start()
+
     # run every 2 hours
     if not (now.hour % 2 == 0 and now.minute == 3):
         return
-
-    threading.Thread(target=update_s3si_ts, args=()).start()
 
     u_id_lst = [u.id for u in users if u.session_token and u.api_key]
     if not u_id_lst:
