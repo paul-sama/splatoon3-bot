@@ -61,7 +61,7 @@ async def cron_job(bot: Bot):
     if not u_id_lst:
         return
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         executor.map(thread_function, u_id_lst)
 
 
@@ -109,7 +109,7 @@ def thread_function(user_id):
         os.mkdir(path_folder)
 
     msg = get_post_stat_msg(u.id)
-    if msg:
+    if msg and u.api_notify:
         logger.debug(f'{u.id}, {u.username}, {msg}')
         file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
         with open(file_msg_path, 'a') as f:

@@ -259,6 +259,35 @@ async def sync_now(bot: Bot, event: Event):
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
+@on_command("api_notify", block=True).handle()
+@check_session_handler
+async def s_api_notify(bot: Bot, event: Event):
+    if 'group' in event.get_event_name():
+        await bot_send(bot, event, MSG_PRIVATE)
+        return
+
+    user_id = event.get_user_id()
+    u = get_or_set_user(user_id=user_id)
+    if not (u and u.session_token and u.api_key):
+        msg = 'Please set api_key first, /set_api_key'
+        if isinstance(bot, QQBot):
+            msg = '请先设置 api_key, /set_api_key'
+        await bot_send(bot, event, msg)
+        return
+
+    cmd = event.get_plaintext().strip()
+    api_notify = 1
+    msg = '设置成功: '
+    if '关' in cmd or '0' in cmd:
+        api_notify = 0
+        msg += '推送通知关，后台仍会继续同步数据到 stat.ink'
+    else:
+        msg += '推送通知开'
+
+    get_or_set_user(user_id=user_id, api_notify=api_notify)
+    await bot_send(bot, event, msg)
+
+
 @on_command("report", block=True).handle()
 @check_session_handler
 async def report(bot: Bot, event: Event):

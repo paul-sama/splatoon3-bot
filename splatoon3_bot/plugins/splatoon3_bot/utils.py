@@ -14,7 +14,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '1.0.4'
+BOT_VERSION = '1.0.5'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 

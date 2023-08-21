@@ -27,6 +27,7 @@ class UserTable(Base):
     push = Column(Boolean(), default=False)
     push_cnt = Column(Integer(), default=0)
     api_key = Column(String(), nullable=True)
+    api_notify = Column(Integer(), default=1)
     acc_loc = Column(String(), nullable=True)
     session_token = Column(String(), nullable=True)
     session_token_2 = Column(String(), nullable=True)

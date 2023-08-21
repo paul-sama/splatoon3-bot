@@ -75,6 +75,7 @@ async def start_push(bot: Bot, event: Event, state: T_State):
 
 
 @on_command("stop_push", aliases={'stop', 'st', 'stp'}, block=True).handle()
+@check_session_handler
 async def stop_push(bot: Bot, event: Event):
     msg = f'Stop push!'
     logger.info(msg)
