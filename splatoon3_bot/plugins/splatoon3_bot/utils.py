@@ -57,7 +57,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
             message = message.replace('`', '').replace('*', '')
 
         if 'group' in event.get_event_name():
-            if '开放' in message:
+            if '开放' in message and ': (+' not in message:
                 coop_lst = message.split('2022-')[-1].split('2023-')[-1].strip().split('\n')
                 # /me 截断
                 message = message.split('2022-')[0].split('2023-')[0].strip() + '\n'
