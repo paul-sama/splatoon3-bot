@@ -15,7 +15,7 @@ WEB_VIEW_VERSION = utils.WEB_VIEW_VERSION
 
 class Splatoon:
 
-    def __init__(self, user_id, session_token):
+    def __init__(self, user_id, session_token, db_table_user_readonly=False):
         self.user_id = user_id
         self.old_user_id = user_id
         self.session_token = session_token
@@ -33,6 +33,7 @@ class Splatoon:
             self.user_lang = user.acc_loc if user.acc_loc else self.user_lang
         self.nso_app_version = ''
         self.req_session = ''
+        self.db_table_user_readonly = db_table_user_readonly
 
     async def get_bullet(self, web_service_token, web_view_ver, app_user_agent, user_lang, user_country):
         """Returns a bulletToken."""
@@ -77,7 +78,8 @@ class Splatoon:
         logger.info(f'{self.user_id} tokens updated.')
         logger.debug(f'new gtoken: {new_gtoken}')
         logger.debug(f'new bullettoken: {new_bullettoken}')
-        get_or_set_user(user_id=self.old_user_id, gtoken=new_gtoken, bullettoken=new_bullettoken)
+        if not self.db_table_user_readonly:
+            get_or_set_user(user_id=self.old_user_id, gtoken=new_gtoken, bullettoken=new_bullettoken)
         return True
 
     def headbutt(self, bullet_token):

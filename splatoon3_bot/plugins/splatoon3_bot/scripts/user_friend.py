@@ -9,9 +9,6 @@ logger = logger.bind(report=True)
 
 
 async def task_get_user_friend():
-    if dt.now().hour == 6:
-        return
-
     logger.debug(f'task_get_user_friend start')
     t = dt.utcnow()
     users = get_all_user()
@@ -36,7 +33,7 @@ async def get_friends(user_id):
     u = get_user(user_id=user_id)
     logger.debug(f'set_user_info: {user_id}, {u.user_id_qq or u.user_id_tg}, {u.username}')
     user_id = u.user_id_qq or u.user_id_tg or u.id
-    splt = Splatoon(user_id, u.session_token)
+    splt = Splatoon(user_id, u.session_token, db_table_user_readonly=True)
 
     await splt.test_page()
 
