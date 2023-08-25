@@ -10,7 +10,7 @@ from ..utils import BOT_VERSION
 
 session = requests.Session()
 S3S_VERSION = "unknown"
-NSOAPP_VERSION = "2.6.0"
+NSOAPP_VERSION = "2.7.0"
 
 # functions in this file & call stack:
 # get_nsoapp_version()
