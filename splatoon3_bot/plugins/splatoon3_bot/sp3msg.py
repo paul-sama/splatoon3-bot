@@ -186,6 +186,12 @@ def set_statics(**kwargs):
         point = kwargs['point']
         battle_detail = kwargs['battle_detail']
 
+        played_time = dt.strptime(battle_detail['playedTime'], '%Y-%m-%dT%H:%M:%SZ')
+        if played_time < dt.utcnow() - timedelta(minutes=60):
+            current_statics['open_power'] = 0
+            current_statics['max_open_power'] = 0
+            return
+
         current_statics['TOTAL'] += 1
         current_statics[judgement] += 1
         current_statics['point'] += int(point)
