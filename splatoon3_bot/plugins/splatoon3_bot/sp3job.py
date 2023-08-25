@@ -20,15 +20,16 @@ from .scripts.user_friend import task_get_user_friend
 logger = logger.bind(cron=True)
 
 async def cron_job(bot: Bot):
-    """定时任务， 每3分钟每个bot执行"""
+    """定时任务， 每1分钟每个bot执行"""
     # logger.debug(f'cron_job {bot.self_id}')
 
     users = get_all_user()
 
-    # check msg file every minute and send msg, can't send msg in thread
-    await send_user_msg(bot, users)
-
     now = dt.now()
+
+    # check msg file every 3 minutes and send msg
+    if now.minute % 3 == 0:
+        await send_user_msg(bot, users)
 
     # 同步任务全在tg bot上执行，避免qq被风控下线无法同步
     if isinstance(bot, QQBot):
