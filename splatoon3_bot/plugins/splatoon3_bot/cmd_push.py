@@ -1,6 +1,6 @@
 
 from collections import defaultdict
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta
 
 from nonebot import on_command, logger, require
 from nonebot.adapters import Event, Bot
@@ -67,7 +67,7 @@ async def start_push(bot: Bot, event: Event, state: T_State):
     }
     state['job_data'] = job_data
     scheduler.add_job(
-        push_latest_battle, 'interval', seconds=INTERVAL, next_run_time=dt.now(),
+        push_latest_battle, 'interval', seconds=INTERVAL, next_run_time=dt.now() + timedelta(seconds=3),
         id=job_id, args=[bot, event, job_data],
         misfire_grace_time=INTERVAL - 1, coalesce=True, max_instances=1
     )
