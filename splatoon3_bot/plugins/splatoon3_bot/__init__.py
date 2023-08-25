@@ -104,7 +104,7 @@ async def _(bot: Bot):
         logger.info(f'remove job {job_id} first')
 
     scheduler.add_job(
-        cron_job, 'interval', minutes=1, id=job_id, args=[bot],
-        misfire_grace_time=59, coalesce=True, max_instances=3
+        cron_job, 'interval', minutes=3, id=job_id, args=[bot],
+        misfire_grace_time=59, coalesce=True, max_instances=1
     )
     logger.info(f'add job {job_id}')

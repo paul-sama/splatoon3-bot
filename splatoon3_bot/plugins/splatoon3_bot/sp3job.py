@@ -20,7 +20,7 @@ from .scripts.user_friend import task_get_user_friend
 logger = logger.bind(cron=True)
 
 async def cron_job(bot: Bot):
-    """定时任务， 每分钟每个bot执行"""
+    """定时任务， 每3分钟每个bot执行"""
     # logger.debug(f'cron_job {bot.self_id}')
 
     users = get_all_user()
@@ -35,7 +35,7 @@ async def cron_job(bot: Bot):
         return
 
     # parse x rank player at 2:40
-    if now.hour == 2 and now.minute == 40:
+    if now.hour == 2 and now.minute == 39:
         threading.Thread(target=asyncio.run, args=(get_x_player(),)).start()
 
     # update gtoken at 7:00
