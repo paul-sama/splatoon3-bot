@@ -156,6 +156,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
     logger.debug(f'push_latest_battle {job_id}, {job_data}')
 
     user_id = job_data.get('user_id')
+    push_cnt = job_data.get('push_cnt', 0)
 
     user = get_user(user_id=user_id)
     if not user or user.push is False:
@@ -164,8 +165,8 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
         scheduler.remove_job(job_id)
         return
 
-    push_cnt = user.push_cnt + 1
-    user = get_or_set_user(user_id=user.id, push_cnt=push_cnt)
+    push_cnt += 1
+    job_data['push_cnt'] = push_cnt
     if push_cnt % 60 == 0:
         # show log every 10 minutes
         logger.info(f'push_latest_battle: {user.username}, {job_id}')

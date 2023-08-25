@@ -57,10 +57,12 @@ async def start_push(bot: Bot, event: Event, state: T_State):
     logger.info(f'add job {job_id}')
     job_data = {
         'user_id': user_id,
+        'get_image': get_image,
+        'push_cnt': 0,
+        'nickname': user.nickname,
         'group_id': group_id,
         'job_id': job_id,
         'current_statics': defaultdict(int),
-        'get_image': get_image,
     }
     state['job_data'] = job_data
     scheduler.add_job(
