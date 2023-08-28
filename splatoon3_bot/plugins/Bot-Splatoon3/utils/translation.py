@@ -75,8 +75,10 @@ def weapons_trans_eng_to_cht(eng_name):
 def get_trans_stage(_id: str):
     """获取地图翻译名"""
     global trans_res
-    zh_name = trans_res["stages"][_id]["name"]
-    if zh_name == "":
+    zh_res = trans_res["stages"].get(_id)
+    if zh_res:
+        zh_name = zh_res["name"]
+    else:
         return "未取得翻译名称"
     return zh_name
 
@@ -84,8 +86,10 @@ def get_trans_stage(_id: str):
 def get_trans_weapon(_id: str):
     """获取武器翻译名"""
     global trans_res
-    zh_name = trans_res["weapons"][_id]["name"]
-    if zh_name == "":
+    zh_res = trans_res["weapons"].get(_id)
+    if zh_res:
+        zh_name = zh_res["name"]
+    else:
         return "未取得翻译名称"
     return zh_name
 

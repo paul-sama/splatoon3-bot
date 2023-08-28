@@ -97,7 +97,14 @@ def get_events(events):
         desc_pos = (main_title_pos[0], main_title_pos[1] + main_title_size[1] + 10)
         drawer.text(desc_pos, desc, font=ttf, fill=(255, 255, 255))
         # 绘制对战卡片
-        event_card = get_event_card(event, event_card_bg_size)
+        # 全问号活动会导致地图和时间参数错误，这里改用try except
+        try:
+            event_card = get_event_card(event, event_card_bg_size)
+        except Exception as e:
+            error = "傻逼任天堂又整不出新活，开始输出问号活动了，活动地图渲染失败"
+            logger.error(error)
+            drawer.text((desc_pos[0], desc_pos[1] + 50), error, font=ttf, fill=(255, 255, 255))
+            continue
         event_card_pos = (20, pos_h)
         paste_with_a(image_background, event_card, event_card_pos)
         pos_h += event_card_bg_size[1] + 10
