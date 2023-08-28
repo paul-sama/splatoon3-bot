@@ -43,7 +43,10 @@ async def start_push(bot: Bot, event: Event, state: T_State):
         except:
             pass
 
-    get_or_set_user(user_id=user_id, push=True, push_cnt=0)
+    push_cnt = user.push_cnt or 0
+    push_cnt += 1
+
+    get_or_set_user(user_id=user_id, push=True, push_cnt=push_cnt)
 
     group_id = ''
 
