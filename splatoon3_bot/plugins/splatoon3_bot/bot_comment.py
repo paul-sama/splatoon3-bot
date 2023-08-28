@@ -60,6 +60,14 @@ async def get_comment_table(bot_id):
         cmt = c.message.strip().replace('\n', ' ').replace('|', '\|')
         msg += f"|{group_name}|{user_name}|{cmt}|\n"
 
-    msg += '||\n\n 群聊 at机器人添加留言'
+    page = ''
+    total_cnt = len(comment_lst)
+    if total_cnt > 30:
+        page_cnt = int(total_cnt / 30) + 1
+        if total_cnt % 30 == 0:
+            page_cnt -= 1
+        page = f' | 页数: {page_cnt}/{page_cnt}'
+
+    msg += '||\n\n 群聊 at机器人添加留言' + page
     # logger.info(f'get_comment_table: {msg}')
     return msg
