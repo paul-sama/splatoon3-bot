@@ -102,7 +102,7 @@ def get_events(events):
             event_card = get_event_card(event, event_card_bg_size)
         except Exception as e:
             error = "傻逼任天堂又整不出新活，开始输出问号活动了，活动地图渲染失败"
-            logger.error(error)
+            logger.warning(error)
             drawer.text((desc_pos[0], desc_pos[1] + 50), error, font=ttf, fill=(255, 255, 255))
             continue
         event_card_pos = (20, pos_h)
