@@ -8,6 +8,20 @@ from nonebot.adapters.onebot.v11 import GroupMessageEvent, Bot as QQBot
 
 from .db_sqlite import model_get_comment, model_add_comment
 from .utils import bot_send
+from .splatnet_image import get_app_screenshot
+
+
+@on_regex("^http.*$").handle()
+async def _http(bot: QQBot, event: Event):
+    _msg = event.get_plaintext().strip()
+    logger.info(f'get msg http: {_msg}')
+    if 'twitter.com' in _msg or 'x.com' in _msg:
+        url = _msg.split(' ')[0]
+        try:
+            pic = await get_app_screenshot('', url=url)
+            await bot_send(bot, event, '', photo=pic)
+        except Exception as e:
+            logger.warning(f'get http ss: {e}')
 
 
 @on_regex("^[\\/.,，。]?留言[板]?$", block=True).handle()
