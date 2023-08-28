@@ -52,8 +52,15 @@ class GroupTable(Base):
     group_id = Column(String(), nullable=False)
     group_name = Column(String(), default='')
     group_type = Column(String(), default='')
+    group_memo = Column(String(), default='')
+    group_level = Column(String(), default='')
+    member_count = Column(Integer(), default=0)
+    max_member_count = Column(Integer(), default=0)
+    member_id_list = Column(Text(), default='')
+    group_create_time = Column(DateTime())
     cmd = Column(Text(), nullable=True)
     bot_map = Column(Integer(), default=1)
+    bot_broadcast = Column(Integer(), default=1)
     create_time = Column(DateTime(), default=func.now())
     update_time = Column(DateTime(), onupdate=func.now())
 
@@ -195,6 +202,13 @@ def get_or_set_user(**kwargs):
 def get_all_user():
     session = DBSession()
     users = session.query(UserTable).all()
+    session.close()
+    return users
+
+
+def get_all_group():
+    session = DBSession()
+    users = session.query(GroupTable).all()
     session.close()
     return users
 

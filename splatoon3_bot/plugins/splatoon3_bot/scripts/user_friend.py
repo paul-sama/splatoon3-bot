@@ -1,7 +1,7 @@
 
 from nonebot import logger
 from datetime import datetime as dt
-from ..db_sqlite import get_all_user, get_user, model_set_user_friend
+from ..db_sqlite import get_all_user, get_user, model_set_user_friend, get_all_group, set_db_info
 from ..splat import Splatoon
 from ..sp3msg import utils
 
@@ -56,3 +56,35 @@ async def get_friends(user_id):
         f_list.append((user_id, friend_id, player_name, nickname, user_icon))
 
     return f_list
+
+
+async def update_qq_group_info(bot):
+    now = dt.now()
+    logger.info('update_qq_group_info start')
+    groups = get_all_group()
+    for g in groups:
+        if g.group_type != 'qq':
+            continue
+        try:
+            group_info = await bot.call_api('get_group_info', group_id=g.group_id)
+            logger.info(f'{g.group_id}: {group_info}')
+            member_list = await bot.call_api('get_group_member_list', group_id=g.group_id)
+            logger.info(f'{g.group_id}: \n{member_list}')
+            member_id_list = ','.join([str(m.get('user_id') or 0) for m in member_list]) or ''
+            if member_id_list:
+                member_id_list = f',{member_id_list}'
+            if group_info:
+                set_db_info(
+                    group_id=g.group_id,
+                    id_type='qq',
+                    group_name=group_info.get('group_name', ''),
+                    group_memo=group_info.get('group_memo', ''),
+                    group_level=group_info.get('group_level', ''),
+                    member_count=group_info.get('member_count') or 0,
+                    max_member_count=group_info.get('max_member_count') or 0,
+                    member_id_list=member_id_list,
+                )
+        except Exception as e:
+            logger.warning(f'update_qq_group_info: {e}')
+
+    logger.info(f'update_qq_group_info end: {(dt.now() - now).seconds}')
