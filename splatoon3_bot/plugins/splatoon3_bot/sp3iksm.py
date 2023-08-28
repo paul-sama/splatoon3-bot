@@ -2,7 +2,6 @@
 # https://github.com/frozenpandaman/s3s
 # License: GPLv3
 
-import subprocess
 from loguru import logger
 
 from .s3s.iksm import *
@@ -14,11 +13,36 @@ APP_USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) ' \
 		'Chrome/94.0.4606.61 Mobile Safari/537.36'
 
 
-def log_in(ver):
-	'''Logs in to a Nintendo Account and returns a session_token.'''
+def get_session_token(session_token_code, auth_code_verifier):
+	"""Helper function for log_in()."""
 
-	global S3S_VERSION
-	S3S_VERSION = ver
+	nsoapp_version = get_nsoapp_version()
+
+	app_head = {
+		'User-Agent':      f'OnlineLounge/{nsoapp_version} NASDKAPI Android',
+		'Accept-Language': 'en-US',
+		'Accept':          'application/json',
+		'Content-Type':    'application/x-www-form-urlencoded',
+		'Content-Length':  '540',
+		'Host':            'accounts.nintendo.com',
+		'Connection':      'Keep-Alive',
+		'Accept-Encoding': 'gzip'
+	}
+
+	body = {
+		'client_id':                   '71b963c1b7b6d119',
+		'session_token_code':          session_token_code,
+		'session_token_code_verifier': auth_code_verifier.replace(b"=", b"")
+	}
+
+	url = 'https://accounts.nintendo.com/connect/1.0.0/api/session_token'
+
+	r = session.post(url, headers=app_head, data=body)
+	return json.loads(r.text)["session_token"]
+
+
+def log_in(ver):
+	"""Logs in to a Nintendo Account and returns a session_token."""
 
 	auth_state = base64.urlsafe_b64encode(os.urandom(36))
 
