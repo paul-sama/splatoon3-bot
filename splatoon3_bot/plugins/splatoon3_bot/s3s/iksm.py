@@ -8,6 +8,8 @@ import requests
 from bs4 import BeautifulSoup
 from ..utils import BOT_VERSION
 
+from awaits.awaitable import awaitable
+
 session = requests.Session()
 S3S_VERSION = "unknown"
 NSOAPP_VERSION = "2.7.0"
@@ -130,6 +132,7 @@ def get_session_token(session_token_code, auth_code_verifier):
 	return json.loads(r.text)["session_token"]
 
 
+@awaitable
 def get_gtoken(f_gen_url, session_token, ver):
 	"""Provided the session_token, returns a GameWebToken and account info."""
 

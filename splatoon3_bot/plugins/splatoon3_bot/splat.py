@@ -64,13 +64,13 @@ class Splatoon:
 
     async def set_gtoken_and_bullettoken(self):
         try:
-            new_gtoken, acc_name, acc_lang, acc_country = iksm.get_gtoken(F_GEN_URL, self.session_token, A_VERSION)
+            new_gtoken, acc_name, acc_lang, acc_country = await iksm.get_gtoken(F_GEN_URL, self.session_token, A_VERSION)
         except Exception as e:
             logger.warning(f'{self.user_id} set_gtoken_and_bullettoken error. {e}')
             if self.user:
                 logger.warning(f'invalid_token_user: {self.user.id}, {self.user.username}, {self.user.nickname}')
             logger.warning('try another url')
-            new_gtoken, acc_name, acc_lang, acc_country = iksm.get_gtoken(F_GEN_URL_2, self.session_token, A_VERSION)
+            new_gtoken, acc_name, acc_lang, acc_country = await iksm.get_gtoken(F_GEN_URL_2, self.session_token, A_VERSION)
 
         new_bullettoken = await self.get_bullet(new_gtoken, WEB_VIEW_VERSION, APP_USER_AGENT, acc_lang, acc_country)
         self.gtoken = new_gtoken

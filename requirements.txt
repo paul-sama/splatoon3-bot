@@ -45,3 +45,4 @@ nonebot_plugin_htmlrender
 nonebot-adapter-telegram
 nonebot2
 cfscrape
+awaits

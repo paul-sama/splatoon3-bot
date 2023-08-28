@@ -11,7 +11,7 @@
 
 ## 自己搭建指南
 
-python >= 3.8
+python >= 3.9
 1. python -m pip install --user pipx
 2. python -m pipx ensurepath
 3. pipx install nb-cli
