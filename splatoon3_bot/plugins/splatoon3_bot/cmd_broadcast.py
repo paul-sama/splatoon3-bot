@@ -59,7 +59,7 @@ async def _broadcast(bot: QQBot, event: Event):
     for g_id in g_id_lst:
         await bot_qq_send_group_msg(message, g_id)
 
-    if not g_id_lst:
+    if g_id_lst:
         msg = f"广播消息已发送至{len(g_id_lst)}个共同QQ群"
         await bot_send(bot, event, message=msg)
 
