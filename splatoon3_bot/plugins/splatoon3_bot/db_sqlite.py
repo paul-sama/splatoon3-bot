@@ -225,7 +225,7 @@ def set_db_info(**kwargs):
             if not isinstance(_cmd, str) or (
                     _cmd[1:4].strip() not in [
                 'log', 'las', 'ss', 'scr', 'me', 'hel', 'sta', 'x_t', 'my_', 'coo', 'fri', 'ns_', 'rep', 'sp', 'ns', 'fr',
-                '文档', '帮助', '图', '图图', '图图图', '工', '全部工', '全部开', '全部挑']
+                '文档', '帮助', '图', '图图', '图图图', '工', '全部工', '全部开', '全部挑', 'bro']
             ):
                 del kwargs['cmd']
 
