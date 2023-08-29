@@ -51,7 +51,7 @@ async def _broadcast(bot: QQBot, event: Event):
         if f',{user_id}' in g.member_id_list:
             g_id_lst.append(g.group_id)
 
-    _msg = "/广播消息 关闭 - 修改设置\n"
+    _msg = "设置: /广播消息 关闭\n发送: /broadcast 消息\n"
     msg = f"[CQ:at,qq={user_id}] 发送\n{text}\n"
     message = Message(_msg) + Message(msg)
 
