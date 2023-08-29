@@ -33,7 +33,7 @@ async def _get_comment(bot: Bot, event: Event):
 @on_message(block=False, rule=to_me()).handle()
 async def _add_comment(bot: QQBot, event: GroupMessageEvent):
     message = event.get_plaintext().strip() or '*'
-    if message[0] in ('/', '、', '.', '，', '。'):
+    if message[0] in ('/', '、', '.', '，', '。') or message == '*':
         return
 
     _event = event.dict() or {}
