@@ -16,7 +16,7 @@ async def _broadcast(bot: QQBot, event: Event):
     user_id = event.get_user_id()
     user = get_user(user_id=user_id)
 
-    text = event.get_plaintext().strip().split(' ', 1)[-1].strip()
+    text = event.get_plaintext()[10:].strip().split(' ', 1)[-1].strip()
     if not text:
         logger.debug(f'broadcast no text: {user_id}, {event.get_plaintext()}')
         return
@@ -44,7 +44,7 @@ async def _broadcast(bot: QQBot, event: Event):
     for g in groups:
         if g.group_type != 'qq' or not g.bot_broadcast or not g.group_id or not g.member_id_list:
             continue
-        if group_id and group_id == g.group_id:
+        if group_id and str(group_id) == str(g.group_id):
             continue
         if f',{user_id}' in g.member_id_list:
             g_id_lst.append(g.group_id)
