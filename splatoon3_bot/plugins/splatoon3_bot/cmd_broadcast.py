@@ -19,6 +19,8 @@ async def _broadcast(bot: QQBot, event: Event):
     text = event.get_plaintext()[10:].strip().split(' ', 1)[-1].strip()
     if not text:
         logger.debug(f'broadcast no text: {user_id}, {event.get_plaintext()}')
+        msg = f"广播消息: /broadcast [消息]\n机器人在所有共同QQ群里发送消息"
+        await bot_send(bot, event, message=msg)
         return
 
     today_cnt = 0
