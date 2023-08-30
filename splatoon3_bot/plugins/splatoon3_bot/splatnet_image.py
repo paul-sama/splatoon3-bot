@@ -38,14 +38,35 @@ async def get_app_screenshot(gtoken, key='', url='', mask=False):
             await page.goto(f"{API_URL}/?lang=zh-CN")
             # await page.wait_for_timeout(1000)
             url = f"{API_URL}/history_record/summary"
+
             if '对战' in key:
-                url = f"{API_URL}/schedules"
+                url = f"{API_URL}/history/latest"
+            if '涂地' in key:
+                url = f"{API_URL}/history/regular"
+            if '蛮颓' in key:
+                url = f"{API_URL}/history/bankara"
+            if 'X' in key:
+                url = f"{API_URL}/history/xmatch"
+            if '活动' in key:
+                url = f"{API_URL}/history/event"
+            if '私房' in key:
+                url = f"{API_URL}/history/private"
+
             if '武器' in key:
                 url = f"{API_URL}/weapon_record"
-            if '鲑鱼跑' in key:
-                url = f"{API_URL}/coop"
             if '徽章' in key:
                 url = f"{API_URL}/history_record/badge"
+
+            if '鲑鱼跑' in key:
+                url = f"{API_URL}/coop"
+            if '打工' in key:
+                url = f"{API_URL}/coop_record"
+            if '祭典' in key:
+                url = f"{API_URL}/fest_record"
+            if '英雄' in key:
+                url = f"{API_URL}/hero_record"
+            if '地图' in key:
+                url = f"{API_URL}/stage_record"
 
             await page.goto(f"{url}?lang=zh-CN")
 
