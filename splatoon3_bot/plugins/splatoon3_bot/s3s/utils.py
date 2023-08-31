@@ -8,29 +8,29 @@ from bs4 import BeautifulSoup
 
 SPLATNET3_URL = "https://api.lp1.av5ja.srv.nintendo.net"
 GRAPHQL_URL  = "https://api.lp1.av5ja.srv.nintendo.net/api/graphql"
-WEB_VIEW_VERSION = "4.0.0-355675c2" # fallback
+WEB_VIEW_VERSION = "4.0.0-091d4283" # fallback
 S3S_NAMESPACE = uuid.UUID('b3a2dbf5-2c09-4792-b78c-00b548b70aeb')
 
 # SHA256 hash database for SplatNet 3 GraphQL queries
 # full list: https://github.com/samuelthomas2774/nxapi/discussions/11#discussioncomment-3614603
 translate_rid = {
-	'HomeQuery':                         '7dcc64ea27a08e70919893a0d3f70871', # blank vars
-	'LatestBattleHistoriesQuery':        '0d90c7576f1916469b2ae69f64292c02', # INK / blank vars - query1
-	'RegularBattleHistoriesQuery':       '3baef04b095ad8975ea679d722bc17de', # INK / blank vars - query1
-	'BankaraBattleHistoriesQuery':       '0438ea6978ae8bd77c5d1250f4f84803', # INK / blank vars - query1
-	'PrivateBattleHistoriesQuery':       '8e5ae78b194264a6c230e262d069bd28', # INK / blank vars - query1
-	'XBattleHistoriesQuery':             '6796e3cd5dc3ebd51864dc709d899fc5', # INK / blank vars - query1
-	'VsHistoryDetailQuery':              '9ee0099fbe3d8db2a838a75cf42856dd', # INK / req "vsResultId" - query2
-	'CoopHistoryQuery':                  '01fb9793ad92f91892ea713410173260', # SR  / blank vars - query1
-	'CoopHistoryDetailQuery':            '379f0d9b78b531be53044bcac031b34b', # SR  / req "coopHistoryDetailId" - query2
-	'MyOutfitCommonDataEquipmentsQuery': 'd29cd0c2b5e6bac90dd5b817914832f8', # for Lean's seed checker
-	'FriendsList':                       'f0a8ebc384cf5fbac01e8085fbd7c898',
-	'HistorySummary':                    'd9246baf077b2a29b5f7aac321810a77',
-	'TotalQuery':                        'f8ae00773cc412a50dd41a6d9a159ddd',
-	'XRankingQuery':                     'd771444f2584d938db8d10055599011d',
-	'ScheduleQuery':                     'd1f062c14f74f758658b2703a5799002',
-	'StageRecordsQuery':                 'f08a932d533845dde86e674e03bbb7d3',
-	'EventBattleHistoriesQuery':         'e7bbaf1fa255305d607351da434b2d0f',
+	'HomeQuery':                         '51fc56bbf006caf37728914aa8bc0e2c86a80cf195b4d4027d6822a3623098a8', # blank vars
+	'LatestBattleHistoriesQuery':        'b24d22fd6cb251c515c2b90044039698aa27bc1fab15801d83014d919cd45780', # INK / blank vars - query1
+	'RegularBattleHistoriesQuery':       '2fe6ea7a2de1d6a888b7bd3dbeb6acc8e3246f055ca39b80c4531bbcd0727bba', # INK / blank vars - query1
+	'BankaraBattleHistoriesQuery':       '9863ea4744730743268e2940396e21b891104ed40e2286789f05100b45a0b0fd', # INK / blank vars - query1
+	'PrivateBattleHistoriesQuery':       'fef94f39b9eeac6b2fac4de43bc0442c16a9f2df95f4d367dd8a79d7c5ed5ce7', # INK / blank vars - query1
+	'XBattleHistoriesQuery':             'eb5996a12705c2e94813a62e05c0dc419aad2811b8d49d53e5732290105559cb', # INK / blank vars - query1
+	'VsHistoryDetailQuery':              'f893e1ddcfb8a4fd645fd75ced173f18b2750e5cfba41d2669b9814f6ceaec46', # INK / req "vsResultId" - query2
+	'CoopHistoryQuery':                  '0f8c33970a425683bb1bdecca50a0ca4fb3c3641c0b2a1237aedfde9c0cb2b8f', # SR  / blank vars - query1
+	'CoopHistoryDetailQuery':            '824a1e22c4ad4eece7ad94a9a0343ecd76784be4f77d8f6f563c165afc8cf602', # SR  / req "coopHistoryDetailId" - query2
+	'MyOutfitCommonDataEquipmentsQuery': '45a4c343d973864f7bb9e9efac404182be1d48cf2181619505e9b7cd3b56a6e8', # for Lean's seed checker
+	'FriendsList':                       'ea1297e9bb8e52404f52d89ac821e1d73b726ceef2fd9cc8d6b38ab253428fb3',
+	'HistorySummary':                    '0a62c0152f27c4218cf6c87523377521c2cff76a4ef0373f2da3300079bf0388',
+	'TotalQuery':                        '2a9302bdd09a13f8b344642d4ed483b9464f20889ac17401e993dfa5c2bb3607',
+	'XRankingQuery':                     'a5331ed228dbf2e904168efe166964e2be2b00460c578eee49fc0bc58b4b899c',
+	'ScheduleQuery':                     '9b6b90568f990b2a14f04c25dd6eb53b35cc12ac815db85ececfccee64215edd',
+	'StageRecordsQuery':                 'c8b31c491355b4d889306a22bd9003ac68f8ce31b2d5345017cdd30a2c8056f3',
+	'EventBattleHistoriesQuery':         'e47f9aac5599f75c842335ef0ab8f4c640e8bf2afe588a3b1d4b480ee79198ac',
 }
 
 def get_web_view_ver():
