@@ -153,9 +153,15 @@ async def log_cmd_to_db(bot, event):
                 })
 
         elif isinstance(bot, TGBot):
+            name = _event.get('from_', {}).get('first_name', '')
+            if _event.get('from_', {}).get('last_name'):
+                name += ' ' + _event.get('from_', {}).get('last_name')
+            if not name:
+                name = _event.get('from_', {}).get('username') or ''
+
             data.update({
                 'id_type': 'tg',
-                'username': _event.get('from_', {}).get('username', ''),
+                'username': name,
                 'first_name': _event.get('from_', {}).get('first_name', ''),
                 'last_name': _event.get('from_', {}).get('last_name', ''),
             })

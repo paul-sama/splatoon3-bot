@@ -206,13 +206,13 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
                 if data.get('current_statics') and data['current_statics'].get('TOTAL'):
                     msg += get_statics(data['current_statics'])
                 logger.info(f'{user.username}, {msg}')
-                await bot_send(bot, event, message=msg, parse_mode='Markdown')
+                await bot_send(bot, event, message=msg, parse_mode='Markdown', from_push_mode=True)
                 return
             return
 
     logger.info(f'{user.id}, {user.username} get new {"battle" if is_battle else "coop"}!')
     db_user_info['battle_id'] = battle_id
-    get_or_set_user(user_id=user.id, user_info=json.dumps(db_user_info), push_cnt=0)
+    get_or_set_user(user_id=user.id, user_info=json.dumps(db_user_info))
     job_data['push_cnt'] = 0
     splt = Splatoon(user_id, user.session_token)
     msg = await get_last_msg(splt, battle_id, _info, is_battle, battle_show_type=db_user_info.get('battle_show_type'), **data)

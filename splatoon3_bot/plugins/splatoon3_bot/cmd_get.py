@@ -62,8 +62,8 @@ async def last(bot: Bot, event: Event):
                 break
 
     image_width = 1000
-    if isinstance(bot, QQBot) and get_text is False and get_coop is False and get_pic is False and get_ss is False:
-        # qq /last 对战默认图片i
+    if isinstance(bot, QQBot) and get_text is False and get_pic is False and get_ss is False:
+        # qq 默认图片
         get_image = True
 
     if get_text:
