@@ -27,9 +27,7 @@ async def cron_job(bot: Bot):
 
     now = dt.now()
 
-    # check msg file every 3 minutes and send msg
-    if now.minute % 3 == 0:
-        await send_user_msg(bot, users)
+    await send_user_msg(bot, users)
 
     if now.hour == 1 and now.minute == 21 and isinstance(bot, QQBot):
         await update_qq_group_info(bot)
