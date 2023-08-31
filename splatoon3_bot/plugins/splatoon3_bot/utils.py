@@ -145,7 +145,7 @@ async def log_cmd_to_db(bot, event):
                 group_lst = get_all_group()
                 for g in group_lst:
                     if str(g.group_id) == str(group_id):
-                        group_name = g.get('group_name')
+                        group_name = g.group_name
                         break
                 data.update({
                     'group_id': group_id,
