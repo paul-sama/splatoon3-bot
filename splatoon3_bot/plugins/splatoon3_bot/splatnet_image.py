@@ -39,34 +39,28 @@ async def get_app_screenshot(gtoken, key='', url='', mask=False):
             # await page.wait_for_timeout(1000)
             url = f"{API_URL}/history_record/summary"
 
-            if '对战' in key:
-                url = f"{API_URL}/history/latest"
-            if '涂地' in key:
-                url = f"{API_URL}/history/regular"
-            if '蛮颓' in key:
-                url = f"{API_URL}/history/bankara"
-            if 'X' in key:
-                url = f"{API_URL}/history/xmatch"
-            if '活动' in key:
-                url = f"{API_URL}/history/event"
-            if '私房' in key:
-                url = f"{API_URL}/history/private"
+            _d = {
+                '个人穿搭': 'my_outfits',
+                '好友': 'friends',
+                '对战': 'history/latest',
+                '涂地': 'history/regular',
+                '蛮颓': 'history/bankara',
+                'X': 'history/xmatch',
+                '活动': 'history/event',
+                '私房': 'history/private',
+                '武器': 'weapon_record',
+                '徽章': 'history_record/badge',
+                '鲑鱼跑': 'coop',
+                '打工': 'coop_record',
+                '祭典': 'fest_record',
+                '英雄': 'hero_record',
+                '地图': 'stage_record',
+            }
 
-            if '武器' in key:
-                url = f"{API_URL}/weapon_record"
-            if '徽章' in key:
-                url = f"{API_URL}/history_record/badge"
-
-            if '鲑鱼跑' in key:
-                url = f"{API_URL}/coop"
-            if '打工' in key:
-                url = f"{API_URL}/coop_record"
-            if '祭典' in key:
-                url = f"{API_URL}/fest_record"
-            if '英雄' in key:
-                url = f"{API_URL}/hero_record"
-            if '地图' in key:
-                url = f"{API_URL}/stage_record"
+            for k, v in _d.items():
+                if k in key:
+                    url = f"{API_URL}/{v}"
+                    break
 
             await page.goto(f"{url}?lang=zh-CN")
 
