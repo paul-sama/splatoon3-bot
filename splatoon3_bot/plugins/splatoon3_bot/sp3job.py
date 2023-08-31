@@ -65,6 +65,10 @@ async def cron_job(bot: Bot):
     if not u_id_lst:
         return
 
+    threading.Thread(target=sync_stat_ink, args=(u_id_lst,)).start()
+
+
+def sync_stat_ink(u_id_lst):
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         executor.map(thread_function, u_id_lst)
 
