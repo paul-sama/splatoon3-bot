@@ -26,7 +26,6 @@ async def all_command(bot: Bot, event: Event):
             'username': _event.get('from_', {}).get('username', ''),
             'first_name': _event.get('from_', {}).get('first_name', ''),
             'last_name': _event.get('from_', {}).get('last_name', ''),
-            'cmd': event.get_plaintext().strip(),
         })
         if 'group' in _event.get('chat', {}).get('type', ''):
             data.update({
@@ -37,18 +36,9 @@ async def all_command(bot: Bot, event: Event):
         data.update({
             'id_type': 'qq',
             'username': _event.get('sender', {}).get('nickname', ''),
-            'cmd': event.get_plaintext().strip(),
         })
         if _event.get('group_id'):
-            try:
-                group_info = await bot.call_api('get_group_info', group_id=_event['group_id'])
-            except Exception as e:
-                logger.error(e)
-                group_info = {}
-            data.update({
-                'group_id': _event['group_id'],
-                'group_name': group_info.get('group_name', ''),
-            })
+            data['group_id'] = _event['group_id']
     set_db_info(**data)
 
 

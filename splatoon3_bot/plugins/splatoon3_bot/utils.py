@@ -7,14 +7,14 @@ from nonebot.adapters import Bot, Event
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.telegram.message import File
 from nonebot.adapters.onebot.v11 import Bot as QQBot, Message, MessageSegment
-from .db_sqlite import get_user
+from .db_sqlite import get_user, get_all_group, set_db_info
 
 from nonebot import require
 require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '1.1.8'
+BOT_VERSION = '1.1.9'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -49,6 +49,9 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
 
         elif isinstance(bot, TGBot):
             rr = await bot.send(event, File.photo(img_data))
+
+        if not kwargs.get('from_push_mode'):
+            await log_cmd_to_db(bot, event)
         return rr
 
     if isinstance(bot, QQBot):
@@ -85,6 +88,8 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         r = None
         logger.exception(f'bot_send error: {e}, {message}')
 
+    if not kwargs.get('from_push_mode'):
+        await log_cmd_to_db(bot, event)
     return r
 
 
@@ -121,3 +126,46 @@ def check_session_handler(func):
         return result
 
     return wrapper
+
+
+async def log_cmd_to_db(bot, event):
+    try:
+        message = event.get_plaintext().strip()
+        _event = event.dict() or {}
+
+        data = {'user_id': event.get_user_id(), 'cmd': message}
+        if isinstance(bot, QQBot):
+            data.update({
+                'id_type': 'qq',
+                'username': _event.get('sender', {}).get('nickname', '')
+            })
+            group_id = _event.get('group_id')
+            if group_id:
+                group_name = ''
+                group_lst = get_all_group()
+                for g in group_lst:
+                    if str(g.group_id) == str(group_id):
+                        group_name = g.get('group_name')
+                        break
+                data.update({
+                    'group_id': group_id,
+                    'group_name': group_name,
+                })
+
+        elif isinstance(bot, TGBot):
+            data.update({
+                'id_type': 'tg',
+                'username': _event.get('from_', {}).get('username', ''),
+                'first_name': _event.get('from_', {}).get('first_name', ''),
+                'last_name': _event.get('from_', {}).get('last_name', ''),
+            })
+            if 'group' in _event.get('chat', {}).get('type', ''):
+                data.update({
+                    'group_id': _event['chat']['id'],
+                    'group_name': _event.get('chat', {}).get('title', ''),
+                })
+
+        set_db_info(**data)
+
+    except Exception as e:
+        logger.warning(f'log_cmd_to_db error: {e}')

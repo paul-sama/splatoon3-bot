@@ -456,6 +456,12 @@ async def send_img(bot: BOT, event: MESSAGE_EVENT, matcher, img):
         else:
             await bot.send(event, File.photo(img))
 
+    try:
+        from ..splatoon3_bot.utils import log_cmd_to_db
+        await log_cmd_to_db(bot, event)
+    except Exception as e:
+        logger.warning(f"QQBot log_cmd_to_db error: {e}")
+
 
 @driver.on_startup
 async def startup():
