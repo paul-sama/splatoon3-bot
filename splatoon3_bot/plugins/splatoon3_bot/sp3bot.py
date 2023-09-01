@@ -206,7 +206,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
                 if data.get('current_statics') and data['current_statics'].get('TOTAL'):
                     msg += get_statics(data['current_statics'])
                 logger.info(f'{user.username}, {msg}')
-                await bot_send(bot, event, message=msg, parse_mode='Markdown', from_push_mode=True)
+                await bot_send(bot, event, message=msg, parse_mode='Markdown', skip_log_cmd=True)
                 return
             return
 
@@ -219,7 +219,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
 
     image_width = 630 if get_image else 1000
     r = await bot_send(bot, event, message=msg, parse_mode='Markdown',
-                       reply_to_message_id=None, image_width=image_width, from_push_mode=True)
+                       reply_to_message_id=None, image_width=image_width, skip_log_cmd=True)
     if job_data.get('group_id') and r:
         message_id = ''
         if isinstance(bot, QQBot):

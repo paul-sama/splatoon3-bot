@@ -139,7 +139,7 @@ async def screen_shot(bot: Bot, event: Event):
 @check_session_handler
 async def history(bot: Bot, event: Event):
     _type = 'open'
-    await bot_send(bot, event, '`开始努力作图，请稍等~`', parse_mode='Markdown')
+    await bot_send(bot, event, '`开始努力作图，请稍等~`', parse_mode='Markdown', skip_log_cmd=True)
 
     cmd_message = event.get_plaintext()[8:].strip()
     logger.debug(f'history: {cmd_message}')

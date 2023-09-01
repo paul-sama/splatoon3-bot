@@ -14,7 +14,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '1.2.0'
+BOT_VERSION = '1.2.1'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -50,7 +50,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         elif isinstance(bot, TGBot):
             rr = await bot.send(event, File.photo(img_data))
 
-        if not kwargs.get('from_push_mode'):
+        if not kwargs.get('skip_log_cmd'):
             await log_cmd_to_db(bot, event)
         return rr
 
@@ -88,7 +88,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         r = None
         logger.exception(f'bot_send error: {e}, {message}')
 
-    if not kwargs.get('from_push_mode'):
+    if not kwargs.get('skip_log_cmd'):
         await log_cmd_to_db(bot, event)
     return r
 
