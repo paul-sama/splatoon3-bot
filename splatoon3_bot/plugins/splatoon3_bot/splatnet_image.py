@@ -62,11 +62,18 @@ async def get_app_screenshot(gtoken, key='', url='', mask=False):
                     url = f"{API_URL}/{v}"
                     break
 
+            if '问卷' in key:
+                url = f"{API_URL}/fest_record"
+
             await page.goto(f"{url}?lang=zh-CN")
 
         # key = [] if not key else key.split(' ')
         # for k in key:
         #     await page.get_by_text(k, exact=True).nth(0).click()
+
+        if '问卷' in key:
+            k = '问卷实施中'
+            await page.get_by_text(k, exact=True).nth(0).click()
 
         await page.wait_for_timeout(6000)
         img_raw = await page.screenshot(full_page=True)
