@@ -135,7 +135,8 @@ async def get_x_player():
 
     # for top_id in ('WFJhbmtpbmdTZWFzb24tcDoy', 'WFJhbmtpbmdTZWFzb24tYToy'):  # season-2
     # for top_id in ('WFJhbmtpbmdTZWFzb24tcDoz', 'WFJhbmtpbmdTZWFzb24tYToz'):  #season-3
-    for top_id in ('WFJhbmtpbmdTZWFzb24tcDo0', 'WFJhbmtpbmdTZWFzb24tYTo0'):  #season-4
+    # for top_id in ('WFJhbmtpbmdTZWFzb24tcDo0', 'WFJhbmtpbmdTZWFzb24tYTo0'):  #season-4
+    for top_id in ('WFJhbmtpbmdTZWFzb24tcDo1', 'WFJhbmtpbmdTZWFzb24tYTo1'):  #season-5
         await parse_x_data(top_id, splt)
 
     logger.info(f'get x player end. {time.time() - s}')
