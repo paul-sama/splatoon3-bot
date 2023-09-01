@@ -251,7 +251,7 @@ def get_time_head_bg(time_head_bg_size, date_time, start_time, end_time):
 def have_festival(_festivals):
     """是否存在祭典   祭典的结构需要遍历判断"""
     for v in _festivals:
-        if v["festMatchSetting"] is not None:
+        if v["festMatchSettings"] is not None:
             return True
     return False
 
