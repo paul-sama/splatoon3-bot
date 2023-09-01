@@ -260,7 +260,7 @@ def now_is_festival(_festivals):
     """现在是否是祭典"""
     now = get_time_now_china()
     for v in _festivals:
-        if v["festMatchSetting"] is not None:
+        if v["festMatchSettings"] is not None:
             # 如果祭典有参数 且现在时间位于这个区间
             st = time_converter(v["startTime"])
             et = time_converter(v["endTime"])
