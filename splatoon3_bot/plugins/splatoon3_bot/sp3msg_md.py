@@ -140,10 +140,14 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
     str_max_open_power = ''
     last_power = ''
     if (not mask and get_image and
-            ((battle_detail.get('bankaraMatch') or {}).get('mode') == 'OPEN' or battle_detail.get('leagueMatch'))):
+            ((battle_detail.get('bankaraMatch') or {}).get('mode') == 'OPEN' or
+             battle_detail.get('leagueMatch') or
+             mode == 'FEST')):
         open_power = ((battle_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
         if battle_detail.get('leagueMatch'):
             open_power = battle_detail['leagueMatch'].get('myLeaguePower') or 0
+        if mode == 'FEST':
+            open_power = (battle_detail.get('festMatch') or {}).get('myFestPower') or 0
 
         if open_power:
             str_open_power = f'战力: {open_power:.2f}'
@@ -166,6 +170,8 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
                         prev_open_power = ((prev_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
                         if prev_detail and not prev_open_power:
                             prev_open_power = (prev_detail.get('leagueMatch') or {}).get('myLeaguePower') or 0
+                        if mode == 'FEST' and prev_detail and not prev_open_power:
+                            prev_open_power = (prev_detail.get('festMatch') or {}).get('myFestPower') or 0
                         if prev_open_power:
                             last_power = prev_open_power
 
@@ -209,17 +215,6 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
 
     if mode == 'FEST':
         msg += f'\n#### {b_info["player"]["festGrade"]}'
-        fest_power = (battle_detail.get('festMatch') or {}).get('myFestPower')
-        if fest_power:
-            current_statics = {}
-            if 'current_statics' in kwargs:
-                current_statics = kwargs['current_statics']
-            last_power = current_statics.get('fest_power') or 0
-            current_statics['fest_power'] = fest_power
-            if last_power:
-                diff = fest_power - last_power
-                msg += f' {diff:+.2f}'
-            msg += f'({fest_power:.2f})'
 
     # push mode
     if 'current_statics' in kwargs:
