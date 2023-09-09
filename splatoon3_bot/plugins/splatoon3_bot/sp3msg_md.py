@@ -118,7 +118,12 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
                 text_list.append(get_row_text(p, mask))
         ti = '||'
         if mode == 'FEST':
-            ti = f"||||||||{(team.get('result') or {}).get('paintRatio') or 0:.2%}  {team.get('festTeamName')}|"
+            _str_team = f"{(team.get('result') or {}).get('paintRatio') or 0:.2%}  {team.get('festTeamName')}"
+            _c = team.get('color') or {}
+            if _c and 'r' in _c:
+                _str_color = f"rgba({int(_c['r']*255)}, {int(_c['g']*255)}, {int(_c['b']*255)}, {_c['a']})"
+                _str_team = f"<span style='color:{_str_color}'>{_str_team}</span>"
+            ti = f"||||||||{_str_team}|"
         text_list.append(f'{ti}\n')
     msg += ''.join(text_list)
 
