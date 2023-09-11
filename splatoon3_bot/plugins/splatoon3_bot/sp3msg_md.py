@@ -690,7 +690,8 @@ def get_top_md(user_id):
         if 'LeagueMatchRankingTeam' in t_type:
             t_lst = t_type.split(':')
             t_type = f'{t_lst[0]}:{t_lst[3]}'
-        t_type = t_type.replace('LeagueMatchRankingTeam-', 'LEAGUE-')
+            i.play_time += timedelta(hours=8)
+        t_type = t_type.replace('LeagueMatchRankingTeam-', 'L-')
         _t = f"{i.play_time:%y-%m-%d:%H}".replace(':00', '')
         msg += f'{t_type}|{i.rank}|{i.power}|{i.weapon}|{i.player_name}|{_t}\n'
 
