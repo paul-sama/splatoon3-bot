@@ -1,4 +1,5 @@
 import os
+import base64
 import json
 from collections import defaultdict
 from datetime import datetime as dt
@@ -116,8 +117,15 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 """
     await bot.send(event, message=msg)
 
+    logger.info(f'login success: {user_id}\n{msg}')
     user = get_user(user_id=user_id)
-    await Splatoon(user.id, user.session_token).set_gtoken_and_bullettoken()
+    _splt = Splatoon(user.id, user.session_token)
+    await _splt.set_gtoken_and_bullettoken()
+
+    res_battle = await _splt.get_recent_battles(skip_check_token=True)
+    b_info = res_battle['data']['latestBattleHistories']['historyGroups']['nodes'][0]['historyDetails']['nodes'][0]
+    player_code = base64.b64decode(b_info['player']['id']).decode('utf-8').split(':')[-1][2:]
+    set_db_info(user_id=user_id, user_id_sp=player_code)
 
 
 @on_command("clear_db_info", block=True).handle()
