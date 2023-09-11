@@ -84,6 +84,25 @@ class TopPlayer(Base):
     update_time = Column(DateTime(), onupdate=func.now())
 
 
+class TopAll(Base):
+    __tablename__ = 'top_all'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    top_id = Column(String(), default='')
+    top_type = Column(String(), default='')
+    rank = Column(Integer(), default=0)
+    power = Column(String(), default='')
+    player_name = Column(String(), default='')
+    player_name_id = Column(String(), default='')
+    player_code = Column(String(), default='', index=True)
+    byname = Column(String(), default='')
+    weapon_id = Column(Integer(), default=0)
+    weapon = Column(String(), default='')
+    play_time = Column(DateTime())
+    create_time = Column(DateTime(), default=func.now())
+    update_time = Column(DateTime(), onupdate=func.now())
+
+
 class Report(Base):
     __tablename__ = 'report'
 
@@ -454,3 +473,33 @@ def model_get_comment():
     comment = session.query(CommentTable).filter(*query).order_by(CommentTable.create_time).all()
     session.close()
     return comment
+
+
+def write_top_all(row):
+    top_id, _top_type, rank, power, name, name_id, player_code, byname, weapon_id, weapon, play_time = row
+
+    session = DBSession()
+    _dict = {
+        'top_id': top_id,
+        'top_type': _top_type,
+        'rank': rank,
+        'power': power,
+        'player_name': name,
+        'player_name_id': name_id,
+        'player_code': player_code,
+        'byname': byname,
+        'weapon_id': weapon_id,
+        'weapon': weapon,
+        'play_time': play_time
+    }
+    new_user = TopAll(**_dict)
+    session.add(new_user)
+    session.commit()
+    session.close()
+
+
+def clean_top_all(top_id):
+    session = DBSession()
+    session.query(TopAll).filter(TopAll.top_id == top_id).delete()
+    session.commit()
+    session.close()
