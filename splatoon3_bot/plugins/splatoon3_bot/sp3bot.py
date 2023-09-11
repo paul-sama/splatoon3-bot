@@ -15,7 +15,7 @@ from .sp3msg import (
 )
 from .sp3msg_md import (
     get_battle_msg as get_battle_msg_md, get_coop_msg as get_coop_msg_md, get_history, get_friends as get_friends_md,
-    get_ns_friends
+    get_ns_friends, get_top_md
 )
 from .splatnet_image import get_app_screenshot
 from .utils import bot_send, INTERVAL
@@ -311,3 +311,8 @@ def get_friend_code(user_id):
         get_or_set_user(user_id=user_id, friend_code=code)
         msg = f'{res.get("name")}: {code}'
     return msg
+
+
+async def get_top(user_id):
+    photo = get_top_md(user_id)
+    return photo

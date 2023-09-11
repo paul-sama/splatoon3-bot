@@ -503,3 +503,10 @@ def clean_top_all(top_id):
     session.query(TopAll).filter(TopAll.top_id == top_id).delete()
     session.commit()
     session.close()
+
+
+def get_top_all(player_code):
+    session = DBSession()
+    user = session.query(TopAll).filter(TopAll.player_code == player_code).all()
+    session.close()
+    return user

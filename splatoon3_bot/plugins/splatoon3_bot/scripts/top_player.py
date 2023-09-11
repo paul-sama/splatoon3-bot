@@ -2,11 +2,12 @@
 import base64
 import json
 import time
+from datetime import datetime as dt
 from nonebot import logger
 
 from ..s3s import utils
 from ..splat import Splatoon
-from ..db_sqlite import write_top_player, clean_top_player, get_all_user
+from ..db_sqlite import write_top_player, clean_top_player, get_all_user, write_top_all, clean_top_all
 
 
 def parse_x_row(n, top_type, x_type, top_id):
@@ -25,6 +26,8 @@ def parse_x_row(n, top_type, x_type, top_id):
     row = [top_id, _top_type, rank, power, name, name_id, player_code, byname, weapon_id, weapon]
     # logger.info(row[:-1])
     write_top_player(row)
+    row.append(dt.utcnow().strftime('%Y-%m-%d %H:%M:%S'))
+    write_top_all(row)
 
 
 async def get_x_items(top_id, splt):
@@ -100,6 +103,7 @@ async def get_top_x(data_row, top_id, x_type, mode_hash, splt=None):
 
 async def parse_x_data(top_id, splt):
     clean_top_player(top_id)
+    clean_top_all(top_id)
     first_rows = await get_x_items(top_id, splt)
 
     for _t in (

@@ -4,7 +4,7 @@ from nonebot.adapters.onebot.v11 import Bot as QQBot
 
 from .sp3bot import (
     get_user_db_info, get_last_battle_or_coop, get_me, get_friends_msg, get_ns_friends_msg, get_x_top_msg,
-    get_my_schedule_msg, get_screenshot_image, get_history_msg, get_friend_code
+    get_my_schedule_msg, get_screenshot_image, get_history_msg, get_friend_code, get_top
 )
 from .utils import bot_send, check_session_handler
 
@@ -159,3 +159,19 @@ async def history(bot: Bot, event: Event):
 async def friend_code(bot: Bot, event: Event):
     msg = get_friend_code(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown')
+
+
+@on_command("top", block=True).handle()
+@check_session_handler
+async def _top(bot: Bot, event: Event):
+
+    cmd_message = event.get_plaintext()[4:].strip()
+    logger.debug(f'top: {cmd_message}')
+    if cmd_message:
+        cmd_lst = cmd_message.split()
+
+    photo = await get_top(event.get_user_id())
+    if photo:
+        await bot_send(bot, event, photo, parse_mode='Markdown', image_width=1000)
+    else:
+        await bot_send(bot, event, '查无数据', parse_mode='Markdown')

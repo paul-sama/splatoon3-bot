@@ -564,6 +564,7 @@ def get_summary(data, all_data, coop, lang='zh-CN'):
 {x_msg}
 {coop_msg}
 ```
+/top 查询排行榜
 """
     return msg
 
