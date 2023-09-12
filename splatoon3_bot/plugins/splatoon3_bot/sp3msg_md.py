@@ -1,7 +1,7 @@
 import base64
 from datetime import timedelta, datetime as dt
 from .sp3msg import get_battle_msg_title, set_statics, logger, utils, get_top_str, defaultdict, fmt_sp3_state
-from .db_sqlite import model_get_user_friend, model_get_login_user, get_top_all, get_user
+from .db_sqlite import model_get_user_friend, model_get_login_user, get_top_all, get_user, get_weapon
 
 
 def get_row_text(p, battle_show_type='1'):
@@ -670,15 +670,16 @@ async def get_ns_friends(splt):
     return msg
 
 
-def get_top_md(user_id):
+def get_top_md(player_code):
     msg = ''
-    user = get_user(user_id=user_id)
-    player_code = user.user_id_sp
     res = get_top_all(player_code)
     if not res:
         return msg
-    for i in res:
-        logger.info(f'{i.top_type}, {i.rank}, {i.power}, {i.weapon}')
+
+    # for i in res:
+    #     logger.info(f'{i.top_type}, {i.rank}, {i.power}, {i.weapon}')
+
+    weapon = get_weapon() or {}
 
     msg = f'''#### 排行榜数据 ({player_code}) HKT {dt.now():%Y-%m-%d %H:%M:%S}
 |||||||
@@ -692,8 +693,12 @@ def get_top_md(user_id):
             t_type = f'{t_lst[0]}:{t_lst[3]}'
             i.play_time += timedelta(hours=8)
         t_type = t_type.replace('LeagueMatchRankingTeam-', 'L-')
-        _t = f"{i.play_time:%y-%m-%d:%H}".replace(':00', '')
-        msg += f'{t_type}|{i.rank}|{i.power}|{i.weapon}|{i.player_name}|{_t}\n'
+        _t = f"{i.play_time:%y-%m-%d %H}".replace(' 00', '')
+        if weapon.get(str(i.weapon_id)):
+            str_w = f'<img height="40" src="{weapon.get(str(i.weapon_id))}"/>'
+        else:
+            str_w = f'{i.weapon_name}'
+        msg += f'{t_type}|{i.rank}|{i.power}|{str_w}|{i.player_name}|{_t}\n'
 
-    msg += '||\n'
+    msg += '||\n\n说明: /top 1-50 a-h. 对战数字, 玩家排序\n'
     return msg

@@ -59,6 +59,8 @@ async def last(bot: Bot, event: Event):
         for cmd in cmd_lst:
             if cmd.isdigit():
                 idx = int(cmd) - 1
+                idx = max(0, idx)
+                idx = min(49, idx)
                 break
 
     image_width = 1000
@@ -167,10 +169,34 @@ async def _top(bot: Bot, event: Event):
 
     cmd_message = event.get_plaintext()[4:].strip()
     logger.debug(f'top: {cmd_message}')
+    battle = None
+    player = None
     if cmd_message:
         cmd_lst = cmd_message.split()
+        for cmd in cmd_lst:
+            cmd = cmd.strip()
+            if not cmd:
+                continue
+            if cmd.isdigit():
+                battle = int(cmd)
+            else:
+                player = cmd.lower()
 
-    photo = await get_top(event.get_user_id())
+    if battle:
+        battle = max(1, battle)
+        battle = min(50, battle)
+    if player:
+        if len(player) != 1 or player not in 'abcdefgh':
+            player = 1
+        else:
+            player = ord(player) - ord('a') + 1
+
+    if battle and not player:
+        player = 1
+    if player and not battle:
+        battle = 1
+
+    photo = await get_top(event.get_user_id(), battle, player)
     if photo:
         await bot_send(bot, event, photo, parse_mode='Markdown', image_width=1000)
     else:

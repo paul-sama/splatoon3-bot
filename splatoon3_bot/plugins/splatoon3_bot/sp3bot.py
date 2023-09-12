@@ -45,6 +45,18 @@ async def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
     try:
         if is_battle:
             battle_detail = await splt.get_battle_detail(_id)
+
+            if kwargs.get('get_player_code'):
+                _idx = kwargs.get('get_player_code', 1) - 1
+                battle_detail = battle_detail['data']['vsHistoryDetail'] or {}
+                teams = [battle_detail['myTeam']] + battle_detail['otherTeams']
+                p_lst = []
+                for t in teams:
+                    for p in t['players']:
+                        p_lst.append(p)
+                player_code = (base64.b64decode(p_lst[_idx]['id']).decode('utf-8') or '').split(':u-')[-1]
+                return player_code
+
             kwargs['splt'] = splt
             if kwargs.get('get_pic') or kwargs.get('get_image'):
                 msg = await get_battle_msg_md(extra_info, battle_detail, **kwargs)
@@ -63,7 +75,7 @@ async def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
 
 
 async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get_coop=False, get_pic=False, idx=0,
-                                  get_screenshot=False, get_image=False, mask=False):
+                                  get_screenshot=False, get_image=False, mask=False, get_player_code=False):
     user = get_user(user_id=user_id)
     splt = Splatoon(user.id, user.session_token)
 
@@ -117,7 +129,7 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
         except:
             user_info = {}
         msg = await get_last_msg(splt, battle_id, b_info, battle_show_type=user_info.get('battle_show_type'),
-                                 get_pic=get_pic, get_image=get_image, mask=mask)
+                                 get_pic=get_pic, get_image=get_image, mask=mask, get_player_code=get_player_code)
         return msg
     else:
         if for_push:
@@ -313,6 +325,13 @@ def get_friend_code(user_id):
     return msg
 
 
-async def get_top(user_id):
-    photo = get_top_md(user_id)
+async def get_top(user_id, battle=None, player=None):
+    logger.info(f'get_top: {user_id}, {battle}, {player}')
+    if not battle:
+        user = get_user(user_id=user_id)
+        player_code = user.user_id_sp
+    else:
+        player_code = await get_last_battle_or_coop(user_id, get_battle=True, idx=battle - 1, get_player_code=player)
+
+    photo = get_top_md(player_code)
     return photo

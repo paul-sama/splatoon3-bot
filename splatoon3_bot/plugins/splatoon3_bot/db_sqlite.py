@@ -103,6 +103,20 @@ class TopAll(Base):
     update_time = Column(DateTime(), onupdate=func.now())
 
 
+class Weapon(Base):
+    __tablename__ = 'weapon'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    weapon_id = Column(String(), default='')
+    weapon_name = Column(String(), default='')
+    image2d = Column(String(), default='')
+    image2d_thumb = Column(String(), default='')
+    image3d = Column(String(), default='')
+    image3d_thumb = Column(String(), default='')
+    create_time = Column(DateTime(), default=func.now())
+    update_time = Column(DateTime(), onupdate=func.now())
+
+
 class Report(Base):
     __tablename__ = 'report'
 
@@ -510,3 +524,11 @@ def get_top_all(player_code):
     user = session.query(TopAll).filter(TopAll.player_code == player_code).all()
     session.close()
     return user
+
+
+def get_weapon():
+    session = DBSession()
+    weapon = session.query(Weapon).all()
+    session.close()
+    _dict = dict((str(i.weapon_id), i.image2d_thumb) for i in weapon)
+    return _dict
