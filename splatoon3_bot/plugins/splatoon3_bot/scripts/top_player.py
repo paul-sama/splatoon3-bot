@@ -32,7 +32,8 @@ def parse_x_row(n, top_type, x_type, top_id):
 
 async def get_x_items(top_id, splt):
     """获取X排行榜第一屏数据"""
-    _d = utils.gen_graphql_body('d5e4924c05891208466fcba260d682e7', varname='id', varvalue=top_id)
+    _d = utils.gen_graphql_body('90932ee3357eadab30eb11e9d6b4fe52d6b35fde91b5c6fd92ba4d6159ea1cb7',
+                                varname='id', varvalue=top_id)
     res = await splt._request(_d)
     return res
 
