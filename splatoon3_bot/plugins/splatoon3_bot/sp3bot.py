@@ -55,8 +55,10 @@ async def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
                     for p in t['players']:
                         p_lst.append(p)
                 _idx = min(_idx, len(p_lst))
-                player_code = (base64.b64decode(p_lst[_idx]['id']).decode('utf-8') or '').split(':u-')[-1]
-                return player_code
+                p = p_lst[_idx]
+                player_code = (base64.b64decode(p['id']).decode('utf-8') or '').split(':u-')[-1]
+                player_name = p['name']
+                return player_code, player_name
 
             kwargs['splt'] = splt
             if kwargs.get('get_pic') or kwargs.get('get_image'):
@@ -328,11 +330,13 @@ def get_friend_code(user_id):
 
 async def get_top(user_id, battle=None, player=None):
     logger.info(f'get_top: {user_id}, {battle}, {player}')
+    player_name = ''
     if not battle:
         user = get_user(user_id=user_id)
         player_code = user.user_id_sp
     else:
-        player_code = await get_last_battle_or_coop(user_id, get_battle=True, idx=battle - 1, get_player_code=player)
+        player_code, player_name = await get_last_battle_or_coop(user_id, get_battle=True, idx=battle - 1,
+                                                                 get_player_code=player)
 
     photo = get_top_md(player_code)
-    return photo
+    return photo or player_name

@@ -196,8 +196,11 @@ async def _top(bot: Bot, event: Event):
     if player and not battle:
         battle = 1
 
+    _msg = '查无数据'
     photo = await get_top(event.get_user_id(), battle, player)
     if photo:
-        await bot_send(bot, event, photo, parse_mode='Markdown', image_width=1000)
-    else:
-        await bot_send(bot, event, '查无数据', parse_mode='Markdown')
+        if not photo.startswith('###'):
+            _msg += f', {photo}'
+        else:
+            _msg = photo
+    await bot_send(bot, event, _msg)
