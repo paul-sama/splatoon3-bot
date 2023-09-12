@@ -54,6 +54,7 @@ async def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
                 for t in teams:
                     for p in t['players']:
                         p_lst.append(p)
+                _idx = min(_idx, len(p_lst))
                 player_code = (base64.b64decode(p_lst[_idx]['id']).decode('utf-8') or '').split(':u-')[-1]
                 return player_code
 
