@@ -697,7 +697,7 @@ def get_top_md(player_code):
         if weapon.get(str(i.weapon_id)):
             str_w = f'<img height="40" src="{weapon.get(str(i.weapon_id))}"/>'
         else:
-            str_w = f'{i.weapon_name}'
+            str_w = f'{i.weapon}'
         msg += f'{t_type}|{i.rank}|{i.power}|{str_w}|{i.player_name}|{_t}\n'
 
     msg += '||\n\n说明: /top 1-50 a-h. 对战数字, 玩家排序\n'
