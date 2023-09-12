@@ -107,10 +107,10 @@ async def parse_x_data(top_id, splt):
     first_rows = await get_x_items(top_id, splt)
 
     for _t in (
-            ('Ar', '6de3895bd90b5fa5220b5e9355981e16'),
-            ('Lf', 'd96057b8f46e5f7f213a35c8ea2b8fdc'),
-            ('Gl', 'd62ec65b297968b659103d8dc95d014d'),
-            ('Cl', '3ab25d7f475cb3d5daf16f835a23411b')
+            ('Ar', '0dc7b908c6d7ad925157a7fa60915523dab4613e6902f8b3359ae96be1ba175f'),
+            ('Lf', 'ca55206629f2c9fab38d74e49dda3c5452a83dd02a5a7612a2520a1fc77ae228'),
+            ('Gl', '6ab0299d827378d2cae1e608d349168cd4db21dd11164c542d405ed689c9f622'),
+            ('Cl', '485e5decc718feeccf6dffddfe572455198fdd373c639d68744ee81507df1a48')
     ):
         x_type, hash_mode = _t
         try:
