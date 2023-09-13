@@ -26,7 +26,7 @@ def parse_x_row(n, top_type, x_type, top_id):
     row = [top_id, _top_type, rank, power, name, name_id, player_code, byname, weapon_id, weapon]
     # logger.info(row[:-1])
     write_top_player(row)
-    row.append(dt.utcnow().strftime('%Y-%m-%d %H:%M:%S'))
+    row.append(dt.utcnow())
     write_top_all(row)
 
 
