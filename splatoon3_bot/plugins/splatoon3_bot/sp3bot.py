@@ -51,7 +51,7 @@ async def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
                 battle_detail = battle_detail['data']['vsHistoryDetail'] or {}
                 teams = [battle_detail['myTeam']] + battle_detail['otherTeams']
                 p_lst = []
-                for t in teams:
+                for t in sorted(teams, key=lambda x: x['order']):
                     for p in t['players']:
                         p_lst.append(p)
                 _idx = min(_idx, len(p_lst))
