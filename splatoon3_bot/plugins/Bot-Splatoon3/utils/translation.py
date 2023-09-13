@@ -288,6 +288,16 @@ dict_weapon_main_trans = {
     "Z+F Splat Charger": "斯普拉蓄力狙击枪 联名",
     "Z+F Splatterscope": "斯普拉准星枪 联名",
     "Zink Mini Splatling": "斯普拉旋转枪 联名",
+    "Ballpoint Splatling Nouveau": "圆珠笔·新艺术",
+    "Bloblobber Deco": "满溢泡澡泼桶 装饰",
+    "Custom Goo Tuber": "高压油管枪 改装",
+    "Dread Wringer": "墨瀑淋",
+    "Gold Dynamo Roller": "电动马达滚筒 高磁波",
+    "Heavy Edit Splatling": "审查者",
+    "Inkline Tri-Stringer": "三发猎鱼弓 联名",
+    "Octobrush Nouveau": "北斋·新艺术",
+    "Sloshing Machine Neo": "回旋泼桶 新型",
+    "Sorella Brella": "遮阳防空伞 姐妹",
 }
 
 # 规范翻译字典 装备 副武器名称
