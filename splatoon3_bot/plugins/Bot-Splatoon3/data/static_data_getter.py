@@ -104,7 +104,8 @@ async def push_weapon_images(img: ImageInfo):
 
 async def get_file_url(url):
     """从网页读获取图片"""
-    data = await async_http_get(url).content
+    resp = await async_http_get(url)
+    data = resp.content
     return data
 
 

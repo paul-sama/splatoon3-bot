@@ -477,11 +477,11 @@ def get_event_card(event, event_card_bg_size):
     )
     stage_card_size = stage_card.size
     paste_with_a(event_card_bg, stage_card, stage_card_pos)
-    # 绘制三个活动时间
+    # 绘制三个或多个活动时间
     drawer = ImageDraw.Draw(event_card_bg)
     ttf = ImageFont.truetype(ttf_path_chinese, 40)
     pos_h = stage_card_pos[1] + stage_card_size[1] + 20
-    for v in range(3):
+    for v in range(len(event["timePeriods"])):
         # 绘制游戏模式小图标
         game_mode_text = event["leagueMatchSetting"]["vsRule"]["rule"]
         game_mode_img_size = (35, 35)

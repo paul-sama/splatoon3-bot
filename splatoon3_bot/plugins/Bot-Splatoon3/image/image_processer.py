@@ -104,8 +104,9 @@ def get_events(events):
             error = "傻逼任天堂又整不出新活，开始输出问号活动了，活动地图渲染失败"
             logger.warning(error)
             drawer.text((desc_pos[0], desc_pos[1] + 50), error, font=ttf, fill=(255, 255, 255))
+            pos_h += 100
             continue
-        event_card_pos = (20, pos_h)
+        event_card_pos = (20, pos_h + 20)
         paste_with_a(image_background, event_card, event_card_pos)
         pos_h += event_card_bg_size[1] + 10
         # 绘制祭典说明卡片
@@ -434,8 +435,8 @@ def get_random_weapon(weapon1: [WeaponData], weapon2: [WeaponData]):
     image_background = circle_corner(get_file("bg2").resize(image_background_size), radii=20)
     # 绘制上下两块武器区域
     weapon_card_bg_size = (image_background_size[0] - 10, (image_background_size[1] - 10) // 2)
-    top_weapon_card = get_weapon_card(weapon1, weapon_card_bg_size, dict_bg_rgb["上-武器卡片-黄"], (34, 34, 34))
-    down_weapon_card = get_weapon_card(weapon2, weapon_card_bg_size, dict_bg_rgb["下-武器卡片-蓝"], (255, 255, 255))
+    top_weapon_card = get_weapon_card(weapon1, weapon_card_bg_size, dict_bg_rgb["上-武器卡片"], (34, 34, 34))
+    down_weapon_card = get_weapon_card(weapon2, weapon_card_bg_size, dict_bg_rgb["下-武器卡片"], (255, 255, 255))
     # 将武器区域贴到最下层背景
     paste_with_a(image_background, top_weapon_card, (5, 5))
     paste_with_a(image_background, down_weapon_card, (5, (image_background_size[1]) // 2))
