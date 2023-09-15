@@ -693,6 +693,9 @@ def get_top_md(player_code):
     # for i in res:
     #     logger.info(f'{i.top_type}, {i.rank}, {i.power}, {i.weapon}')
 
+    if not res:
+        return
+
     weapon = get_weapon() or {}
 
     str_player_code = ''
@@ -733,5 +736,5 @@ def get_top_md(player_code):
         else:
             msg += f'{t_type}|{i.rank}|{i.power}|{str_w}|{i.player_name}|{dict_p[i.player_code]}|{_t}\n'
 
-    msg += '||\n\n说明: /top 1-50 a-h. 对战数字, 玩家排序\n'
+    msg += '||\n\n说明: /top [1-50] [a-h] [last]. 对战数字, 玩家排序, 全部查询\n'
     return msg
