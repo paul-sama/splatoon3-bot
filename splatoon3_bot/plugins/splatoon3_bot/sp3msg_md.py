@@ -682,7 +682,7 @@ def get_top_md(player_code):
         res = res[-30:]
     else:
         res_a = []
-        for p in player_code:
+        for p in player_code or []:
             p, _name = p.split('_', 1)
             dict_p[p] = _name
             res = get_top_all(p)
