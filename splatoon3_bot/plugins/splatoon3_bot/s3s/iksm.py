@@ -73,6 +73,8 @@ def get_gtoken(f_gen_url, session_token, ver):
 		logger.warning("Not a valid authorization request. Please delete config.txt and try again.")
 		logger.warning("Error from Nintendo (in api/token step):")
 		logger.warning(json.dumps(id_response, indent=2))
+		if id_response.get('error') == 'invalid_grant':
+			raise ValueError('invalid_grant')
 		return
 
 	url = "https://api.accounts.nintendo.com/2.0.0/users/me"
