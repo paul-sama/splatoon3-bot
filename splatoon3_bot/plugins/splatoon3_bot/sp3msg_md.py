@@ -671,22 +671,49 @@ async def get_ns_friends(splt):
 
 
 def get_top_md(player_code):
+    logger.info(f'get top md {player_code}')
     msg = ''
-    res = get_top_all(player_code)
-    if not res:
-        return msg
+    dict_p = {}
+    if isinstance(player_code, str):
+        res = get_top_all(player_code)
+        if not res:
+            return msg
+        res = sorted(res, key=lambda x: x.play_time)
+        res = res[-30:]
+    else:
+        res_a = []
+        for p in player_code:
+            p, _name = p.split('_', 1)
+            dict_p[p] = _name
+            res = get_top_all(p)
+            res = sorted(res, key=lambda x: x.play_time)
+            res_a.extend(res)
+        res = res_a
 
     # for i in res:
     #     logger.info(f'{i.top_type}, {i.rank}, {i.power}, {i.weapon}')
 
     weapon = get_weapon() or {}
 
-    msg = f'''#### 排行榜数据 ({player_code}) HKT {dt.now():%Y-%m-%d %H:%M:%S}
+    str_player_code = ''
+    if isinstance(player_code, str):
+        str_player_code = f'({player_code})'
+
+    msg = f'''#### 排行榜数据 {str_player_code} HKT {dt.now():%Y-%m-%d %H:%M:%S}
 |||||||
 |---|---:|:---|---|---|---|
 '''
-    res = sorted(res, key=lambda x: x.play_time)
-    for i in res[-30:]:
+
+    if isinstance(player_code, list):
+        msg = f'''#### 排行榜数据 {str_player_code} HKT {dt.now():%Y-%m-%d %H:%M:%S}
+||||||||
+|---|---:|:---|---|---|---|---|
+'''
+
+    p_code = ''
+    if res:
+        p_code = res[0].player_code
+    for i in res:
         t_type = i.top_type
         if 'LeagueMatchRankingTeam' in t_type:
             t_lst = t_type.split(':')
@@ -698,7 +725,13 @@ def get_top_md(player_code):
             str_w = f'<img height="40" src="{weapon.get(str(i.weapon_id))}"/>'
         else:
             str_w = f'{i.weapon}'
-        msg += f'{t_type}|{i.rank}|{i.power}|{str_w}|{i.player_name}|{_t}\n'
+        if i.player_code != p_code:
+            msg += f'||\n'
+            p_code = i.player_code
+        if isinstance(player_code, str):
+            msg += f'{t_type}|{i.rank}|{i.power}|{str_w}|{i.player_name}|{_t}\n'
+        else:
+            msg += f'{t_type}|{i.rank}|{i.power}|{str_w}|{i.player_name}|{dict_p[i.player_code]}|{_t}\n'
 
     msg += '||\n\n说明: /top 1-50 a-h. 对战数字, 玩家排序\n'
     return msg

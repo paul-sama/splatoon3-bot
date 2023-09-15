@@ -171,6 +171,7 @@ async def _top(bot: Bot, event: Event):
     logger.debug(f'top: {cmd_message}')
     battle = None
     player = None
+    get_all = False
     if cmd_message:
         cmd_lst = cmd_message.split()
         for cmd in cmd_lst:
@@ -181,6 +182,8 @@ async def _top(bot: Bot, event: Event):
                 battle = int(cmd)
             else:
                 player = cmd.lower()
+            if cmd == 'last':
+                get_all = True
 
     if battle:
         battle = max(1, battle)
@@ -195,6 +198,9 @@ async def _top(bot: Bot, event: Event):
         player = 1
     if player and not battle:
         battle = 1
+
+    if get_all:
+        player = 'all'
 
     _msg = '查无数据'
     photo = await get_top(event.get_user_id(), battle, player)
