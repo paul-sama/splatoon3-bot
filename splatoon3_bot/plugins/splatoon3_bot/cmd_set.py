@@ -125,7 +125,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
     res_battle = await _splt.get_recent_battles(skip_check_token=True)
     b_info = res_battle['data']['latestBattleHistories']['historyGroups']['nodes'][0]['historyDetails']['nodes'][0]
     player_code = base64.b64decode(b_info['player']['id']).decode('utf-8').split(':')[-1][2:]
-    set_db_info(user_id=user_id, user_id_sp=player_code)
+    set_db_info(user_id=user_id, id_type=data['id_type'], user_id_sp=player_code)
 
 
 @on_command("clear_db_info", block=True).handle()
