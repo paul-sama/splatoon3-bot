@@ -152,7 +152,7 @@ async def clear_db_info(bot: Bot, event: Event):
 
     msg = "All your data cleared! 已清空账号数据!"
     logger.info(msg)
-    await bot.send(event, message=msg)
+    await bot_send(bot, event, message=msg)
 
 
 matcher_set_battle_info = on_command("set_battle_info", aliases={'sbi'}, block=True)
