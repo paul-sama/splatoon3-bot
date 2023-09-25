@@ -15,7 +15,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '1.3.3'
+BOT_VERSION = '1.3.4'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -142,7 +142,7 @@ def check_session_handler(func):
     return wrapper
 
 
-async def log_cmd_to_db(bot, event):
+async def log_cmd_to_db(bot, event, get_map=False):
     try:
         message = event.get_plaintext().strip()
         _event = event.dict() or {}
@@ -201,6 +201,12 @@ async def log_cmd_to_db(bot, event):
                     'group_id': group_id,
                     'group_name': group_info.get('group_name', ''),
                 })
+
+        if data.get('group_id'):
+            if get_map:
+                data['map_cnt'] = 1
+            else:
+                data['cmd_cnt'] = 1
 
         set_db_info(**data)
 

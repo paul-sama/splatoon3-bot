@@ -63,6 +63,8 @@ class GroupTable(Base):
     cmd = Column(Text(), nullable=True)
     bot_map = Column(Integer(), default=1)
     bot_broadcast = Column(Integer(), default=1)
+    cmd_cnt = Column(Integer(), default=0)
+    map_cnt = Column(Integer(), default=0)
     create_time = Column(DateTime(), default=func.now())
     update_time = Column(DateTime(), onupdate=func.now())
 
@@ -326,6 +328,11 @@ def set_db_info(**kwargs):
                     else:
                         new_cmd = str_cmd
                     kwargs['cmd'] = new_cmd
+                    if kwargs.get('cmd_cnt'):
+                        kwargs['cmd_cnt'] = group.cmd_cnt + 1
+                    if kwargs.get('map_cnt'):
+                        kwargs['map_cnt'] = group.map_cnt + 1
+
                 for k, v in kwargs.items():
                     if getattr(group, k, '_empty') == '_empty':
                         continue
