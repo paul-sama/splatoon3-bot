@@ -394,7 +394,8 @@ async def send_msg(bot: BOT, event: MESSAGE_EVENT, matcher, msg):
     """公用send_msg"""
     # 指定回复模式
     reply_mode = plugin_config.splatoon3_reply_mode
-    if isinstance(bot, V11_Bot):
+
+    if isinstance(bot, (V11_Bot, V12_Bot)):
         try:
             group_id = (event.dict() or {}).get('group_id')
             if group_id:
@@ -403,14 +404,15 @@ async def send_msg(bot: BOT, event: MESSAGE_EVENT, matcher, msg):
                 stop_group_id_lst = model_get_map_group_id_list()
                 logger.debug(f'stop_group_id_lst: {stop_group_id_lst}')
                 if stop_group_id_lst and group_id in stop_group_id_lst:
-                    logger.info(f'qq群 {group_id} 已停用该查地图插件')
+                    logger.info(f'群组 {group_id} 已停用该查地图插件')
                     return
         except Exception as e:
             logger.warning(f"QQBot bot map error: {e}")
 
+    if isinstance(bot, V11_Bot):
         await bot.send(event, message=V11_MsgSeg.text(msg), reply_message=reply_mode)
     elif isinstance(bot, V12_Bot):
-        await bot.send(event, message=V12_MsgSeg.text(msg), reply_message=reply_mode)
+        await bot.send(event, message=V12_MsgSeg.text(msg))
     elif isinstance(bot, Tg_Bot):
         if reply_mode:
             await bot.send(event, msg, reply_to_message_id=event.dict().get("message_id"))
@@ -422,8 +424,8 @@ async def send_img(bot: BOT, event: MESSAGE_EVENT, matcher, img):
     """公用send_img"""
     # 指定回复模式
     reply_mode = plugin_config.splatoon3_reply_mode
-    if isinstance(bot, V11_Bot):
 
+    if isinstance(bot, (V11_Bot, V12_Bot)):
         try:
             group_id = (event.dict() or {}).get('group_id')
             if group_id:
@@ -432,11 +434,12 @@ async def send_img(bot: BOT, event: MESSAGE_EVENT, matcher, img):
                 stop_group_id_lst = model_get_map_group_id_list()
                 logger.debug(f'stop_group_id_lst: {stop_group_id_lst}')
                 if stop_group_id_lst and group_id in stop_group_id_lst:
-                    logger.info(f'qq群 {group_id} 已停用该查地图插件')
+                    logger.info(f'群组 {group_id} 已停用该查地图插件')
                     return
         except Exception as e:
             logger.warning(f"QQBot bot map error: {e}")
 
+    if isinstance(bot, V11_Bot):
         try:
             await bot.send(event, message=V11_MsgSeg.image(file=img, cache=False), reply_message=reply_mode)
         except Exception as e:
@@ -447,7 +450,7 @@ async def send_img(bot: BOT, event: MESSAGE_EVENT, matcher, img):
             resp = await bot.upload_file(type="data", name="temp.png", data=img)
             file_id = resp["file_id"]
             if file_id:
-                await bot.send(event, message=V12_MsgSeg.image(file_id=file_id), reply_message=reply_mode)
+                await bot.send(event, message=V12_MsgSeg.image(file_id=file_id))
         except Exception as e:
             logger.warning(f"QQBot send error: {e}")
     elif isinstance(bot, Tg_Bot):

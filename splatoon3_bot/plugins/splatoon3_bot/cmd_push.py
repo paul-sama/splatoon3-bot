@@ -5,6 +5,7 @@ from datetime import datetime as dt, timedelta
 from nonebot import on_command, logger, require
 from nonebot.adapters import Event, Bot
 from nonebot.adapters.onebot.v11 import Bot as QQBot
+from nonebot.adapters.onebot.v12 import Bot as WXBot
 from nonebot.typing import T_State
 
 from .db_sqlite import get_or_set_user, get_user
@@ -30,7 +31,7 @@ async def start_push(bot: Bot, event: Event, state: T_State):
         get_image = True
 
     # QQ 默认image
-    if isinstance(bot, QQBot):
+    if isinstance(bot, (QQBot, WXBot)):
         get_image = True
 
     if 't' in cmd_lst or 'text' in cmd_lst:

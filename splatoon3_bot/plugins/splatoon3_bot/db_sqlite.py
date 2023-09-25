@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import json
 import os
 from loguru import logger
 from sqlalchemy import Column, String, create_engine, Integer, Boolean, Text, DateTime, func, Float
@@ -21,6 +22,7 @@ class UserTable(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id_tg = Column(String(), unique=True, nullable=True)
     user_id_qq = Column(String(), unique=True, nullable=True)
+    user_id_wx = Column(String(), unique=True, nullable=True)
     username = Column(String(), nullable=True)
     first_name = Column(String(), nullable=True)
     last_name = Column(String(), nullable=True)
@@ -211,7 +213,9 @@ def get_or_set_user(**kwargs):
             return
 
         user = session.query(UserTable).filter(
-            (UserTable.id == user_id) | (UserTable.user_id_qq == user_id) | (UserTable.user_id_tg == user_id)).first()
+            (UserTable.id == user_id) | (UserTable.user_id_qq == user_id) | (UserTable.user_id_tg == user_id) |
+            (UserTable.user_id_wx == user_id)
+        ).first()
         if user:
             for k, v in kwargs.items():
                 if getattr(user, k, '_empty') == '_empty' or k == 'user_id':
@@ -221,8 +225,9 @@ def get_or_set_user(**kwargs):
                 logger.debug(f'update user {k}={v}')
                 setattr(user, k, v)
                 session.commit()
-            user = session.query(UserTable).filter((UserTable.id == user_id) | (UserTable.user_id_qq == user_id) |
-                                                   (UserTable.user_id_tg == user_id)).first()
+            user = session.query(UserTable).filter(
+                (UserTable.id == user_id) | (UserTable.user_id_qq == user_id) |
+                (UserTable.user_id_tg == user_id) | (UserTable.user_id_wx == user_id)).first()
             session.close()
             return user
         else:
@@ -265,6 +270,8 @@ def set_db_info(**kwargs):
                 query_lst.append(UserTable.user_id_tg == user_id)
             elif id_type == 'qq':
                 query_lst.append(UserTable.user_id_qq == user_id)
+            elif id_type == 'wx':
+                query_lst.append(UserTable.user_id_wx == user_id)
             if query_lst:
                 user = session.query(UserTable).filter(*query_lst).first()
                 if user:
@@ -279,6 +286,11 @@ def set_db_info(**kwargs):
                         else:
                             new_cmd = str_cmd
                         kwargs['cmd'] = new_cmd
+                    if kwargs.get('user_info'):
+                        old_user_info = json.loads(user.user_info) if user.user_info else {}
+                        new_user_info = json.loads(kwargs.get('user_info'))
+                        new_user_info.update(old_user_info)
+                        kwargs['user_info'] = json.dumps(new_user_info)
 
                     for k, v in kwargs.items():
                         if getattr(user, k, '_empty') == '_empty':
@@ -292,6 +304,7 @@ def set_db_info(**kwargs):
                     new_user = UserTable(
                         user_id_tg=user_id if id_type == 'tg' else None,
                         user_id_qq=user_id if id_type == 'qq' else None,
+                        user_id_wx=user_id if id_type == 'wx' else None,
                         username=kwargs.get('username'),
                         first_name=kwargs.get('first_name'),
                         last_name=kwargs.get('last_name'),
@@ -342,7 +355,9 @@ def get_user(**kwargs):
         session = DBSession()
 
         user = session.query(UserTable).filter(
-            (UserTable.id == user_id) | (UserTable.user_id_qq == user_id) | (UserTable.user_id_tg == user_id)).first()
+            (UserTable.id == user_id) | (UserTable.user_id_qq == user_id) | (UserTable.user_id_tg == user_id) |
+            (UserTable.user_id_wx == user_id)
+        ).first()
         if user:
             logger.debug(f'get user from db: {user.id}, {user.username}, {kwargs}')
             session.close()

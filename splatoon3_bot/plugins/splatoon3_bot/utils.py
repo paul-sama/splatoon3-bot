@@ -7,6 +7,7 @@ from nonebot.adapters import Bot, Event
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.telegram.message import File
 from nonebot.adapters.onebot.v11 import Bot as QQBot, Message, MessageSegment
+from nonebot.adapters.onebot.v12 import Bot as WXBot, Message, MessageSegment as WXMsgSeg
 from .db_sqlite import get_user, get_all_group, set_db_info
 
 from nonebot import require
@@ -14,7 +15,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '1.3.2'
+BOT_VERSION = '1.3.3'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -50,11 +51,21 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         elif isinstance(bot, TGBot):
             rr = await bot.send(event, File.photo(img_data))
 
+        elif isinstance(bot, WXBot):
+            # onebot12协议需要先上传文件获取file_id后才能发送图片
+            try:
+                resp = await bot.upload_file(type="data", name="temp.png", data=img_data)
+                file_id = resp["file_id"]
+                if file_id:
+                    await bot.send(event, message=WXMsgSeg.image(file_id=file_id))
+            except Exception as e:
+                logger.warning(f"QQBot send error: {e}")
+
         if not kwargs.get('skip_log_cmd'):
             await log_cmd_to_db(bot, event)
         return rr
 
-    if isinstance(bot, QQBot):
+    if isinstance(bot, (QQBot, WXBot)):
         message = message.replace('```', '').replace('\_', '_').strip().strip('`')
         if 'duration: ' in message or 'W1 ' in message:
             message = message.replace('`', '').replace('*', '')
@@ -75,7 +86,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
             if '\nW1' in message:
                 message = message.split('\n\n')[0].strip()
 
-            if 'reply_to_message_id' not in kwargs:
+            if 'reply_to_message_id' not in kwargs and isinstance(bot, QQBot):
                 message = Message(f"[CQ:reply,id={event.dict().get('message_id')}]" + message)
 
     elif isinstance(bot, TGBot):
@@ -83,7 +94,10 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
             kwargs['reply_to_message_id'] = event.dict().get('message_id')
 
     try:
-        r = await bot.send(event, message, **kwargs)
+        if isinstance(bot, WXBot):
+            r = await bot.send(event, message)
+        else:
+            r = await bot.send(event, message, **kwargs)
     except Exception as e:
         r = None
         logger.exception(f'bot_send error: {e}, {message}')
@@ -108,7 +122,7 @@ def check_session_handler(func):
         user = get_user(user_id=event.get_user_id())
         if not user or not user.session_token:
             _msg = "Permission denied. /login first."
-            if isinstance(bot, QQBot):
+            if isinstance(bot, (QQBot, WXBot)):
                 _msg = '无权限查看，请先 /login 登录'
 
             matcher = kwargs.get('matcher')
@@ -169,6 +183,23 @@ async def log_cmd_to_db(bot, event):
                 data.update({
                     'group_id': _event['chat']['id'],
                     'group_name': _event.get('chat', {}).get('title', ''),
+                })
+
+        elif isinstance(bot, WXBot):
+            user_info = await bot.get_user_info(user_id=event.get_user_id())
+            if not user_info:
+                logger.info(f'get_user_info wx failed, {event.get_user_id()}')
+                return
+            data.update({
+                'id_type': 'wx',
+                'username': user_info.get('user_name', '')
+            })
+            group_id = _event.get('group_id')
+            if group_id:
+                group_info = await bot.get_group_info(group_id=group_id)
+                data.update({
+                    'group_id': group_id,
+                    'group_name': group_info.get('group_name', ''),
                 })
 
         set_db_info(**data)

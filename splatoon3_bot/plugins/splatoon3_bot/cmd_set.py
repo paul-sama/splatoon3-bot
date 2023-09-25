@@ -9,6 +9,7 @@ from nonebot.adapters import Event, Bot
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.telegram.message import File
 from nonebot.adapters.onebot.v11 import Bot as QQBot
+from nonebot.adapters.onebot.v12 import Bot as WXBot
 from nonebot.typing import T_State
 
 from .db_sqlite import set_db_info, get_user, get_or_set_user
@@ -30,6 +31,9 @@ matcher_login = on_command("login", block=True)
 @matcher_login.handle()
 async def login(bot: Bot, event: Event, state: T_State):
     if 'group' in event.get_event_name():
+        if isinstance(bot, WXBot):
+            await matcher_login.finish(MSG_PRIVATE)
+            return
         await matcher_login.finish(MSG_PRIVATE, reply_message=True)
         return
 
@@ -59,7 +63,7 @@ Navigate to this URL in your browser:
 {url}
 Log in, right click the "Select this account" button, copy the link address, and paste below. (Valid for 2 minutes)
             '''
-        elif isinstance(bot, QQBot):
+        elif isinstance(bot, (QQBot, WXBot)):
             msg = f'''在浏览器中打开下面链接
 {url}
 登陆后，右键账号后面的红色按钮 (手机端长按复制)
@@ -88,10 +92,15 @@ async def login_id(bot: Bot, event: Event, state: T_State):
         return
     logger.info(f'session_token: {session_token}')
     user_id = event.get_user_id()
+    id_type = 'qq'
+    if isinstance(bot, TGBot):
+        id_type = 'tg'
+    if isinstance(bot, WXBot):
+        id_type = 'wx'
     data = {
         'session_token': session_token,
         'user_id': user_id,
-        'id_type': 'tg' if isinstance(bot, TGBot) else 'qq',
+        'id_type': id_type,
     }
     if isinstance(bot, TGBot):
         data['report_type'] = 1
@@ -106,7 +115,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 /start_push - start push mode
 /set_api_key - set stat.ink api_key, bot will sync your data to stat.ink
 """
-    if isinstance(bot, QQBot):
+    if isinstance(bot, (QQBot, WXBot)):
         msg = f"""登录成功！机器人现在可以从App获取你的数据。
 /me - 显示你的信息
 /friends - 显示在线的喷喷好友
@@ -161,7 +170,7 @@ matcher_set_battle_info = on_command("set_battle_info", aliases={'sbi'}, block=T
 @matcher_set_battle_info.handle()
 @check_session_handler
 async def set_battle_info(bot: Bot, event: Event, matcher: matcher_set_battle_info):
-    if isinstance(bot, QQBot) and 'group' in event.get_event_name():
+    if 'group' in event.get_event_name():
         await matcher_set_battle_info.finish(MSG_PRIVATE)
         return
 
@@ -174,7 +183,7 @@ set battle info, default 1): show name
 5 - weapon (name) byname
 6 - weapon (name)#nameId byname
 '''
-    if isinstance(bot, QQBot):
+    if isinstance(bot, (QQBot, WXBot)):
         msg = '设置对战显示信息， 默认为 1): 名字' + msg.split('show name')[-1]
     await bot_send(bot, event, message=msg)
 
@@ -212,7 +221,7 @@ async def set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
         return
 
     msg = '''Please copy you api_key from https://stat.ink/profile then paste below'''
-    if isinstance(bot, QQBot):
+    if isinstance(bot, (QQBot, WXBot)):
         msg = '''请从 https://stat.ink/profile 页面复制你的 api_key 后发送给机器人
 注册stat.ink账号后，无需其他操作，设置api_key
 机器人会每2小时检查并同步你的数据到 stat.ink (App最多保存最近50*5场对战和50场打工数据)
@@ -235,7 +244,7 @@ async def get_set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     msg = f'''set_api_key success, bot will check every 2 hours and post your data to stat.ink.
 first sync will be in minutes.
     '''
-    if isinstance(bot, QQBot):
+    if isinstance(bot, (QQBot, WXBot)):
         msg = f'''设置成功，机器人会每2小时检查一次并同步你的数据到 stat.ink 第一次同步会即刻开始。'''
     await bot_send(bot, event, message=msg)
 
@@ -256,7 +265,7 @@ async def sync_now(bot: Bot, event: Event):
     u = get_or_set_user(user_id=user_id)
     if not (u and u.session_token and u.api_key):
         msg = 'Please set api_key first, /set_api_key'
-        if isinstance(bot, QQBot):
+        if isinstance(bot, (QQBot, WXBot)):
             msg = '请先设置 api_key, /set_api_key'
         await bot_send(bot, event, msg)
         return
@@ -278,7 +287,7 @@ async def s_api_notify(bot: Bot, event: Event):
     u = get_or_set_user(user_id=user_id)
     if not (u and u.session_token and u.api_key):
         msg = 'Please set api_key first, /set_api_key'
-        if isinstance(bot, QQBot):
+        if isinstance(bot, (QQBot, WXBot)):
             msg = '请先设置 api_key, /set_api_key'
         await bot_send(bot, event, msg)
         return

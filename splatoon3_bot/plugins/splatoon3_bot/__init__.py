@@ -1,8 +1,10 @@
+import json
 
 from nonebot import logger, on_startswith, on_command, get_driver, get_bots
 from nonebot.adapters import Event, Bot
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.onebot.v11 import Bot as QQBot
+from nonebot.adapters.onebot.v12 import Bot as WXBot
 
 from .db_sqlite import set_db_info
 from .sp3msg import MSG_HELP, MSG_HELP_QQ
@@ -39,6 +41,24 @@ async def all_command(bot: Bot, event: Event):
         })
         if _event.get('group_id'):
             data['group_id'] = _event['group_id']
+    elif isinstance(bot, WXBot):
+        user_info = await bot.get_user_info(user_id=event.get_user_id())
+        if not user_info:
+            logger.info(f'get_user_info wx failed, {event.get_user_id()}')
+            return
+        data.update({
+            'id_type': 'wx',
+            'username': user_info.get('user_name', ''),
+            'user_info': json.dumps(user_info)
+        })
+        group_id = _event.get('group_id')
+        if group_id:
+            group_info = await bot.get_group_info(group_id=group_id)
+            data.update({
+                'group_id': group_id,
+                'group_name': group_info.get('group_name', ''),
+            })
+
     set_db_info(**data)
 
 
@@ -47,7 +67,7 @@ async def unknown_command(bot: Bot, event: Event):
     logger.info(f'unknown_command {event.get_event_name()}')
     if 'private' in event.get_event_name():
         _msg = "Sorry, I didn't understand that command. /help"
-        if isinstance(bot, QQBot):
+        if isinstance(bot, (QQBot, WXBot)):
             _msg = '无效命令，输入 /help 查看帮助'
         logger.info(_msg)
         await bot.send(event, message=_msg)
@@ -58,7 +78,7 @@ async def _help(bot: Bot, event: Event):
     if isinstance(bot, TGBot):
         await bot_send(bot, event, message=MSG_HELP, disable_web_page_preview=True)
 
-    elif isinstance(bot, QQBot):
+    elif isinstance(bot, (QQBot, WXBot)):
         msg = MSG_HELP_QQ
         if 'group' in event.get_event_name():
             msg = msg.replace('更多指令', '/日程查询插件 关闭\n\n更多指令')
@@ -86,7 +106,12 @@ async def bot_on_shutdown():
 
 @get_driver().on_bot_connect
 async def _(bot: Bot):
-    bot_type = 'Telegram' if isinstance(bot, TGBot) else 'QQ'
+    bot_type = 'Telegram'
+    if isinstance(bot, QQBot):
+        bot_type = 'QQ'
+    elif isinstance(bot, WXBot):
+        bot_type = 'WeChat'
+
     logger.info(f' {bot_type} bot connect {bot.self_id} '.center(60, '-').center(120, ' '))
 
     job_id = f'sp3_cron_job_{bot.self_id}'

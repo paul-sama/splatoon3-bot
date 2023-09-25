@@ -10,6 +10,7 @@ from datetime import datetime as dt
 from nonebot import Bot, logger, get_driver
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.onebot.v11 import Bot as QQBot
+from nonebot.adapters.onebot.v12 import Bot as WXBot, MessageSegment as WXMsgSeg, Message as WXMsg
 
 from .db_sqlite import get_or_set_user, get_all_user
 from .scripts.top_player import get_x_player
@@ -32,8 +33,8 @@ async def cron_job(bot: Bot):
     if now.hour == 1 and now.minute == 21 and isinstance(bot, QQBot):
         await update_qq_group_info(bot)
 
-    # 同步任务全在tg bot上执行，避免qq被风控下线无法同步
-    if isinstance(bot, QQBot):
+    # 其他定时任务全在tg bot上执行
+    if not isinstance(bot, TGBot):
         return
 
     # parse x rank player at 2:40
@@ -76,7 +77,8 @@ async def send_user_msg(bot, users):
     for u in users:
         # if not u.api_key or not u.session_token:
         #     continue
-        if (isinstance(bot, TGBot) and not u.user_id_tg) or (isinstance(bot, QQBot) and not u.user_id_qq):
+        if (isinstance(bot, TGBot) and not u.user_id_tg) or (isinstance(bot, QQBot) and not u.user_id_qq) or (
+                isinstance(bot, WXBot) and not u.user_id_wx):
             continue
         file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
         if not os.path.exists(file_msg_path):
@@ -96,12 +98,16 @@ async def send_user_msg(bot, users):
                 elif isinstance(bot, QQBot):
                     msg = msg.replace('```', '').strip()
                     ret = await bot.send_private_msg(user_id=u.user_id_qq, message=msg)
-                if ret:
-                    logger.debug(f"{u.id} send message: {ret}")
-                    logger.debug(f"{u.id} delete message file: {file_msg_path}")
-                    logger.info(msg)
-                    if os.path.exists(file_msg_path):
-                        os.remove(file_msg_path)
+                elif isinstance(bot, WXBot):
+                    msg = msg.replace('```', '').strip()
+                    msg = WXMsg(WXMsgSeg.text(msg))
+                    ret = await bot.send_message(detail_type="private", user_id=u.user_id_wx, message=msg)
+
+                logger.debug(f"{u.id} send message: {ret}")
+                logger.debug(f"{u.id} delete message file: {file_msg_path}")
+                logger.info(msg)
+                if os.path.exists(file_msg_path):
+                    os.remove(file_msg_path)
             except Exception as e:
                 logger.error(f"{u.id}, send_user_msg: {e}, {msg}")
 

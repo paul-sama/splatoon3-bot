@@ -4,6 +4,7 @@ import sys
 from nonebot import logger
 from nonebot.adapters.telegram import Adapter as TelegramAdapter
 from nonebot.adapters.onebot.v11 import Adapter as QQAdapter
+from nonebot.adapters.onebot.v12 import Adapter as WXAdapter
 from nonebot.log import logger_id, default_filter
 
 
@@ -27,6 +28,7 @@ nonebot.init()
 driver = nonebot.get_driver()
 driver.register_adapter(TelegramAdapter)
 driver.register_adapter(QQAdapter)
+driver.register_adapter(WXAdapter)
 
 
 # 在这里加载插件
