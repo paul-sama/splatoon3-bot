@@ -412,6 +412,8 @@ async def send_msg(bot: BOT, event: MESSAGE_EVENT, matcher, msg):
     if isinstance(bot, V11_Bot):
         await bot.send(event, message=V11_MsgSeg.text(msg), reply_message=reply_mode)
     elif isinstance(bot, V12_Bot):
+        if '努力作图' in msg:
+            msg = '图片太大，可能发送失败...'
         await bot.send(event, message=V12_MsgSeg.text(msg))
     elif isinstance(bot, Tg_Bot):
         if reply_mode:
@@ -452,7 +454,7 @@ async def send_img(bot: BOT, event: MESSAGE_EVENT, matcher, img):
             if file_id:
                 await bot.send(event, message=V12_MsgSeg.image(file_id=file_id))
         except Exception as e:
-            logger.warning(f"QQBot send error: {e}")
+            logger.warning(f"WXBot send error: {e}")
     elif isinstance(bot, Tg_Bot):
         if reply_mode:
             await bot.send(event, File.photo(img), reply_to_message_id=event.dict().get("message_id"))

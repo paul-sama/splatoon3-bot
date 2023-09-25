@@ -58,7 +58,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
                 if file_id:
                     await bot.send(event, message=WXMsgSeg.image(file_id=file_id))
             except Exception as e:
-                logger.warning(f"QQBot send error: {e}")
+                logger.warning(f"WXBot send error: {e}")
 
         if not kwargs.get('skip_log_cmd'):
             await log_cmd_to_db(bot, event)
