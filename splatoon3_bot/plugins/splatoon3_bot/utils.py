@@ -15,7 +15,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '1.3.4'
+BOT_VERSION = '1.3.5'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -39,12 +39,11 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         if isinstance(bot, QQBot):
             img = MessageSegment.image(file=img_data, cache=False)
 
-            msg = ''
+            reply_mode = False
             if 'group' in event.get_event_name() and 'reply_to_message_id' not in kwargs:
-                msg = f"[CQ:reply,id={event.dict().get('message_id')}]"
-            message = Message(msg) + Message(img)
+                reply_mode = True
             try:
-                rr = await bot.send(event, message=message)
+                rr = await bot.send(event, message=img, reply_message=reply_mode)
             except Exception as e:
                 logger.warning(f'QQBot send error: {e}')
 
@@ -87,7 +86,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
                 message = message.split('\n\n')[0].strip()
 
             if 'reply_to_message_id' not in kwargs and isinstance(bot, QQBot):
-                message = Message(f"[CQ:reply,id={event.dict().get('message_id')}]" + message)
+                kwargs['reply_message'] = True
 
     elif isinstance(bot, TGBot):
         if 'group' in event.get_event_name() and 'reply_to_message_id' not in kwargs:
