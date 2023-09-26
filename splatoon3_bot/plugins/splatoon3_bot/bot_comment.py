@@ -91,13 +91,14 @@ async def get_comment_table(bot):
         u_icon = f"https://q1.qlogo.cn/g?b=qq&nk={c.user_id}&s=640"
         if c.bot_type == 'wx':
             u_icon = c.user_icon or ''
-            user_name += ' V'
+            user_name = f"<span style='color:green'>{user_name}</span>"
         user_name += f''' |<img height="40" src="{u_icon}"/>'''
         group_name = c.group_name or ''
         if group_name:
             g_icon = f"https://p.qlogo.cn/gh/{c.group_id}/{c.group_id}/100"
             if c.bot_type == 'wx':
                 g_icon = c.group_icon or ''
+                group_name = f"<span style='color:green'>{group_name}</span>"
             group_name += f'''| <img height="40" src="{g_icon}"/>'''
         else:
             group_name = '|'
