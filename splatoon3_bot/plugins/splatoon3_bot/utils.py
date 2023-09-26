@@ -15,7 +15,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '1.3.7'
+BOT_VERSION = '1.3.8'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -53,6 +53,10 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         elif isinstance(bot, WXBot):
             # onebot12协议需要先上传文件获取file_id后才能发送图片
             try:
+                if len(img_data) > 3500000:
+                    await bot.send(event, message=WXMsgSeg.text('图片太大，发送失败...'))
+                    raise ValueError("图片太大，发送失败...")
+
                 resp = await bot.upload_file(type="data", name="temp.png", data=img_data)
                 file_id = resp["file_id"]
                 if file_id:
