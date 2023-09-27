@@ -7,6 +7,7 @@ from nonebot import logger
 from nonebot.adapters import Event, Bot
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.onebot.v11 import Bot as QQBot
+from nonebot.adapters.onebot.v12 import Bot as WXBot
 
 from .db_sqlite import get_user, get_or_set_user, get_all_user
 from .splat import Splatoon, API_URL
@@ -223,7 +224,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
                 scheduler.remove_job(job_id)
                 get_or_set_user(user_id=user_id, push=False)
                 msg = 'No game record for 30 minutes, stop push.'
-                if isinstance(bot, QQBot):
+                if isinstance(bot, (QQBot, WXBot)):
                     msg = '30分钟内没有游戏记录，停止推送。'
 
                 if data.get('current_statics') and data['current_statics'].get('TOTAL'):

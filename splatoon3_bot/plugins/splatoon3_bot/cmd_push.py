@@ -76,7 +76,7 @@ async def start_push(bot: Bot, event: Event, state: T_State):
         misfire_grace_time=INTERVAL - 1, coalesce=True, max_instances=1
     )
     msg = f'Start push! check new data(battle or coop) every {INTERVAL} seconds. /stop_push to stop'
-    if isinstance(bot, QQBot):
+    if isinstance(bot, (QQBot, WXBot)):
         str_i = '图片' if get_image else '文字'
         msg = f'开启{str_i}推送模式，每10秒钟查询一次最新数据(对战或打工)\n/stop_push 停止推送'
     await bot_send(bot, event, msg)
