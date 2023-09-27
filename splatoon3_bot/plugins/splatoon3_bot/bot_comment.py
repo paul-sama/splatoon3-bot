@@ -39,6 +39,7 @@ async def _add_comment(bot: Union[QQBot, WXBot], event: Union[GroupMessageEvent,
         return
 
     _event = event.dict() or {}
+    logger.debug(f'comment_event: {_event}')
     if isinstance(bot, QQBot):
         group_id = _event.get('group_id') or ''
         try:
@@ -103,8 +104,8 @@ async def get_comment_table(bot):
         else:
             group_name = '|'
         cmt = c.message.strip().replace('\n', ' ').replace('|', '\|')
-        if isinstance(bot, WXBot):
-            cmt = cmt[:30]
+        # if isinstance(bot, WXBot):
+        #     cmt = cmt[:30]
         msg += f"|{group_name}|{user_name}|{cmt}|\n"
 
     page = ''

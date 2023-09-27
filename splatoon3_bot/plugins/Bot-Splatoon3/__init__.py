@@ -450,9 +450,9 @@ async def send_img(bot: BOT, event: MESSAGE_EVENT, matcher, img):
     elif isinstance(bot, V12_Bot):
         # onebot12协议需要先上传文件获取file_id后才能发送图片
         try:
-            if len(img) > 3500000:
-                await bot.send(event, message=V12_MsgSeg.text('图片太大，发送失败...'))
-                raise ValueError("图片太大，发送失败...")
+            # if len(img) > 3500000:
+            #     await bot.send(event, message=V12_MsgSeg.text('图片太大，发送失败...'))
+            #     raise ValueError("图片太大，发送失败...")
 
             resp = await bot.upload_file(type="data", name="temp.png", data=img)
             file_id = resp["file_id"]
