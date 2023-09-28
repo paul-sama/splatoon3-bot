@@ -46,9 +46,15 @@ async def set_user_info(user_id, skip_report=False):
 
     last_play_time = max(dt.strptime(battle_t, '%Y%m%dT%H%M%S'), dt.strptime(coop_t, '%Y%m%dT%H%M%S'))
 
+    id_type = 'tg'
+    if u.user_id_qq:
+        id_type = 'qq'
+    if u.user_id_wx:
+        id_type = 'wx'
+
     _dict = {
         'user_id': user_id,
-        'id_type': 'qq' if u.user_id_qq else 'tg',
+        'id_type': id_type,
         'nickname': nickname,
         'user_id_sp': player_code,
         'first_play_time': first_play_time,
