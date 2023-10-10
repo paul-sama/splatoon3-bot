@@ -69,6 +69,15 @@ class Splatoon:
             logger.warning(f'{self.user_id} set_gtoken_and_bullettoken error. {e}')
             if self.user and 'invalid_grant' in str(e):
                 logger.warning(f'invalid_grant_user: {self.user.id}, {self.user.username}, {self.user.nickname}')
+                get_or_set_user(user_id=self.user.id, session_token=None)
+
+                msg = f'喷喷账号{self.user.nickname or ""}登录过期，请重新登录 /login'
+                from .utils import DIR_RESOURCE, os
+                file_msg_path = os.path.join(f'{DIR_RESOURCE}/user_msg', f'msg_{self.user.id}.txt')
+                with open(file_msg_path, 'a') as f:
+                    f.write(msg)
+                return
+
             logger.warning('try another url')
             new_gtoken, acc_name, acc_lang, acc_country = await iksm.get_gtoken(F_GEN_URL_2, self.session_token, A_VERSION)
 

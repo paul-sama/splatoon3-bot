@@ -104,12 +104,15 @@ async def send_user_msg(bot, users):
                     ret = await bot.send_message(detail_type="private", user_id=u.user_id_wx, message=msg)
 
                 logger.debug(f"{u.id} send message: {ret}")
+
+            except Exception as e:
+                logger.exception(f"{u.id}, send_user_msg: {e}, {msg}")
+
+            finally:
                 logger.debug(f"{u.id} delete message file: {file_msg_path}")
                 logger.info(msg)
                 if os.path.exists(file_msg_path):
                     os.remove(file_msg_path)
-            except Exception as e:
-                logger.error(f"{u.id}, send_user_msg: {e}, {msg}")
 
 
 def thread_function(user_id):
