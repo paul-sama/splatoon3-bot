@@ -189,6 +189,10 @@ def get_gtoken(f_gen_url, session_token, ver):
 		except:
 			logger.warning("Error from Nintendo (in Game/GetWebServiceToken step):")
 			logger.warning(json.dumps(web_service_resp, indent=2))
+			if web_service_resp.get('errorMessage') == 'Membership required error.':
+				logger.warning(user_info)
+				nickname = user_info.get('nickname')
+				raise ValueError(f'Membership required error.|{nickname}')
 			return
 
 	return web_service_token, user_nickname, user_lang, user_country
