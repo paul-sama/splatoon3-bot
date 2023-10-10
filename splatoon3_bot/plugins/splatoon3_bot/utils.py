@@ -15,7 +15,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '1.4.3'
+BOT_VERSION = '1.4.4'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -149,8 +149,9 @@ async def log_cmd_to_db(bot, event, get_map=False):
     try:
         message = event.get_plaintext().strip()
         _event = event.dict() or {}
+        user_id = event.get_user_id()
 
-        data = {'user_id': event.get_user_id(), 'cmd': message}
+        data = {'user_id': user_id, 'cmd': message}
         if isinstance(bot, QQBot):
             data.update({
                 'id_type': 'qq',
@@ -164,6 +165,13 @@ async def log_cmd_to_db(bot, event, get_map=False):
                     if str(g.group_id) == str(group_id):
                         group_name = g.group_name
                         break
+
+                if not group_name:
+                    group_info = await bot.call_api('get_group_info', group_id=group_id)
+                    group_name = group_info.get('group_name')
+                    if group_name:
+                        set_db_info(group_id=group_id, id_type='qq', group_name=group_name)
+
                 data.update({
                     'group_id': group_id,
                     'group_name': group_name,
@@ -189,20 +197,36 @@ async def log_cmd_to_db(bot, event, get_map=False):
                 })
 
         elif isinstance(bot, WXBot):
-            user_info = await bot.get_user_info(user_id=event.get_user_id())
-            if not user_info:
-                logger.info(f'get_user_info wx failed, {event.get_user_id()}')
-                return
+            username = ''
+            user = get_user(user_id=user_id)
+            if user:
+                username = user.username
+            if not username:
+                user_info = await bot.get_user_info(user_id=user_id)
+                if user_info:
+                    username = user_info.get('user_name', '')
             data.update({
                 'id_type': 'wx',
-                'username': user_info.get('user_name', '')
+                'username': username
             })
             group_id = _event.get('group_id')
             if group_id:
-                group_info = await bot.get_group_info(group_id=group_id)
+                group_name = ''
+                group_lst = get_all_group()
+                for g in group_lst:
+                    if str(g.group_id) == str(group_id):
+                        group_name = g.group_name
+                        break
+
+                if not group_name:
+                    group_info = await bot.get_group_info(group_id=group_id)
+                    group_name = group_info.get('group_name')
+                    if group_name:
+                        set_db_info(group_id=group_id, id_type='qq', group_name=group_name)
+
                 data.update({
                     'group_id': group_id,
-                    'group_name': group_info.get('group_name', ''),
+                    'group_name': group_name,
                 })
 
         if data.get('group_id'):
