@@ -15,7 +15,7 @@ from nonebot.adapters.onebot.v12 import Bot as WXBot, MessageSegment as WXMsgSeg
 from .db_sqlite import get_or_set_user, get_all_user
 from .scripts.top_player import get_x_player
 from .scripts.report import update_user_info, update_user_info_first
-from .scripts.user_friend import task_get_user_friend, update_qq_group_info
+from .scripts.user_friend import task_get_user_friend, update_qq_group_info, update_wx_group_info
 
 
 logger = logger.bind(cron=True)
@@ -32,6 +32,8 @@ async def cron_job(bot: Bot):
 
     if now.hour == 1 and now.minute == 21 and isinstance(bot, QQBot):
         await update_qq_group_info(bot)
+    if now.hour == 1 and now.minute == 31 and isinstance(bot, WXBot):
+        await update_wx_group_info(bot)
 
     # 其他定时任务全在tg bot上执行
     if not isinstance(bot, TGBot):

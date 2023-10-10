@@ -88,3 +88,35 @@ async def update_qq_group_info(bot):
             logger.warning(f'update_qq_group_info: {e}')
 
     logger.info(f'update_qq_group_info end: {(dt.now() - now).seconds}')
+
+
+async def update_wx_group_info(bot):
+    now = dt.now()
+    logger.info('update_wx_group_info start')
+    groups = get_all_group()
+    for g in groups:
+        if g.group_type != 'wx':
+            continue
+        try:
+            group_info = await bot.get_group_info(group_id=g.group_id)
+            # logger.info(f'{g.group_id}: {group_info}')
+            group_member_list = await bot.get_group_member_list(group_id=g.group_id) or {}
+            member_list = []
+            if group_member_list and group_member_list.get('data'):
+                member_list = group_member_list['data']
+            # logger.info(f'{g.group_id}: \n{member_list}')
+            member_id_list = ','.join([str(m.get('user_id') or 0) for m in member_list]) or ''
+            if member_id_list:
+                member_id_list = f',{member_id_list}'
+            if group_info:
+                set_db_info(
+                    group_id=g.group_id,
+                    id_type='wx',
+                    group_name=group_info.get('group_name', ''),
+                    member_count=len(member_list),
+                    member_id_list=member_id_list,
+                )
+        except Exception as e:
+            logger.warning(f'update_wx_group_info: {e}')
+
+    logger.info(f'update_wx_group_info end: {(dt.now() - now).seconds}')
