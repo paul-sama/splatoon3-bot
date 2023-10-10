@@ -31,8 +31,8 @@ async def task_get_user_friend():
 
 async def get_friends(user_id):
     u = get_user(user_id=user_id)
-    logger.debug(f'set_user_info: {user_id}, {u.user_id_qq or u.user_id_tg}, {u.username}')
-    user_id = u.user_id_qq or u.user_id_tg or u.id
+    logger.debug(f'set_user_info: {user_id}, {u.user_id_qq or u.user_id_tg or u.user_id_wx}, {u.username}')
+    user_id = u.user_id_qq or u.user_id_tg or u.user_id_wx or u.id
     splt = Splatoon(user_id, u.session_token, db_table_user_readonly=True)
 
     await splt.test_page()

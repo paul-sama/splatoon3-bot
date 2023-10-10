@@ -26,7 +26,7 @@ class Splatoon:
         user = get_or_set_user(user_id=self.user_id)
         self.user = user
         if user:
-            self.user_id = user.user_id_qq or user.user_id_tg or user.id
+            self.user_id = user.user_id_qq or user.user_id_tg or user.user_id_wx or user.id
             self.old_user_id = user_id
             self.bullet_token = user.bullettoken
             self.gtoken = user.gtoken

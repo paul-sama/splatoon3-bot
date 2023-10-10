@@ -18,8 +18,8 @@ async def set_user_info(user_id, skip_report=False):
     u = get_user(user_id=user_id)
     if not u or not u.session_token:
         return
-    logger.debug(f'set_user_info: {user_id}, {u.user_id_qq or u.user_id_tg}, {u.username}')
-    user_id = u.user_id_qq or u.user_id_tg or u.id
+    logger.debug(f'set_user_info: {user_id}, {u.user_id_qq or u.user_id_tg or u.user_id_wx}, {u.username}')
+    user_id = u.user_id_qq or u.user_id_tg or u.user_id_wx or u.id
     splt = Splatoon(user_id, u.session_token)
 
     await splt.test_page()
@@ -161,7 +161,7 @@ async def update_user_info():
             await set_user_info(u.id)
         except Exception as e:
             logger.warning(e)
-            logger.warning(f'update_user_info_failed: {u.id}, {u.user_id_qq or u.user_id_tg}, {u.username}')
+            logger.warning(f'update_user_info_failed: {u.id}, {u.user_id_qq or u.user_id_tg or u.user_id_wx}, {u.username}')
 
     logger.info(f'update_user_info_end: {dt.utcnow() - t}')
 
@@ -177,7 +177,7 @@ async def update_user_info_first():
             await set_user_info(u.id, skip_report=True)
         except Exception as e:
             logger.warning(e)
-            logger.warning(f'update_user_info_first_failed: {u.id}, {u.user_id_qq or u.user_id_tg}, {u.username}')
+            logger.warning(f'update_user_info_first_failed: {u.id}, {u.user_id_qq or u.user_id_tg or u.user_id_wx}, {u.username}')
 
     logger.info(f'update_user_info_first_end: {dt.utcnow() - t}')
 
