@@ -69,7 +69,7 @@ async def update_qq_group_info(bot):
             group_info = await bot.call_api('get_group_info', group_id=g.group_id)
             logger.info(f'{g.group_id}: {group_info}')
             member_list = await bot.call_api('get_group_member_list', group_id=g.group_id)
-            logger.info(f'{g.group_id}: \n{member_list}')
+            # logger.info(f'{g.group_id}: \n{member_list}')
             member_id_list = ','.join([str(m.get('user_id') or 0) for m in member_list]) or ''
             if member_id_list:
                 member_id_list = f',{member_id_list}'
@@ -100,10 +100,7 @@ async def update_wx_group_info(bot):
         try:
             group_info = await bot.get_group_info(group_id=g.group_id)
             # logger.info(f'{g.group_id}: {group_info}')
-            group_member_list = await bot.get_group_member_list(group_id=g.group_id) or {}
-            member_list = []
-            if group_member_list and group_member_list.get('data'):
-                member_list = group_member_list['data']
+            member_list = await bot.get_group_member_list(group_id=g.group_id) or {}
             # logger.info(f'{g.group_id}: \n{member_list}')
             member_id_list = ','.join([str(m.get('user_id') or 0) for m in member_list]) or ''
             if member_id_list:
