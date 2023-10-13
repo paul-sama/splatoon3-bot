@@ -13,7 +13,7 @@ async def get_app_screenshot(gtoken, key='', url='', mask=False):
         cookies = COOKIES[:]
         cookies[0]['value'] = gtoken
         height = 1000
-        for _k in ('对战', '武器', '鲑鱼跑', '徽章'):
+        for _k in ('对战', '涂地', '蛮颓', 'X', '活动', '私房', '武器', '鲑鱼跑', '徽章'):
             if _k in key:
                 height = 2500
         if mask:

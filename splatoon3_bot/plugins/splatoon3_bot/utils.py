@@ -6,8 +6,8 @@ from nonebot import logger
 from nonebot.adapters import Bot, Event
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.telegram.message import File
-from nonebot.adapters.onebot.v11 import Bot as QQBot, Message, MessageSegment
-from nonebot.adapters.onebot.v12 import Bot as WXBot, Message, MessageSegment as WXMsgSeg
+from nonebot.adapters.onebot.v11 import Bot as QQBot, MessageSegment
+from nonebot.adapters.onebot.v12 import Bot as WXBot, MessageSegment as WXMsgSeg
 from .db_sqlite import get_user, get_all_group, set_db_info
 
 from nonebot import require
@@ -15,7 +15,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '1.4.6'
+BOT_VERSION = '1.4.7'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
