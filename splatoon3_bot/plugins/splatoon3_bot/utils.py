@@ -15,7 +15,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '1.4.7'
+BOT_VERSION = '1.4.8'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -222,7 +222,7 @@ async def log_cmd_to_db(bot, event, get_map=False):
                     group_info = await bot.get_group_info(group_id=group_id)
                     group_name = group_info.get('group_name')
                     if group_name:
-                        set_db_info(group_id=group_id, id_type='qq', group_name=group_name)
+                        set_db_info(group_id=group_id, id_type='wx', group_name=group_name)
 
                 data.update({
                     'group_id': group_id,
