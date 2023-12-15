@@ -9,7 +9,7 @@ from nonebot.adapters.onebot.v12 import Bot as WXBot
 from nonebot.typing import T_State
 
 from .db_sqlite import get_or_set_user, get_user
-from .utils import INTERVAL, bot_send, check_session_handler, KookBot
+from .utils import INTERVAL, bot_send, check_session_handler, KookBot, QQ_Bot
 from .sp3bot import push_latest_battle
 from .sp3msg import get_statics
 
@@ -22,6 +22,9 @@ __all__ = ['start_push', 'stop_push', 'scheduler']
 @on_command("start_push", aliases={'sp', 'push', 'start'}, block=True).handle()
 @check_session_handler
 async def start_push(bot: Bot, event: Event, state: T_State):
+    if isinstance(bot, QQ_Bot):
+        await bot_send(bot, event, '暂不支持')
+        return
     user_id = event.get_user_id()
     user = get_user(user_id=user_id)
 
@@ -79,6 +82,9 @@ async def start_push(bot: Bot, event: Event, state: T_State):
 @on_command("stop_push", aliases={'stop', 'st', 'stp'}, block=True).handle()
 @check_session_handler
 async def stop_push(bot: Bot, event: Event):
+    if isinstance(bot, QQ_Bot):
+        await bot_send(bot, event, '暂不支持')
+        return
     msg = f'Stop push!'
 
     logger.info(msg)

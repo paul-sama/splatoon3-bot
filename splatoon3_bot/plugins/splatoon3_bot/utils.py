@@ -9,6 +9,10 @@ from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.telegram.message import File
 from nonebot.adapters.onebot.v11 import Bot as QQBot, MessageSegment
 from nonebot.adapters.onebot.v12 import Bot as WXBot, MessageSegment as WXMsgSeg
+# qq官方协议
+from nonebot.adapters.qq import Bot as QQ_Bot
+from nonebot.adapters.qq import MessageSegment as QQ_MsgSeg
+from nonebot.adapters.qq.event import MessageEvent as QQ_ME, GroupAtMessageCreateEvent
 
 from nonebot.adapters.kaiheila import Bot as KookBot
 from nonebot.adapters.kaiheila import MessageSegment as Kook_MsgSeg
@@ -20,7 +24,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '1.5.0'
+BOT_VERSION = '1.5.1'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -52,11 +56,27 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
             url = await bot.upload_file(img_data)
             await bot.send(event, Kook_MsgSeg.image(url), reply_sender=True)
 
+        elif isinstance(bot, QQ_Bot):
+            if not isinstance(event, GroupAtMessageCreateEvent):
+                await bot.send(event, message=QQ_MsgSeg.file_image(img_data))
+            else:
+                # 目前q群只支持url图片，得想办法上传图片获取url
+                kook_bot = None
+                for k, b in get_bots().items():
+                    if isinstance(b, KookBot):
+                        kook_bot = b
+                        break
+                if kook_bot is not None:
+                    # 使用kook的接口传图片
+                    url = await kook_bot.upload_file(img_data)
+                    await bot.send(event, message=QQ_MsgSeg.image(url))
+
         if not kwargs.get('skip_log_cmd'):
             await log_cmd_to_db(bot, event)
         return rr
 
-    if isinstance(bot, (TGBot, KookBot)):
+    # 下面为文字消息
+    if isinstance(bot, (TGBot, KookBot, QQ_Bot)):
         if 'group' in event.get_event_name() and 'reply_to_message_id' not in kwargs:
             kwargs['reply_to_message_id'] = event.dict().get('message_id')
         if 'group' in event.get_event_name():
@@ -72,6 +92,8 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
     try:
         if isinstance(bot, KookBot):
             r = await bot.send(event, message=Kook_MsgSeg.text(message))
+        elif isinstance(bot, QQ_Bot):
+            r = bot.send(event, message=QQ_MsgSeg.text(message))
         else:
             r = await bot.send(event, message, **kwargs)
     except Exception as e:
@@ -98,7 +120,7 @@ def check_session_handler(func):
         user = get_user(user_id=event.get_user_id())
         if not user or not user.session_token:
             _msg = "Permission denied. /login first."
-            if isinstance(bot, (QQBot, WXBot, KookBot)):
+            if isinstance(bot, (QQBot, WXBot, KookBot, QQ_Bot)):
                 _msg = '无权限查看，请先 /login 登录'
 
             matcher = kwargs.get('matcher')
@@ -108,6 +130,9 @@ def check_session_handler(func):
 
             if isinstance(bot, QQBot):
                 await bot.send(event, message=_msg, reply_message=True)
+                return False
+            elif isinstance(bot, QQ_Bot):
+                await bot.send(event, message=QQ_MsgSeg.text(_msg))
                 return False
             await bot.send(event, message=_msg)
             return False
@@ -147,6 +172,25 @@ def get_event_info(bot, event):
             data.update({
                 'group_id': _event.get('target_id') or '',
                 'group_name': _event.get('event', {}).get('channel_name', ''),
+            })
+    elif isinstance(bot, QQ_Bot):
+        if _event.get('guild_id'):
+            # qq 频道
+            data.update({
+                'id_type': 'qq',
+                'username': _event.get('author', {}).get('username'),
+            })
+
+        else:
+            # qq 群
+            data.update({
+                'id_type': 'qq',
+                'username': 'QQ群',
+            })
+        if 'group' in event.get_event_name():
+            data.update({
+                'group_id': _event.get('guild_id') or _event.get('group_openid') or '',
+                'group_name': '',
             })
     return data
 
