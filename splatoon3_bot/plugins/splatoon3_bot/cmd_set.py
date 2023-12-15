@@ -331,10 +331,11 @@ async def report(bot: Bot, event: Event):
     user_id = u.id
     msg = get_report(user_id=user_id, report_day=report_day)
 
+    u = get_user(user_id=user_id)
     if not report_day:
         get_or_set_user(user_id=user_id, report_type=1)
 
-    if msg and not report_day:
+    if msg and not report_day and not u.report_type:
         msg += f'```\n\n早报订阅成功\n/unsubscribe 取消订阅```'
     elif not msg and not report_day:
         msg = f'```\n数据准备中。。。\n\n早报订阅成功\n/unsubscribe 取消订阅```'
