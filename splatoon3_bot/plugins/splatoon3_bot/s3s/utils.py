@@ -7,8 +7,8 @@ import requests
 from bs4 import BeautifulSoup
 
 SPLATNET3_URL = "https://api.lp1.av5ja.srv.nintendo.net"
-GRAPHQL_URL  = "https://api.lp1.av5ja.srv.nintendo.net/api/graphql"
-WEB_VIEW_VERSION = "4.0.0-dae4328c" # fallback
+GRAPHQL_URL = "https://api.lp1.av5ja.srv.nintendo.net/api/graphql"
+WEB_VIEW_VERSION = "6.0.0-daea5c11"  # fallback
 S3S_NAMESPACE = uuid.UUID('b3a2dbf5-2c09-4792-b78c-00b548b70aeb')
 
 # SHA256 hash database for SplatNet 3 GraphQL queries
@@ -22,7 +22,7 @@ translate_rid = {
 	'XBattleHistoriesQuery':             'eb5996a12705c2e94813a62e05c0dc419aad2811b8d49d53e5732290105559cb', # INK / blank vars - query1
 	'VsHistoryDetailQuery':              'f893e1ddcfb8a4fd645fd75ced173f18b2750e5cfba41d2669b9814f6ceaec46', # INK / req "vsResultId" - query2
 	'CoopHistoryQuery':                  '0f8c33970a425683bb1bdecca50a0ca4fb3c3641c0b2a1237aedfde9c0cb2b8f', # SR  / blank vars - query1
-	'CoopHistoryDetailQuery':            '824a1e22c4ad4eece7ad94a9a0343ecd76784be4f77d8f6f563c165afc8cf602', # SR  / req "coopHistoryDetailId" - query2
+	'CoopHistoryDetailQuery':            '42262d241291d7324649e21413b29da88c0314387d8fdf5f6637a2d9d29954ae', # SR  / req "coopHistoryDetailId" - query2
 	'MyOutfitCommonDataEquipmentsQuery': '45a4c343d973864f7bb9e9efac404182be1d48cf2181619505e9b7cd3b56a6e8', # for Lean's seed checker
 	'FriendsList':                       'ea1297e9bb8e52404f52d89ac821e1d73b726ceef2fd9cc8d6b38ab253428fb3',
 	'HistorySummary':                    '0a62c0152f27c4218cf6c87523377521c2cff76a4ef0373f2da3300079bf0388',
@@ -31,6 +31,8 @@ translate_rid = {
 	'ScheduleQuery':                     '9b6b90568f990b2a14f04c25dd6eb53b35cc12ac815db85ececfccee64215edd',
 	'StageRecordsQuery':                 'c8b31c491355b4d889306a22bd9003ac68f8ce31b2d5345017cdd30a2c8056f3',
 	'EventBattleHistoriesQuery':         'e47f9aac5599f75c842335ef0ab8f4c640e8bf2afe588a3b1d4b480ee79198ac',
+	'EventListQuery':                    '875a827a6e460c3cd6b1921e6a0872d8b95a1fce6d52af79df67734c5cc8b527',
+	'EventBoardQuery':                   'ad4097d5fb900b01f12dffcb02228ef6c20ddbfba41f0158bb91e845335c708e',
 }
 
 def get_web_view_ver():

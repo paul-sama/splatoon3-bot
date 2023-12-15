@@ -1,7 +1,10 @@
 import base64
 from datetime import timedelta, datetime as dt
 from .sp3msg import get_battle_msg_title, set_statics, logger, utils, get_top_str, defaultdict, fmt_sp3_state
-from .db_sqlite import model_get_user_friend, model_get_login_user, get_top_all, get_user, get_weapon
+from .db_sqlite import (
+    model_get_user_friend, model_get_login_user, get_top_all, get_top_all_row, get_weapon, model_get_report,
+    get_top_player_row
+)
 
 
 def get_row_text(p, battle_show_type='1'):
@@ -51,9 +54,44 @@ def get_user_name_color(nick_name, player_code):
     r = model_get_user_friend(nick_name)
     # 用户好友蓝色
     if r:
-        img = f"<img height='36px' style='position:absolute;right:20px;margin-top:-6px' src='{r.user_icon}'/>"
+        img = f"<img height='36px' style='position:absolute;right:5px;margin-top:-6px' src='{r.user_icon}'/>"
         u_str = f'<span style="color:skyblue">{nick_name} {img}</span>'
     return u_str
+
+
+def get_top_all_name(name, player_code):
+    top_all = get_top_all_row(player_code)
+    if not top_all:
+        return name
+
+    row = top_all
+    max_power = row.power
+    top_str = f'F({max_power})' if row.top_type.startswith('Fest') else f'E({max_power})'
+    name = name.replace('`', '&#96;').replace('|', '&#124;')
+    name = name.strip() + f' <span style="color:#EE9D59">`{top_str}`</span">'
+    if '<img' not in name:
+        weapon_id = str(row.weapon_id)
+        weapon = get_weapon() or {}
+        if weapon.get(weapon_id):
+            name += f"<img height='36px' style='position:absolute;right:5px;margin-top:-6px' src='{weapon[weapon_id]}'/>"
+    return name
+
+
+def get_top_str_w(player_code):
+    top_str = ''
+    r = get_top_player_row(player_code)
+    if r:
+        _x = 'x' if ':6:' in r.top_type else 'X'
+        if '-a:' in r.top_type:
+            top_str = f' <span style="color:#fc0390">{_x}{r.rank}</span"><span style="color:red">({r.power})</span">'
+        else:
+            top_str = f' <span style="color:red">{_x}{r.rank}({r.power})</span">'
+        weapon_id = str(r.weapon_id)
+        weapon = get_weapon() or {}
+        if weapon.get(weapon_id):
+            top_str += f"<img height='36px' style='position:absolute;right:5px;margin-top:-6px' src='{weapon[weapon_id]}'/>"
+        return top_str
+    return top_str
 
 
 def get_row_text_image(p, mask=False):
@@ -67,7 +105,7 @@ def get_row_text_image(p, mask=False):
     ration = k / d if d else 99
     name = p['name']
     if p.get('isMyself'):
-        name = f'**{name}**'
+        name = f'<b>{name}</b>'
     elif mask:
         name = f'~~我是马赛克~~'
 
@@ -75,9 +113,12 @@ def get_row_text_image(p, mask=False):
     if not p.get('isMyself'):
         name = get_user_name_color(name, player_code)
 
-    top_str = get_top_str(player_code)
+    top_str = get_top_str_w(player_code)
     if top_str:
-        name = name.strip() + f' <span style="color:red">`{top_str}`</span">'
+        name = name.strip() + top_str
+
+    elif not p.get('isMyself'):
+        name = get_top_all_name(name, player_code)
 
     weapon_img = ((p.get('weapon') or {}).get('image') or {}).get('url') or ''
     w_str = f'<img height="40" src="{weapon_img}"/>'
@@ -183,6 +224,13 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
                 str_max_open_power = f', MAX: {max_open_power:.2f}'
             current_statics['open_power'] = open_power
             current_statics['max_open_power'] = max_open_power
+
+        # 开放重新定分置零
+        if (not open_power and judgement in ('WIN', 'LOST') and
+                (kwargs.get('current_statics') or {}).get('max_open_power')):
+            current_statics = kwargs['current_statics']
+            current_statics['open_power'] = 0
+            current_statics['max_open_power'] = 0
 
     str_open_power_inline = ''
     if str_open_power and ('current_statics' in kwargs or last_power):

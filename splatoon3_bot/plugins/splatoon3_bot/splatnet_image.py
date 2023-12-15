@@ -18,7 +18,7 @@ async def get_app_screenshot(gtoken, key='', url='', mask=False):
                 height = 2500
         if mask:
             height = 740
-        if url and 'coop' in url:
+        if url and 'coop' in url or key == '打工':
             height = 1500
         context = await browser.new_context(viewport={"width": 500, "height": height})
         await context.add_cookies(cookies)
@@ -51,7 +51,9 @@ async def get_app_screenshot(gtoken, key='', url='', mask=False):
                 '武器': 'weapon_record',
                 '徽章': 'history_record/badge',
                 '鲑鱼跑': 'coop',
-                '打工': 'coop_record',
+                '打工b': 'coop_record/enemies',
+                '打工B': 'coop_record/enemies',
+                '打工': 'coop_record/play_record',
                 '祭典': 'fest_record',
                 '英雄': 'hero_record',
                 '地图': 'stage_record',

@@ -1,13 +1,18 @@
 
 import os
 import functools
+from datetime import datetime as dt
 
-from nonebot import logger
+from nonebot import logger, get_driver, get_bots
 from nonebot.adapters import Bot, Event
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.telegram.message import File
 from nonebot.adapters.onebot.v11 import Bot as QQBot, MessageSegment
 from nonebot.adapters.onebot.v12 import Bot as WXBot, MessageSegment as WXMsgSeg
+
+from nonebot.adapters.kaiheila import Bot as KookBot
+from nonebot.adapters.kaiheila import MessageSegment as Kook_MsgSeg
+
 from .db_sqlite import get_user, get_all_group, set_db_info
 
 from nonebot import require
@@ -15,7 +20,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '1.4.8'
+BOT_VERSION = '1.5.0'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -47,22 +52,31 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
             except Exception as e:
                 logger.warning(f'QQBot send error: {e}')
 
+                if 'call api send_msg timeout' not in str(e):
+                    await notify_tg_channel(
+                        'QQ failed\n' + str(e),
+                        _type='msg',
+                        tg_bot_token='523495759:AAEC6Wkg1nXrPTwgMRKFnL9Ex8s_QbiXPB8',
+                        tg_channel_chat_id='-866268859'
+                    )
+
         elif isinstance(bot, TGBot):
-            rr = await bot.send(event, File.photo(img_data))
+            if 'reply_to_message_id' not in kwargs:
+                rr = await bot.send(event, File.photo(img_data), reply_to_message_id=event.dict().get('message_id'))
+            else:
+                rr = await bot.send(event, File.photo(img_data))
 
         elif isinstance(bot, WXBot):
-            # onebot12协议需要先上传文件获取file_id后才能发送图片
             try:
-                # if len(img_data) > 3500000:
-                #     await bot.send(event, message=WXMsgSeg.text('图片太大，发送失败...'))
-                #     raise ValueError("图片太大，发送失败...")
-
                 resp = await bot.upload_file(type="data", name="temp.png", data=img_data)
                 file_id = resp["file_id"]
                 if file_id:
                     await bot.send(event, message=WXMsgSeg.image(file_id=file_id))
             except Exception as e:
                 logger.warning(f"WXBot send error: {e}")
+        elif isinstance(bot, KookBot):
+            url = await bot.upload_file(img_data)
+            await bot.send(event, Kook_MsgSeg.image(url), reply_sender=True)
 
         if not kwargs.get('skip_log_cmd'):
             await log_cmd_to_db(bot, event)
@@ -92,13 +106,24 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
             if 'reply_to_message_id' not in kwargs and isinstance(bot, QQBot):
                 kwargs['reply_message'] = True
 
-    elif isinstance(bot, TGBot):
+    elif isinstance(bot, (TGBot, KookBot)):
         if 'group' in event.get_event_name() and 'reply_to_message_id' not in kwargs:
             kwargs['reply_to_message_id'] = event.dict().get('message_id')
+        if 'group' in event.get_event_name():
+            # /me 截断
+            if '开放' in message and ': (+' not in message:
+                coop_lst = message.split('2022-')[-1].split('2023-')[-1].strip().split('\n')
+                message = message.split('2022-')[0].split('2023-')[0].strip() + '\n'
+                for l in coop_lst:
+                    if '打工次数' in l or '头目鲑鱼' in l:
+                        message += '\n' + l
+                message += '```'
 
     try:
         if isinstance(bot, WXBot):
             r = await bot.send(event, message)
+        elif isinstance(bot, KookBot):
+            r = await bot.send(event, message=Kook_MsgSeg.text(message))
         else:
             r = await bot.send(event, message, **kwargs)
     except Exception as e:
@@ -125,7 +150,7 @@ def check_session_handler(func):
         user = get_user(user_id=event.get_user_id())
         if not user or not user.session_token:
             _msg = "Permission denied. /login first."
-            if isinstance(bot, (QQBot, WXBot)):
+            if isinstance(bot, (QQBot, WXBot, KookBot)):
                 _msg = '无权限查看，请先 /login 登录'
 
             matcher = kwargs.get('matcher')
@@ -145,97 +170,99 @@ def check_session_handler(func):
     return wrapper
 
 
+def get_event_info(bot, event):
+    data = {'user_id': event.get_user_id()}
+    _event = event.dict() or {}
+    if isinstance(bot, TGBot):
+        name = _event.get('from_', {}).get('first_name', '')
+        if _event.get('from_', {}).get('last_name'):
+            name += ' ' + _event.get('from_', {}).get('last_name')
+        if not name:
+            name = _event.get('from_', {}).get('username') or ''
+        data.update({
+            'id_type': 'tg',
+            'username': name,
+            'first_name': _event.get('from_', {}).get('first_name', ''),
+            'last_name': _event.get('from_', {}).get('last_name', ''),
+        })
+        if 'group' in _event.get('chat', {}).get('type', ''):
+            data.update({
+                'group_id': _event['chat']['id'],
+                'group_name': _event.get('chat', {}).get('title', ''),
+            })
+    elif isinstance(bot, KookBot):
+        data.update({
+            'id_type': 'kk',
+            'username': _event.get('event', {}).get('author', {}).get('username') or '',
+        })
+        if 'group' in event.get_event_name():
+            data.update({
+                'group_id': _event.get('target_id') or '',
+                'group_name': _event.get('event', {}).get('channel_name', ''),
+            })
+    return data
+
+
 async def log_cmd_to_db(bot, event, get_map=False):
     try:
         message = event.get_plaintext().strip()
-        _event = event.dict() or {}
         user_id = event.get_user_id()
 
         data = {'user_id': user_id, 'cmd': message}
-        if isinstance(bot, QQBot):
-            data.update({
-                'id_type': 'qq',
-                'username': _event.get('sender', {}).get('nickname', '')
-            })
-            group_id = _event.get('group_id')
-            if group_id:
-                group_name = ''
-                group_lst = get_all_group()
-                for g in group_lst:
-                    if str(g.group_id) == str(group_id):
-                        group_name = g.group_name
-                        break
+        grp_cnt = ''
+        data.update(get_event_info(bot, event))
 
-                if not group_name:
-                    group_info = await bot.call_api('get_group_info', group_id=group_id)
-                    group_name = group_info.get('group_name')
-                    if group_name:
-                        set_db_info(group_id=group_id, id_type='qq', group_name=group_name)
-
-                data.update({
-                    'group_id': group_id,
-                    'group_name': group_name,
-                })
-
-        elif isinstance(bot, TGBot):
-            name = _event.get('from_', {}).get('first_name', '')
-            if _event.get('from_', {}).get('last_name'):
-                name += ' ' + _event.get('from_', {}).get('last_name')
-            if not name:
-                name = _event.get('from_', {}).get('username') or ''
-
-            data.update({
-                'id_type': 'tg',
-                'username': name,
-                'first_name': _event.get('from_', {}).get('first_name', ''),
-                'last_name': _event.get('from_', {}).get('last_name', ''),
-            })
-            if 'group' in _event.get('chat', {}).get('type', ''):
-                data.update({
-                    'group_id': _event['chat']['id'],
-                    'group_name': _event.get('chat', {}).get('title', ''),
-                })
-
-        elif isinstance(bot, WXBot):
-            username = ''
-            user = get_user(user_id=user_id)
-            if user:
-                username = user.username
-            if not username:
-                user_info = await bot.get_user_info(user_id=user_id)
-                if user_info:
-                    username = user_info.get('user_name', '')
-            data.update({
-                'id_type': 'wx',
-                'username': username
-            })
-            group_id = _event.get('group_id')
-            if group_id:
-                group_name = ''
-                group_lst = get_all_group()
-                for g in group_lst:
-                    if str(g.group_id) == str(group_id):
-                        group_name = g.group_name
-                        break
-
-                if not group_name:
-                    group_info = await bot.get_group_info(group_id=group_id)
-                    group_name = group_info.get('group_name')
-                    if group_name:
-                        set_db_info(group_id=group_id, id_type='wx', group_name=group_name)
-
-                data.update({
-                    'group_id': group_id,
-                    'group_name': group_name,
-                })
-
-        if data.get('group_id'):
-            if get_map:
-                data['map_cnt'] = 1
-            else:
-                data['cmd_cnt'] = 1
+        if get_map:
+            data['map_cnt'] = 1
+        else:
+            data['cmd_cnt'] = 1
 
         set_db_info(**data)
 
+        # log to tg channel
+        str_grp = ''
+        if data.get('group_id'):
+            str_grp = f"群聊: #{data['id_type']}g{data['group_id']} ({data['group_name']}){grp_cnt}\n"
+        if not str_grp:
+            return
+
+        text = f"#{data['id_type']}{data['user_id']}\n昵称:{data['username']}\n{str_grp}消息:{message}"
+        await notify_tg_channel(text)
+
     except Exception as e:
         logger.warning(f'log_cmd_to_db error: {e}')
+
+
+async def notify_tg_channel(_msg, _type='msg', **kwargs):
+
+    configs = get_driver().config
+
+    # log to telegram
+    tg_bot_token = getattr(configs, 'tg_bot_token', None)
+    tg_channel_chat_id = getattr(configs, 'tg_channel_msg_chat_id', None)
+    if _type == 'job':
+        tg_channel_chat_id = getattr(configs, 'tg_channel_job_chat_id', None)
+
+    if 'tg_bot_token' in kwargs:
+        tg_bot_token = kwargs.get('tg_bot_token')
+    if 'tg_channel_chat_id' in kwargs:
+        tg_channel_chat_id = kwargs.get('tg_channel_chat_id')
+
+    if tg_bot_token and tg_channel_chat_id:
+        url = "{}{}/{}".format("https://api.telegram.org/bot", tg_bot_token, "sendMessage")
+        dict_msg = {"chat_id": tg_channel_chat_id, "text": _msg, "disable_web_page_preview": True}
+        logger.debug(f'notify_tg_channel: {repr(_msg)}')
+        import httpx
+        async with httpx.AsyncClient() as client:
+            await client.get(url, params=dict_msg)
+
+    # log to kook
+    kk_channel_chat_id = getattr(configs, 'kk_channel_msg_chat_id', None)
+    if _type == 'job':
+        kk_channel_chat_id = getattr(configs, 'kk_channel_job_chat_id', None)
+
+    if kk_channel_chat_id:
+        for bot in get_bots().values():
+            logger.debug(f'bot_qq_send_user_msg: {bot}')
+            if isinstance(bot, KookBot):
+                await bot.send_channel_msg(channel_id=kk_channel_chat_id, message=Kook_MsgSeg.text(_msg))

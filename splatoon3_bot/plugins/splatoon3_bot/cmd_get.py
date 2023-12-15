@@ -5,7 +5,7 @@ from nonebot.adapters.onebot.v12 import Bot as WXBot
 
 from .sp3bot import (
     get_user_db_info, get_last_battle_or_coop, get_me, get_friends_msg, get_ns_friends_msg, get_x_top_msg,
-    get_my_schedule_msg, get_screenshot_image, get_history_msg, get_friend_code, get_top
+    get_my_schedule_msg, get_screenshot_image, get_history_msg, get_friend_code, get_top, get_user
 )
 from .utils import bot_send, check_session_handler
 
@@ -35,7 +35,7 @@ async def last(bot: Bot, event: Event):
     get_battle = False
     get_coop = False
     get_pic = False
-    get_image = False
+    get_image = True
     get_ss = False
     mask = False
     idx = 0
@@ -65,11 +65,8 @@ async def last(bot: Bot, event: Event):
                 break
 
     image_width = 1000
-    if isinstance(bot, (QQBot, WXBot)) and get_text is False and get_pic is False and get_ss is False:
-        # qq 默认图片
-        get_image = True
 
-    if get_text:
+    if get_text or get_pic:
         get_image = False
 
     if get_image:
@@ -82,6 +79,21 @@ async def last(bot: Bot, event: Event):
         photo = msg
         msg = ''
     await bot_send(bot, event, msg, parse_mode='Markdown', photo=photo, image_width=image_width)
+
+    user = get_user(user_id=user_id)
+    if user.push_cnt < 3:
+        is_playing = await get_last_battle_or_coop(user_id, idx=idx, is_playing=True)
+        logger.info(f'is_playing: {is_playing}')
+        if is_playing:
+            msg = ''
+            if 'group' in event.get_event_name():
+                if not user.push_cnt:
+                    msg = '正在游玩时可以 /push 开启推送模式~'
+            else:
+                if user.push_cnt < 3:
+                    msg = '正在游玩时可以 /push 开启推送模式~'
+            if msg:
+                await bot_send(bot, event, msg)
 
 
 @on_command("me", block=True).handle()

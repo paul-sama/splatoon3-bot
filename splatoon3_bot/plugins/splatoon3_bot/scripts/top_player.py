@@ -7,7 +7,9 @@ from nonebot import logger
 
 from ..s3s import utils
 from ..splat import Splatoon
-from ..db_sqlite import write_top_player, clean_top_player, get_all_user, write_top_all, clean_top_all
+from ..db_sqlite import (
+    write_top_player, clean_top_player, get_all_user, write_top_all, clean_top_all, get_top_all_by_top_type
+)
 
 
 def parse_x_row(n, top_type, x_type, top_id):
@@ -141,7 +143,69 @@ async def get_x_player():
     # for top_id in ('WFJhbmtpbmdTZWFzb24tcDoy', 'WFJhbmtpbmdTZWFzb24tYToy'):  # season-2
     # for top_id in ('WFJhbmtpbmdTZWFzb24tcDoz', 'WFJhbmtpbmdTZWFzb24tYToz'):  #season-3
     # for top_id in ('WFJhbmtpbmdTZWFzb24tcDo0', 'WFJhbmtpbmdTZWFzb24tYTo0'):  #season-4
-    for top_id in ('WFJhbmtpbmdTZWFzb24tcDo1', 'WFJhbmtpbmdTZWFzb24tYTo1'):  #season-5
+    # for top_id in ('WFJhbmtpbmdTZWFzb24tcDo1', 'WFJhbmtpbmdTZWFzb24tYTo1'):  #season-5
+    for top_id in ('WFJhbmtpbmdTZWFzb24tcDo2', 'WFJhbmtpbmdTZWFzb24tYTo2'):  #season-6
         await parse_x_data(top_id, splt)
 
     logger.info(f'get x player end. {time.time() - s}')
+
+
+async def get_event_list(splt):
+    data = utils.gen_graphql_body(utils.translate_rid['EventListQuery'])
+    res = await splt._request(data)
+    return res
+
+
+async def get_event_items(splt, top_id):
+    data = utils.gen_graphql_body(utils.translate_rid['EventBoardQuery'],
+                                  varname='eventMatchRankingPeriodId', varvalue=top_id)
+    res = await splt._request(data)
+    return res
+
+
+def parse_league(league):
+    if not league:
+        logger.info('no league')
+        return
+
+    play_time = league['data']['rankingPeriod']['endTime'].replace('T', ' ').replace('Z', '')
+    play_time = dt.strptime(play_time, '%Y-%m-%d %H:%M:%S')
+    league_name = league['data']['rankingPeriod']['leagueMatchSetting']['leagueMatchEvent']['name']
+    logger.info(f'{play_time}, {league_name}')
+    for team in league['data']['rankingPeriod']['teams']:
+        top_id = team['id']
+        logger.info(f'saving top_id: {top_id}')
+        clean_top_all(top_id)
+        top_type = base64.b64decode(top_id).decode('utf-8')
+        for n in team['details']['nodes']:
+            for player in n['players']:
+                player_id = player['id']
+                player_code = base64.b64decode(player_id).decode('utf-8').split(':')[-1][2:]
+                weapon_id = int(base64.b64decode(player['weapon']['id']).decode('utf-8').split('-')[-1])
+                weapon = player['weapon']['name']
+                db_row = [top_id, top_type, n['rank'], n['power'], player['name'], player['nameId'], player_code,
+                          player['byname'], weapon_id, weapon, play_time]
+                write_top_all(db_row)
+
+
+async def task_get_league_player(splt):
+    logger.info(f'get_league_player start')
+    res = await get_event_list(splt)
+    if not res:
+        return
+    edges = res['data']['leagueMatchRankingSeasons']['edges']
+    for n in edges[::-1]:
+        in_ed = n['node']['leagueMatchRankingTimePeriodGroups']['edges']
+        for nn in in_ed[::-1]:
+            logger.info(nn['node']['leagueMatchSetting']['leagueMatchEvent']['name'])
+            for t in nn['node']['timePeriods']:
+                top_id = t['id']
+                top_type = base64.b64decode(top_id).decode('utf-8')
+                _, search_type = top_type.split('TimePeriod-')
+                _r = get_top_all_by_top_type(search_type)
+                logger.info(f'search {search_type}, {len(_r or [])}')
+                if _r:
+                    continue
+                res = await get_event_items(splt, top_id)
+                parse_league(res)
+    logger.info(f'get_league_player end')

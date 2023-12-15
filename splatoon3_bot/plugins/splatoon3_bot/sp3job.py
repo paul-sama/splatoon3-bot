@@ -10,6 +10,7 @@ from datetime import datetime as dt
 from nonebot import Bot, logger, get_driver
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.onebot.v11 import Bot as QQBot
+from nonebot.adapters.kaiheila import Bot as KookBot
 from nonebot.adapters.onebot.v12 import Bot as WXBot, MessageSegment as WXMsgSeg, Message as WXMsg
 
 from .db_sqlite import get_or_set_user, get_all_user
@@ -29,11 +30,6 @@ async def cron_job(bot: Bot):
     now = dt.now()
 
     await send_user_msg(bot, users)
-
-    if now.hour == 1 and now.minute == 21 and isinstance(bot, QQBot):
-        await update_qq_group_info(bot)
-    if now.hour == 1 and now.minute == 31 and isinstance(bot, WXBot):
-        await update_wx_group_info(bot)
 
     # 其他定时任务全在tg bot上执行
     if not isinstance(bot, TGBot):
@@ -63,6 +59,7 @@ async def cron_job(bot: Bot):
         return
 
     u_id_lst = [u.id for u in users if u.session_token and u.api_key]
+
     if not u_id_lst:
         return
 
@@ -80,7 +77,7 @@ async def send_user_msg(bot, users):
         # if not u.api_key or not u.session_token:
         #     continue
         if (isinstance(bot, TGBot) and not u.user_id_tg) or (isinstance(bot, QQBot) and not u.user_id_qq) or (
-                isinstance(bot, WXBot) and not u.user_id_wx):
+                isinstance(bot, WXBot) and not u.user_id_wx) or (isinstance(bot, KookBot) and not u.user_id_kk):
             continue
         file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
         if not os.path.exists(file_msg_path):
@@ -90,31 +87,52 @@ async def send_user_msg(bot, users):
         with open(file_msg_path, 'r') as f:
             msg = f.read()
         if msg:
+            _text = ''
             try:
                 ret = None
                 if isinstance(bot, TGBot):
+                    _text += f'#tg{u.user_id_tg}'
                     if 'stat.ink' in msg:
+                        msg = msg.replace('Exported', '#Exported')
                         ret = await bot.send_message(chat_id=u.user_id_tg, text=msg, disable_web_page_preview=True)
                     else:
+                        if '早报' in msg:
+                            msg = '#report\n' + msg
                         ret = await bot.send_message(chat_id=u.user_id_tg, text=msg, parse_mode='Markdown')
                 elif isinstance(bot, QQBot):
+                    _text += f'#qq{u.user_id_qq}'
                     msg = msg.replace('```', '').strip()
                     ret = await bot.send_private_msg(user_id=u.user_id_qq, message=msg)
                 elif isinstance(bot, WXBot):
+                    _text += f'#wx{u.user_id_wx}'
                     msg = msg.replace('```', '').strip()
-                    msg = WXMsg(WXMsgSeg.text(msg))
-                    ret = await bot.send_message(detail_type="private", user_id=u.user_id_wx, message=msg)
+                    _msg = WXMsg(WXMsgSeg.text(msg))
+                    ret = await bot.send_message(detail_type="private", user_id=u.user_id_wx, message=_msg)
+                elif isinstance(bot, KookBot):
+                    _text += f'#kk{u.user_id_kk}'
+                    logger.info(f'uuu {u.id}, {u.user_id_kk}')
+                    ret = await bot.call_api('direct-message_create', chat_code=u.user_id_kk, content=msg)
 
                 logger.debug(f"{u.id} send message: {ret}")
 
             except Exception as e:
-                logger.exception(f"{u.id}, send_user_msg: {e}, {msg}")
+                # logger.exception(f"{u.id}, send_user_msg: {e}, {msg}")
+                _text += ' failed!'
+                if isinstance(bot, WXBot):
+                    logger.warning(f"{u.id}, send_user_msg: {e}, {msg}")
+                else:
+                    logger.exception(f"{u.id}, send_user_msg: {e}, {msg}")
 
             finally:
                 logger.debug(f"{u.id} delete message file: {file_msg_path}")
                 logger.info(msg)
                 if os.path.exists(file_msg_path):
                     os.remove(file_msg_path)
+
+                _text += '\n'
+                msg = msg.replace('```', '').strip()
+                from .utils import notify_tg_channel
+                await notify_tg_channel(_text + msg, _type='job')
 
 
 def thread_function(user_id):
@@ -253,7 +271,7 @@ def get_post_stat_msg(user_id):
         url += '/spl3'
     elif coop_cnt and not battle_cnt:
         url += '/salmon3'
-    msg += f' to\n{url}'
+    msg += f' to\n{url}\n'
 
     logger.debug(f'{u.id}, {u.username}, {msg}')
 

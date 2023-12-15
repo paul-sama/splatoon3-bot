@@ -11,7 +11,7 @@ h2==4.1.0
 hpack==4.0.0
 httpcore==0.17.0
 httptools==0.5.0
-httpx==0.24.0
+httpx
 hyperframe==6.0.1
 idna==3.4
 loguru==0.6.0
@@ -43,6 +43,7 @@ websockets==11.0.2
 yarl==1.9.2
 nonebot_plugin_htmlrender
 nonebot-adapter-telegram
+nonebot-adapter-kaiheila
 nonebot2
 cfscrape
 awaits

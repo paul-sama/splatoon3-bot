@@ -1,9 +1,8 @@
 
+import asyncio
 import base64
 import time
 from nonebot import logger
-from nonebot.adapters.telegram import Bot as TGBot
-from nonebot.adapters.onebot.v11 import Bot as QQBot
 
 from datetime import datetime as dt, timedelta
 
@@ -15,74 +14,75 @@ logger = logger.bind(report=True)
 
 
 async def set_user_info(user_id, skip_report=False):
-    u = get_user(user_id=user_id)
-    if not u or not u.session_token:
-        return
-    logger.debug(f'set_user_info: {user_id}, {u.user_id_qq or u.user_id_tg or u.user_id_wx}, {u.username}')
-    user_id = u.user_id_qq or u.user_id_tg or u.user_id_wx or u.id
-    splt = Splatoon(user_id, u.session_token)
-
-    await splt.test_page()
-    time.sleep(1)
-    await splt.test_page()
-
-    res_summary = await splt.get_summary()
-    history = res_summary['data']['playHistory']
-    player = res_summary['data']['currentPlayer']
-    first_play_time = history['gameStartTime']
-    first_play_time = dt.strptime(first_play_time, '%Y-%m-%dT%H:%M:%SZ')
-    nickname = player['name']
-
-    # get last battle
-    res_battle = await splt.get_recent_battles(skip_check_token=True)
-    b_info = res_battle['data']['latestBattleHistories']['historyGroups']['nodes'][0]['historyDetails']['nodes'][0]
-    battle_t = base64.b64decode(b_info['id']).decode('utf-8').split('_')[0].split(':')[-1]
-    player_code = base64.b64decode(b_info['player']['id']).decode('utf-8').split(':')[-1][2:]
-
-    # get last coop
-    res_coop = await splt.get_coops()
-    coop_id = res_coop['data']['coopResult']['historyGroups']['nodes'][0]['historyDetails']['nodes'][0]['id']
-    coop_t = base64.b64decode(coop_id).decode('utf-8').split('_')[0].split(':')[-1]
-
-    last_play_time = max(dt.strptime(battle_t, '%Y%m%dT%H%M%S'), dt.strptime(coop_t, '%Y%m%dT%H%M%S'))
-
-    id_type = 'tg'
-    if u.user_id_qq:
-        id_type = 'qq'
-    if u.user_id_wx:
-        id_type = 'wx'
-
-    _dict = {
-        'user_id': user_id,
-        'id_type': id_type,
-        'nickname': nickname,
-        'user_id_sp': player_code,
-        'first_play_time': first_play_time,
-        'last_play_time': last_play_time,
-    }
-    logger.debug(f'set_user_info: {_dict}')
-    set_db_info(**_dict)
-
-    if last_play_time.date() >= (dt.utcnow() - timedelta(days=1)).date() and skip_report is False:
-        await set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code)
-
-        if not u.report_type:
+    try:
+        u = get_user(user_id=user_id)
+        if not u or not u.session_token:
             return
 
-        path_folder = f'{DIR_RESOURCE}/user_msg'
-        if not os.path.exists(path_folder):
-            os.mkdir(path_folder)
+        logger.debug(f'set_user_info: {user_id}, {u.user_id_qq or u.user_id_tg or u.user_id_wx or u.user_id_kk}, {u.username}')
+        user_id = u.user_id_qq or u.user_id_tg or u.user_id_wx or u.user_id_kk or u.id
+        splt = Splatoon(user_id, u.session_token)
 
-        msg = get_report(u.id)
-        if msg:
-            # msg += '\n\n/unsubscribe 取消订阅\n'
-            file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
-            with open(file_msg_path, 'a') as f:
-                f.write(msg)
+        if skip_report:
+            await splt.test_page()
+
+        res_summary = await splt.get_summary()
+        history = res_summary['data']['playHistory']
+        player = res_summary['data']['currentPlayer']
+        first_play_time = history['gameStartTime']
+        first_play_time = dt.strptime(first_play_time, '%Y-%m-%dT%H:%M:%SZ')
+        nickname = player['name']
+
+        # get last battle
+        res_battle = await splt.get_recent_battles(skip_check_token=True)
+        b_info = res_battle['data']['latestBattleHistories']['historyGroups']['nodes'][0]['historyDetails']['nodes'][0]
+        battle_t = base64.b64decode(b_info['id']).decode('utf-8').split('_')[0].split(':')[-1]
+        player_code = base64.b64decode(b_info['player']['id']).decode('utf-8').split(':')[-1][2:]
+
+        # get last coop
+        res_coop = await splt.get_coops(skip_check_token=True)
+        coop_id = res_coop['data']['coopResult']['historyGroups']['nodes'][0]['historyDetails']['nodes'][0]['id']
+        coop_t = base64.b64decode(coop_id).decode('utf-8').split('_')[0].split(':')[-1]
+
+        last_play_time = max(dt.strptime(battle_t, '%Y%m%dT%H%M%S'), dt.strptime(coop_t, '%Y%m%dT%H%M%S'))
+
+        id_type = 'tg'
+        if u.user_id_qq:
+            id_type = 'qq'
+        if u.user_id_wx:
+            id_type = 'wx'
+        if u.user_id_kk:
+            id_type = 'kk'
+
+        _dict = {
+            'user_id': user_id,
+            'id_type': id_type,
+            'nickname': nickname,
+            'user_id_sp': player_code,
+            'first_play_time': first_play_time,
+            'last_play_time': last_play_time,
+            'gtoken': splt.gtoken,
+            'bullettoken': splt.bullet_token,
+        }
+        logger.debug(f'set_user_info: {_dict}')
+
+        if skip_report:
+            return _dict
+
+        if last_play_time.date() >= (dt.utcnow() - timedelta(days=1)).date():
+            _report = await set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code)
+
+            # tg, kk 才发早报
+            _user_id_sp = u.user_id_sp if u.report_type and id_type in ('tg', 'kk') else ''
+
+            return _dict, _report, _user_id_sp
+
+    except Exception as ex:
+        logger.warning(f'set_user_info error: {user_id}, {ex}')
 
 
 async def set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code):
-    all_data = await splt.get_all_res()
+    all_data = await splt.get_all_res(skip_check_token=True)
 
     history = res_summary['data']['playHistory']
     player = res_summary['data']['currentPlayer']
@@ -147,37 +147,58 @@ async def set_user_report(u, res_summary, res_coop, last_play_time, splt, player
         'coop_bronze': p['gold'],
         'last_play_time': last_play_time,
     }
-    model_add_report(**_report)
+    return _report
 
 
 async def update_user_info():
     t = dt.utcnow()
-    users = get_all_user()
-    for u in users:
-        if not u or not u.session_token:
-            continue
 
-        try:
-            await set_user_info(u.id)
-        except Exception as e:
-            logger.warning(e)
-            logger.warning(f'update_user_info_failed: {u.id}, {u.user_id_qq or u.user_id_tg or u.user_id_wx}, {u.username}')
+    users = [u for u in get_all_user() if u and u.session_token]
+    users = sorted(users, key=lambda x: (-x.is_vip, x.id))
+    u = [u.id for u in users]
+
+    path_folder = f'{DIR_RESOURCE}/user_msg'
+    if not os.path.exists(path_folder):
+        os.mkdir(path_folder)
+
+    _pool = 20
+    for i in range(0, len(u), _pool):
+        _u_id_lst = u[i:i+_pool]
+        tasks = [set_user_info(_id) for _id in _u_id_lst]
+        res = await asyncio.gather(*tasks)
+        for r in res:
+            if not r:
+                continue
+            _dict, _report, _uid = r
+            if _dict:
+                set_db_info(**_dict)
+            if _report:
+                model_add_report(**_report)
+            if _uid:
+                msg = get_report(_uid)
+                if msg:
+                    file_msg_path = os.path.join(path_folder, f'msg_{_uid}.txt')
+                    with open(file_msg_path, 'a') as f:
+                        f.write(msg)
 
     logger.info(f'update_user_info_end: {dt.utcnow() - t}')
 
 
 async def update_user_info_first():
     t = dt.utcnow()
-    users = get_all_user()
-    for u in users:
-        if not u or not u.session_token:
-            continue
+    users = [u for u in get_all_user() if u and u.session_token]
+    users = sorted(users, key=lambda x: (-x.is_vip, x.id))
+    u = [u.id for u in users]
 
-        try:
-            await set_user_info(u.id, skip_report=True)
-        except Exception as e:
-            logger.warning(e)
-            logger.warning(f'update_user_info_first_failed: {u.id}, {u.user_id_qq or u.user_id_tg or u.user_id_wx}, {u.username}')
+    _pool = 50
+    for i in range(0, len(u), _pool):
+        _u_id_lst = u[i:i+_pool]
+        tasks = [set_user_info(_id, True) for _id in _u_id_lst]
+        res = await asyncio.gather(*tasks)
+        for r in res:
+            if not r:
+                continue
+            set_db_info(**r)
 
     logger.info(f'update_user_info_first_end: {dt.utcnow() - t}')
 
@@ -186,7 +207,8 @@ def get_report(user_id, report_day=None):
     msg = '\n喷喷早报\n'
     if report_day:
         msg = '\n喷喷小报\n'
-    report_list = model_get_report(user_id=user_id)
+    u = get_user(user_id=user_id)
+    report_list = model_get_report(user_id_sp=u.user_id_sp)
 
     # for r in report_list:
     #     logger.info(f'rrrrrrrrrrrr {r.id:>4}, {r.create_time}, {r.last_play_time}')

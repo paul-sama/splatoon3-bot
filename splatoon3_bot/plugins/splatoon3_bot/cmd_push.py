@@ -9,7 +9,7 @@ from nonebot.adapters.onebot.v12 import Bot as WXBot
 from nonebot.typing import T_State
 
 from .db_sqlite import get_or_set_user, get_user
-from .utils import INTERVAL, bot_send, check_session_handler
+from .utils import INTERVAL, bot_send, check_session_handler, KookBot
 from .sp3bot import push_latest_battle
 from .sp3msg import get_statics
 
@@ -26,14 +26,8 @@ async def start_push(bot: Bot, event: Event, state: T_State):
     user = get_user(user_id=user_id)
 
     cmd_lst = event.get_plaintext().strip().split(' ')
-    get_image = False
-    if 'i' in cmd_lst or 'image' in cmd_lst:
-        get_image = True
 
-    # QQ 默认image
-    if isinstance(bot, (QQBot, WXBot)):
-        get_image = True
-
+    get_image = True
     if 't' in cmd_lst or 'text' in cmd_lst:
         get_image = False
 
@@ -76,7 +70,7 @@ async def start_push(bot: Bot, event: Event, state: T_State):
         misfire_grace_time=INTERVAL - 1, coalesce=True, max_instances=1
     )
     msg = f'Start push! check new data(battle or coop) every {INTERVAL} seconds. /stop_push to stop'
-    if isinstance(bot, (QQBot, WXBot)):
+    if isinstance(bot, (QQBot, WXBot, KookBot)):
         str_i = '图片' if get_image else '文字'
         msg = f'开启{str_i}推送模式，每10秒钟查询一次最新数据(对战或打工)\n/stop_push 停止推送'
     await bot_send(bot, event, msg)
@@ -86,9 +80,16 @@ async def start_push(bot: Bot, event: Event, state: T_State):
 @check_session_handler
 async def stop_push(bot: Bot, event: Event):
     msg = f'Stop push!'
+
     logger.info(msg)
     user_id = event.get_user_id()
     get_or_set_user(user_id=user_id, push=False)
+
+    if isinstance(bot, (QQBot, WXBot, KookBot)):
+        msg = '停止推送！'
+        user = get_user(user_id=user_id)
+        if not user.api_key:
+            msg += '''\n/set_api_key 可保存数据到 stat.ink\n(App最多可查看最近50*5场对战和50场打工)'''
 
     job_id = f'{user_id}_push'
     logger.info(f'remove job {job_id}')
@@ -103,4 +104,3 @@ async def stop_push(bot: Bot, event: Event):
         msg += get_statics(job_data['current_statics'])
 
     await bot_send(bot, event, msg, parse_mode='Markdown')
-

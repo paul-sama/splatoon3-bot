@@ -1,5 +1,6 @@
 import time
 import httpx
+import json
 from httpx import AsyncClient
 from loguru import logger
 from .db_sqlite import get_or_set_user
@@ -26,7 +27,7 @@ class Splatoon:
         user = get_or_set_user(user_id=self.user_id)
         self.user = user
         if user:
-            self.user_id = user.user_id_qq or user.user_id_tg or user.user_id_wx or user.id
+            self.user_id = user.user_id_qq or user.user_id_tg or user.user_id_wx or user.user_id_kk or user.id
             self.old_user_id = user_id
             self.bullet_token = user.bullettoken
             self.gtoken = user.gtoken
@@ -64,7 +65,8 @@ class Splatoon:
 
     async def set_gtoken_and_bullettoken(self):
         try:
-            new_gtoken, acc_name, acc_lang, acc_country = await iksm.get_gtoken(F_GEN_URL, self.session_token, A_VERSION)
+            new_gtoken, acc_name, acc_lang, acc_country, _user_info = \
+                await iksm.get_gtoken(F_GEN_URL, self.session_token, A_VERSION)
         except Exception as e:
             logger.warning(f'{self.user_id} set_gtoken_and_bullettoken error. {e}')
             if self.user and 'invalid_grant' in str(e):
@@ -91,7 +93,8 @@ class Splatoon:
                 return
 
             logger.warning('try another url')
-            new_gtoken, acc_name, acc_lang, acc_country = await iksm.get_gtoken(F_GEN_URL_2, self.session_token, A_VERSION)
+            new_gtoken, acc_name, acc_lang, acc_country, _user_info = \
+                await iksm.get_gtoken(F_GEN_URL_2, self.session_token, A_VERSION)
 
         new_bullettoken = await self.get_bullet(new_gtoken, WEB_VIEW_VERSION, APP_USER_AGENT, acc_lang, acc_country)
         self.gtoken = new_gtoken
@@ -130,6 +133,7 @@ class Splatoon:
             await self.set_gtoken_and_bullettoken()
 
     async def _request(self, data, skip_check_token=False):
+        res = ''
         try:
             if not skip_check_token:
                 await self.test_page()
@@ -144,6 +148,12 @@ class Splatoon:
             else:
                 return res.json()
         except Exception as e:
+            logger.warning(utils.GRAPHQL_URL)
+            logger.warning(data)
+            logger.warning(res)
+            if res:
+                logger.warning(res.status_code)
+                logger.warning(res.text)
             logger.warning(f'_request error: {e}')
             return None
 

@@ -2,7 +2,7 @@ import base64
 import json
 
 from collections import defaultdict
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta
 from nonebot import logger
 from nonebot.adapters import Event, Bot
 from nonebot.adapters.telegram import Bot as TGBot
@@ -19,7 +19,7 @@ from .sp3msg_md import (
     get_ns_friends, get_top_md
 )
 from .splatnet_image import get_app_screenshot
-from .utils import bot_send, INTERVAL
+from .utils import bot_send, INTERVAL, notify_tg_channel
 
 
 def get_user_db_info(user_id):
@@ -87,7 +87,8 @@ async def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
 
 
 async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get_coop=False, get_pic=False, idx=0,
-                                  get_screenshot=False, get_image=False, mask=False, get_player_code=False):
+                                  get_screenshot=False, get_image=False, mask=False, get_player_code=False,
+                                  is_playing=False):
     user = get_user(user_id=user_id)
     splt = Splatoon(user.id, user.session_token)
 
@@ -118,6 +119,14 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
         coop_info = {}
         coop_id = ''
         coop_t = ''
+
+    if is_playing:
+        str_time = max(battle_t, coop_t)
+        str_time = str_time.replace('T', ' ').replace('Z', '')
+        dt_time = dt.strptime(str_time, '%Y%m%d %H%M%S')
+        if dt.utcnow() - dt_time <= timedelta(hours=1):
+            return True
+        return False
 
     if get_coop:
         get_battle = False
@@ -226,11 +235,17 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
                 msg = 'No game record for 30 minutes, stop push.'
                 if isinstance(bot, (QQBot, WXBot)):
                     msg = '30分钟内没有游戏记录，停止推送。'
+                    if not user.api_key:
+                        msg += '''\n/set_api_key 可保存数据到 stat.ink\n(App最多可查看最近50*5场对战和50场打工)'''
 
                 if data.get('current_statics') and data['current_statics'].get('TOTAL'):
                     msg += get_statics(data['current_statics'])
                 logger.info(f'{user.username}, {msg}')
                 await bot_send(bot, event, message=msg, parse_mode='Markdown', skip_log_cmd=True)
+
+                bot_type = 'tg' if isinstance(bot, TGBot) else 'qq'
+                msg = f"#{bot_type}{user_id} {user.nickname or ''}\n 30分钟内没有游戏记录，停止推送。"
+                await notify_tg_channel(msg)
                 return
             return
 

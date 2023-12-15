@@ -7,6 +7,8 @@ from nonebot.adapters import Event, Bot
 
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, Bot as QQBot
 from nonebot.adapters.onebot.v12 import GroupMessageEvent as WXGME, Bot as WXBot
+from nonebot.adapters.telegram import Bot as TGBot
+from nonebot.adapters.telegram.event import GroupMessageEvent as TGGME
 
 from .db_sqlite import model_get_comment, model_add_comment
 from .utils import bot_send
@@ -89,12 +91,14 @@ async def get_comment_table(bot):
 '''
     for c in comment_lst[-30:]:
         user_name = c.user_name or ''
+        user_name = user_name.replace('`', '&#96;').replace('|', '&#124;')
         u_icon = f"https://q1.qlogo.cn/g?b=qq&nk={c.user_id}&s=640"
         if c.bot_type == 'wx':
             u_icon = c.user_icon or ''
             user_name = f"<span style='color:green'>{user_name}</span>"
         user_name += f''' |<img height="40" src="{u_icon}"/>'''
         group_name = c.group_name or ''
+        group_name = group_name.replace('`', '&#96;').replace('|', '&#124;')
         if group_name:
             g_icon = f"https://p.qlogo.cn/gh/{c.group_id}/{c.group_id}/100"
             if c.bot_type == 'wx':
@@ -114,7 +118,7 @@ async def get_comment_table(bot):
         page_cnt = int(total_cnt / 30) + 1
         if total_cnt % 30 == 0:
             page_cnt -= 1
-        page = f' | 页数: {page_cnt}/{page_cnt}'
+        page = f' | 页数: {page_cnt}/{page_cnt}. 所有留言可在腾讯文档查看.'
 
     msg += '||\n\n 群聊 at机器人添加留言' + page
     # logger.info(f'get_comment_table: {msg}')

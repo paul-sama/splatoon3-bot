@@ -12,7 +12,7 @@ from awaits.awaitable import awaitable
 
 session = requests.Session()
 S3S_VERSION = "unknown"
-NSOAPP_VERSION = "2.7.0"
+NSOAPP_VERSION = "2.8.1"
 
 
 def get_nsoapp_version():
@@ -195,7 +195,7 @@ def get_gtoken(f_gen_url, session_token, ver):
 				raise ValueError(f'Membership required error.|{nickname}')
 			return
 
-	return web_service_token, user_nickname, user_lang, user_country
+	return web_service_token, user_nickname, user_lang, user_country, user_info
 
 
 def call_imink_api(id_token, step, f_gen_url, user_id, coral_user_id=None):

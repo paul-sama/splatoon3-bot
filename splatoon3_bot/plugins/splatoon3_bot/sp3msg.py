@@ -28,24 +28,21 @@ DICT_RANK_POINT = {
 
 
 MSG_HELP = f"""
-/login - login
 /me - show your info
 /friends - show splatoon3 online friends
 /ns_friends - show online friends
 /last - show the last battle or coop
 /start_push - start push mode
-/my_schedule - my schedule
-/coop_schedule - Coop Schedule
 /x_top - show X Top Players
 /screen_shot - ss, get screen shot of SplatNet
 
 settings:
 /set_api_key - set stat.ink api_key for post data
 /sync_now - sync data to stat.ink now
-/set_battle_info - set battle info
 /show_db_info - show db info
 
 /help - show this help message {BOT_VERSION}
+https://docs.qq.com/sheet/DUkZHRWtCUkR0d2Nr?tab=BB08J2
 """
 
 MSG_HELP_QQ = f'''机器人使用说明

@@ -6,13 +6,16 @@ import json
 import os
 from loguru import logger
 from sqlalchemy import Column, String, create_engine, Integer, Boolean, Text, DateTime, func, Float
+from sqlalchemy.sql import text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 dir_plugin = os.path.abspath(os.path.join(__file__, os.pardir))
 database_uri = f'sqlite:///{dir_plugin}/resource/data.sqlite'
+database_uri_2 = f'sqlite:///{dir_plugin}/resource/data_friend.sqlite'
 
 Base = declarative_base()
+Base_2 = declarative_base()
 
 
 # Table
@@ -23,11 +26,14 @@ class UserTable(Base):
     user_id_tg = Column(String(), unique=True, nullable=True)
     user_id_qq = Column(String(), unique=True, nullable=True)
     user_id_wx = Column(String(), unique=True, nullable=True)
+    user_id_kk = Column(String(), unique=True, nullable=True)
     username = Column(String(), nullable=True)
     first_name = Column(String(), nullable=True)
     last_name = Column(String(), nullable=True)
     push = Column(Boolean(), default=False)
     push_cnt = Column(Integer(), default=0)
+    cmd_cnt = Column(Integer(), default=0)
+    map_cnt = Column(Integer(), default=0)
     api_key = Column(String(), nullable=True)
     api_notify = Column(Integer(), default=1)
     acc_loc = Column(String(), nullable=True)
@@ -52,19 +58,19 @@ class GroupTable(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     group_id = Column(String(), nullable=False)
-    group_name = Column(String(), default='')
     group_type = Column(String(), default='')
-    group_memo = Column(String(), default='')
+    group_name = Column(String(), default='')
     group_level = Column(String(), default='')
     member_count = Column(Integer(), default=0)
-    max_member_count = Column(Integer(), default=0)
-    member_id_list = Column(Text(), default='')
-    group_create_time = Column(DateTime())
+    cmd_cnt = Column(Integer(), default=0)
+    map_cnt = Column(Integer(), default=0)
     cmd = Column(Text(), nullable=True)
     bot_map = Column(Integer(), default=1)
     bot_broadcast = Column(Integer(), default=1)
-    cmd_cnt = Column(Integer(), default=0)
-    map_cnt = Column(Integer(), default=0)
+    group_memo = Column(String(), default='')
+    max_member_count = Column(Integer(), default=0)
+    member_id_list = Column(Text(), default='')
+    group_create_time = Column(DateTime())
     create_time = Column(DateTime(), default=func.now())
     update_time = Column(DateTime(), onupdate=func.now())
 
@@ -165,7 +171,7 @@ class Report(Base):
     create_time = Column(DateTime(), default=func.now())
 
 
-class UserFriendTable(Base):
+class UserFriendTable(Base_2):
     __tablename__ = 'user_friend'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -198,10 +204,12 @@ class CommentTable(Base):
 
 
 engine = create_engine(database_uri, connect_args={"check_same_thread": False})
-
 Base.metadata.create_all(engine)
-
 DBSession = sessionmaker(bind=engine)
+
+engine_2 = create_engine(database_uri_2, connect_args={"check_same_thread": False})
+Base_2.metadata.create_all(engine_2)
+DBSession_2 = sessionmaker(bind=engine_2)
 
 
 def get_or_set_user(**kwargs):
@@ -216,7 +224,7 @@ def get_or_set_user(**kwargs):
 
         user = session.query(UserTable).filter(
             (UserTable.id == user_id) | (UserTable.user_id_qq == user_id) | (UserTable.user_id_tg == user_id) |
-            (UserTable.user_id_wx == user_id)
+            (UserTable.user_id_wx == user_id) | (UserTable.user_id_kk == user_id)
         ).first()
         if user:
             for k, v in kwargs.items():
@@ -229,7 +237,8 @@ def get_or_set_user(**kwargs):
                 session.commit()
             user = session.query(UserTable).filter(
                 (UserTable.id == user_id) | (UserTable.user_id_qq == user_id) |
-                (UserTable.user_id_tg == user_id) | (UserTable.user_id_wx == user_id)).first()
+                (UserTable.user_id_tg == user_id) | (UserTable.user_id_wx == user_id) |
+                (UserTable.user_id_kk == user_id)).first()
             session.close()
             return user
         else:
@@ -274,6 +283,8 @@ def set_db_info(**kwargs):
                 query_lst.append(UserTable.user_id_qq == user_id)
             elif id_type == 'wx':
                 query_lst.append(UserTable.user_id_wx == user_id)
+            elif id_type == 'kk':
+                query_lst.append(UserTable.user_id_kk == user_id)
             if query_lst:
                 user = session.query(UserTable).filter(*query_lst).first()
                 if user:
@@ -288,6 +299,10 @@ def set_db_info(**kwargs):
                         else:
                             new_cmd = str_cmd
                         kwargs['cmd'] = new_cmd
+                        if kwargs.get('cmd_cnt'):
+                            kwargs['cmd_cnt'] = user.cmd_cnt + 1
+                        if kwargs.get('map_cnt'):
+                            kwargs['map_cnt'] = user.map_cnt + 1
                     if kwargs.get('user_info'):
                         old_user_info = json.loads(user.user_info) if user.user_info else {}
                         new_user_info = json.loads(kwargs.get('user_info'))
@@ -299,7 +314,7 @@ def set_db_info(**kwargs):
                             continue
                         if getattr(user, k) == v:
                             continue
-                        logger.debug(f'update user {k}={v}')
+                        logger.debug(f'update user {user.id}: {k}={v}')
                         setattr(user, k, v)
                         session.commit()
                 else:
@@ -307,6 +322,7 @@ def set_db_info(**kwargs):
                         user_id_tg=user_id if id_type == 'tg' else None,
                         user_id_qq=user_id if id_type == 'qq' else None,
                         user_id_wx=user_id if id_type == 'wx' else None,
+                        user_id_kk=user_id if id_type == 'kk' else None,
                         username=kwargs.get('username'),
                         first_name=kwargs.get('first_name'),
                         last_name=kwargs.get('last_name'),
@@ -363,7 +379,7 @@ def get_user(**kwargs):
 
         user = session.query(UserTable).filter(
             (UserTable.id == user_id) | (UserTable.user_id_qq == user_id) | (UserTable.user_id_tg == user_id) |
-            (UserTable.user_id_wx == user_id)
+            (UserTable.user_id_wx == user_id) | (UserTable.user_id_kk == user_id)
         ).first()
         if user:
             logger.debug(f'get user from db: {user.id}, {user.username}, {kwargs}')
@@ -411,6 +427,14 @@ def get_top_player(player_code):
     return user
 
 
+def get_top_player_row(player_code):
+    session = DBSession()
+    user = session.query(TopPlayer).filter(
+        TopPlayer.player_code == player_code).order_by(TopPlayer.power.desc()).first()
+    session.close()
+    return user
+
+
 def model_add_report(**kwargs):
     logger.debug(f'model_add_report: {kwargs}')
     _dict = kwargs
@@ -422,12 +446,24 @@ def model_add_report(**kwargs):
 
 
 def model_get_report(**kwargs):
-    user_id = kwargs.get('user_id')
-    if not user_id:
+    user_id_sp = kwargs.get('user_id_sp')
+    if not user_id_sp:
         return None
     session = DBSession()
-    query = [Report.user_id == user_id]
-    report = session.query(Report).filter(*query).order_by(Report.create_time.desc()).all()
+
+#     query = [Report.user_id_sp == user_id_sp]
+#     report = session.query(Report).filter(*query).order_by(Report.create_time.desc()).all()
+
+    report = session.query(Report).from_statement(text("""
+        SELECT *
+        FROM report WHERE (user_id_sp, last_play_time, create_time) IN
+        ( SELECT user_id_sp, last_play_time, MAX(create_time)
+          FROM report
+          GROUP BY user_id_sp, last_play_time)
+        and user_id_sp=:user_id_sp
+        order by create_time desc""")
+    ).params(user_id_sp=user_id_sp).all()
+
     session.close()
     return report
 
@@ -449,7 +485,7 @@ def model_get_login_user(player_code):
 
 
 def model_get_user_friend(nickname):
-    session = DBSession()
+    session = DBSession_2()
     user = session.query(UserFriendTable).filter(
         UserFriendTable.game_name == nickname
     ).order_by(UserFriendTable.create_time.desc()).first()
@@ -458,15 +494,28 @@ def model_get_user_friend(nickname):
 
 
 def model_set_user_friend(data_lst):
-    session = DBSession()
+    _logger = logger.bind(report=True)
+    session = DBSession_2()
     for r in data_lst:
         user = session.query(UserFriendTable).filter(UserFriendTable.friend_id == r[1]).first()
         game_name = r[2] or r[3]
         if user:
-            user.player_name = r[2]
-            user.nickname = r[3]
-            user.game_name = game_name
-            user.user_icon = r[4]
+            is_change = False
+            if r[2] and user.game_name != game_name:
+                is_change = True
+            if is_change is False and user.user_icon != r[4]:
+                is_change = True
+
+            if is_change:
+                _logger.debug(f'change {user.id:>5}, {user.player_name}, {user.nickname}, {user.game_name}')
+                _logger.debug(f'cha--> {user.id:>5}, {r[2]}, {r[3]}, {game_name}')
+                user.player_name = r[2]
+                user.nickname = r[3]
+                user.user_icon = r[4]
+                user.game_name = game_name
+                session.commit()
+                _logger.debug(f'edit user_friend: {user.id:>5}, {r[1]}, {r[2]}, {r[3]}, {game_name}')
+
         else:
             _dict = {
                 'user_id': '',
@@ -478,8 +527,9 @@ def model_set_user_friend(data_lst):
             }
             new_user = UserFriendTable(**_dict)
             session.add(new_user)
+            session.commit()
+            _logger.debug(f'add user_friend: {r[1]}, {r[2]}, {r[3]}, {game_name}')
 
-    session.commit()
     session.close()
 
 
@@ -546,6 +596,21 @@ def get_top_all(player_code):
     user = session.query(TopAll).filter(TopAll.player_code == player_code).all()
     session.close()
     return user
+
+
+def get_top_all_row(player_code):
+    session = DBSession()
+    user = session.query(TopAll).filter(
+        TopAll.player_code == player_code).order_by(TopAll.power.desc()).first()
+    session.close()
+    return user
+
+
+def get_top_all_by_top_type(top_type):
+    session = DBSession()
+    top = session.query(TopAll).where(TopAll.top_type.contains(top_type)).all()
+    session.close()
+    return top
 
 
 def get_weapon():

@@ -10,6 +10,7 @@ from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.telegram.message import File
 from nonebot.adapters.onebot.v11 import Bot as QQBot
 from nonebot.adapters.onebot.v12 import Bot as WXBot
+from nonebot.adapters.kaiheila import Bot as KookBot
 from nonebot.typing import T_State
 
 from .db_sqlite import set_db_info, get_user, get_or_set_user
@@ -22,7 +23,7 @@ from .scripts.report import get_report
 
 
 __all__ = ['login', 'login_id', 'clear_db_info', 'set_db_info', 'get_set_battle_info']
-MSG_PRIVATE = '请添加机器人为好友再私聊完成登录操作'
+MSG_PRIVATE = '请私信机器人完成登录操作'
 
 
 matcher_login = on_command("login", block=True)
@@ -31,7 +32,7 @@ matcher_login = on_command("login", block=True)
 @matcher_login.handle()
 async def login(bot: Bot, event: Event, state: T_State):
     if 'group' in event.get_event_name():
-        if isinstance(bot, WXBot):
+        if isinstance(bot, (WXBot, KookBot)):
             await matcher_login.finish(MSG_PRIVATE)
             return
         await matcher_login.finish(MSG_PRIVATE, reply_message=True)
@@ -63,7 +64,7 @@ Navigate to this URL in your browser:
 {url}
 Log in, right click the "Select this account" button, copy the link address, and paste below. (Valid for 2 minutes)
             '''
-        elif isinstance(bot, (QQBot, WXBot)):
+        elif isinstance(bot, (QQBot, WXBot, KookBot)):
             msg = f'''在浏览器中打开下面链接
 {url}
 登陆后，右键账号后面的红色按钮 (手机端长按复制)
@@ -97,12 +98,14 @@ async def login_id(bot: Bot, event: Event, state: T_State):
         id_type = 'tg'
     if isinstance(bot, WXBot):
         id_type = 'wx'
+    if isinstance(bot, KookBot):
+        id_type = 'kk'
     data = {
         'session_token': session_token,
         'user_id': user_id,
         'id_type': id_type,
     }
-    if isinstance(bot, TGBot):
+    if isinstance(bot, (TGBot, KookBot)):
         data['report_type'] = 1
     set_db_info(**data)
     '''
@@ -115,7 +118,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 /start_push - start push mode
 /set_api_key - set stat.ink api_key, bot will sync your data to stat.ink
 """
-    if isinstance(bot, (QQBot, WXBot)):
+    if isinstance(bot, (QQBot, WXBot, KookBot)):
         msg = f"""登录成功！机器人现在可以从App获取你的数据。
 /me - 显示你的信息
 /friends - 显示在线的喷喷好友
@@ -138,6 +141,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 
 
 @on_command("clear_db_info", block=True).handle()
+@check_session_handler
 async def clear_db_info(bot: Bot, event: Event):
 
     if 'group' in event.get_event_name():
@@ -153,7 +157,6 @@ async def clear_db_info(bot: Bot, event: Event):
         session_token=None,
         session_token_2=None,
         push=False,
-        push_cnt=0,
         api_key=None,
         acc_loc=None,
         user_info=None,
@@ -224,7 +227,7 @@ async def set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     if isinstance(bot, (QQBot, WXBot)):
         msg = '''请从 https://stat.ink/profile 页面复制你的 api_key 后发送给机器人
 注册stat.ink账号后，无需其他操作，设置api_key
-机器人会每2小时检查并同步你的数据到 stat.ink (App最多保存最近50*5场对战和50场打工数据)
+机器人会同步你的数据到 stat.ink (App最多保存最近50*5场对战和50场打工数据)
         '''
     await bot_send(bot, event, message=msg)
 
@@ -244,8 +247,10 @@ async def get_set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     msg = f'''set_api_key success, bot will check every 2 hours and post your data to stat.ink.
 first sync will be in minutes.
     '''
-    if isinstance(bot, (QQBot, WXBot)):
-        msg = f'''设置成功，机器人会每2小时检查一次并同步你的数据到 stat.ink 第一次同步会即刻开始。'''
+    if isinstance(bot, (QQBot, WXBot, KookBot)):
+        msg = f'''设置成功，机器人会检查一次并同步你的数据到 stat.ink
+/api_notify 关 - 设置关闭推送通知
+        '''
     await bot_send(bot, event, message=msg)
 
     update_s3si_ts()
@@ -261,19 +266,21 @@ async def sync_now(bot: Bot, event: Event):
         return
 
     user_id = event.get_user_id()
-    update_s3si_ts()
     u = get_or_set_user(user_id=user_id)
     if not (u and u.session_token and u.api_key):
         msg = 'Please set api_key first, /set_api_key'
-        if isinstance(bot, (QQBot, WXBot)):
+        if isinstance(bot, (QQBot, WXBot, KookBot)):
             msg = '请先设置 api_key, /set_api_key'
         await bot_send(bot, event, msg)
         return
 
-    msg = get_post_stat_msg(user_id)
-    if not msg:
-        msg = 'All done!'
+    update_s3si_ts()
+    from .sp3job import sync_stat_ink
+    u_id_lst = [user_id]
+    threading.Thread(target=sync_stat_ink, args=(u_id_lst,)).start()
+    msg = '''手动同步任务开始，请稍等~ '''
     await bot_send(bot, event, msg, parse_mode='Markdown')
+    return
 
 
 @on_command("api_notify", block=True).handle()
@@ -287,7 +294,7 @@ async def s_api_notify(bot: Bot, event: Event):
     u = get_or_set_user(user_id=user_id)
     if not (u and u.session_token and u.api_key):
         msg = 'Please set api_key first, /set_api_key'
-        if isinstance(bot, (QQBot, WXBot)):
+        if isinstance(bot, (QQBot, WXBot, KookBot)):
             msg = '请先设置 api_key, /set_api_key'
         await bot_send(bot, event, msg)
         return
@@ -342,60 +349,3 @@ async def unsubscribe(bot: Bot, event: Event):
     get_or_set_user(user_id=event.get_user_id(), report_type=0)
     msg = f'```\n取消订阅成功\n/report 订阅早报```'
     await bot_send(bot, event, message=msg, parse_mode='Markdown')
-
-
-# 日程查询插件
-@on_command("日程查询插件", block=True).handle()
-async def splatoon3_plugin_set(bot: Bot, event: Event):
-    if 'group' not in event.get_event_name():
-        await bot_send(bot, event, '请在群聊中使用')
-        return
-
-    cmd = event.get_plaintext().strip().replace('日程查询插件', '').strip()
-    bot_map = 1
-    if '关' in cmd:
-        bot_map = 0
-
-    from .db_sqlite import DBSession, GroupTable
-    group_id = (event.dict() or {}).get('group_id')
-    logger.info(f'splatoon3_plugin_set {group_id}, {bot_map}')
-
-    msg = '无效的指令'
-    if group_id:
-        with DBSession() as session:
-            group = session.query(GroupTable).filter(GroupTable.group_id == group_id).first()
-            if group:
-                group.bot_map = bot_map
-                session.commit()
-                str_map = '开启' if bot_map else '关闭'
-                msg = f'设置成功: 日程查询插件 {str_map}'
-
-    await bot_send(bot, event, message=msg)
-
-
-@on_command("广播消息", block=True).handle()
-async def bot_broadcast_set(bot: Bot, event: Event):
-    if 'group' not in event.get_event_name():
-        await bot_send(bot, event, '请在群聊中使用')
-        return
-
-    cmd = event.get_plaintext().strip().replace('广播消息', '').strip()
-    bot_broadcast = 1
-    if '关' in cmd:
-        bot_broadcast = 0
-
-    from .db_sqlite import DBSession, GroupTable
-    group_id = (event.dict() or {}).get('group_id')
-    logger.info(f'bot_broadcast_set {group_id}, {bot_broadcast}')
-
-    msg = '无效的指令'
-    if group_id:
-        with DBSession() as session:
-            group = session.query(GroupTable).filter(GroupTable.group_id == group_id).first()
-            if group:
-                group.bot_broadcast = bot_broadcast
-                session.commit()
-                str_map = '开启' if bot_broadcast else '关闭, 此群将不会再收到广播消息'
-                msg = f'设置成功: 广播消息 {str_map}'
-
-    await bot_send(bot, event, message=msg)
