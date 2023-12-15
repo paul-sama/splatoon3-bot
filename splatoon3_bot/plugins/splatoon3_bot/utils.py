@@ -41,39 +41,13 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
 
     if img_data:
         rr = None
-        if isinstance(bot, QQBot):
-            img = MessageSegment.image(file=img_data, cache=False)
 
-            reply_mode = False
-            if 'group' in event.get_event_name() and 'reply_to_message_id' not in kwargs:
-                reply_mode = True
-            try:
-                rr = await bot.send(event, message=img, reply_message=reply_mode)
-            except Exception as e:
-                logger.warning(f'QQBot send error: {e}')
-
-                if 'call api send_msg timeout' not in str(e):
-                    await notify_tg_channel(
-                        'QQ failed\n' + str(e),
-                        _type='msg',
-                        tg_bot_token='523495759:AAEC6Wkg1nXrPTwgMRKFnL9Ex8s_QbiXPB8',
-                        tg_channel_chat_id='-866268859'
-                    )
-
-        elif isinstance(bot, TGBot):
+        if isinstance(bot, TGBot):
             if 'reply_to_message_id' not in kwargs:
                 rr = await bot.send(event, File.photo(img_data), reply_to_message_id=event.dict().get('message_id'))
             else:
                 rr = await bot.send(event, File.photo(img_data))
 
-        elif isinstance(bot, WXBot):
-            try:
-                resp = await bot.upload_file(type="data", name="temp.png", data=img_data)
-                file_id = resp["file_id"]
-                if file_id:
-                    await bot.send(event, message=WXMsgSeg.image(file_id=file_id))
-            except Exception as e:
-                logger.warning(f"WXBot send error: {e}")
         elif isinstance(bot, KookBot):
             url = await bot.upload_file(img_data)
             await bot.send(event, Kook_MsgSeg.image(url), reply_sender=True)
@@ -82,31 +56,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
             await log_cmd_to_db(bot, event)
         return rr
 
-    if isinstance(bot, (QQBot, WXBot)):
-        message = message.replace('```', '').replace('\_', '_').strip().strip('`')
-        if 'duration: ' in message or 'W1 ' in message:
-            message = message.replace('`', '').replace('*', '')
-
-        if 'group' in event.get_event_name():
-            if '开放' in message and ': (+' not in message:
-                coop_lst = message.split('2022-')[-1].split('2023-')[-1].strip().split('\n')
-                # /me 截断
-                message = message.split('2022-')[0].split('2023-')[0].strip() + '\n'
-                for l in coop_lst:
-                    if '打工次数' in l or '头目鲑鱼' in l:
-                        message += '\n' + l
-
-            if 'duration: ' in message:
-                message, duration = message.split('duration: ')
-                duration = duration.strip().split('\n')[0]
-                message = message + f'\nduration: {duration}'
-            if '\nW1' in message:
-                message = message.split('\n\n')[0].strip()
-
-            if 'reply_to_message_id' not in kwargs and isinstance(bot, QQBot):
-                kwargs['reply_message'] = True
-
-    elif isinstance(bot, (TGBot, KookBot)):
+    if isinstance(bot, (TGBot, KookBot)):
         if 'group' in event.get_event_name() and 'reply_to_message_id' not in kwargs:
             kwargs['reply_to_message_id'] = event.dict().get('message_id')
         if 'group' in event.get_event_name():
@@ -120,9 +70,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
                 message += '```'
 
     try:
-        if isinstance(bot, WXBot):
-            r = await bot.send(event, message)
-        elif isinstance(bot, KookBot):
+        if isinstance(bot, KookBot):
             r = await bot.send(event, message=Kook_MsgSeg.text(message))
         else:
             r = await bot.send(event, message, **kwargs)
