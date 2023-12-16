@@ -5,12 +5,8 @@ import secrets
 from collections import defaultdict
 from datetime import datetime as dt
 
-from nonebot import on_command, logger
+from nonebot import on_command, logger, get_driver
 from nonebot.adapters import Event, Bot
-from nonebot.adapters.telegram import Bot as TGBot
-from nonebot.adapters.telegram.message import File
-from nonebot.adapters.onebot.v12 import Bot as WXBot
-from nonebot.adapters.kaiheila import Bot as KookBot
 from nonebot.typing import T_State
 
 from .db_sqlite import set_db_info, get_user, get_or_set_user, get_all_user
@@ -18,25 +14,28 @@ from .sp3iksm import log_in, login_2, A_VERSION
 from .splat import Splatoon
 from .sp3bot import get_last_battle_or_coop
 from .sp3job import get_post_stat_msg, update_s3si_ts, thread_function, threading, asyncio
-from .utils import bot_send, check_session_handler, KookBot, notify_tg_channel, QQ_Bot
+from .utils import bot_send, _check_session_handler, Kook_Bot, QQ_Bot, Tg_Bot, V11_Bot, V12_Bot, Tg_File, QQ_GME
 from .scripts.report import get_report
-
 
 __all__ = ['login', 'login_id', 'clear_db_info', 'set_db_info', 'get_set_battle_info']
 MSG_PRIVATE = '请私信机器人完成登录操作'
-
 
 matcher_login = on_command("login", block=True)
 
 
 @matcher_login.handle()
 async def login(bot: Bot, event: Event, state: T_State):
-    if isinstance(bot, QQ_Bot):
-        await bot_send(bot, event, '请至kook完成登录后 /get_login_code')
+    if isinstance(bot, QQ_Bot) and isinstance(event, QQ_GME):
+        configs = get_driver().config
+        splatoon3_qq_channel_invite_url = getattr(configs, 'splatoon3_notify_kk_bot_id', "")
+        splatoon3_kk_channel_invite_url = getattr(configs, 'splatoon3_notify_kk_bot_id', "")
+
+        msg = f"Q群当前无法登录nso，请至其他平台完成登录后回到Q群绑定识别码\nQQ频道:{splatoon3_qq_channel_invite_url} \nkook频道:{splatoon3_kk_channel_invite_url}"
+        await bot_send(bot, event, '')
         return
 
     if 'group' in event.get_event_name():
-        if isinstance(bot, (WXBot, KookBot)):
+        if isinstance(bot, (V12_Bot, Kook_Bot, QQ_Bot)):
             await matcher_login.finish(MSG_PRIVATE)
             return
         await matcher_login.finish(MSG_PRIVATE, reply_message=True)
@@ -49,10 +48,10 @@ async def login(bot: Bot, event: Event, state: T_State):
 
     dir_path = os.path.dirname(os.path.abspath(__file__))
     img_path = f'{dir_path}/resource/sp3bot-login.gif'
-    if isinstance(bot, TGBot):
+    if isinstance(bot, Tg_Bot):
         try:
             logger.info(f'img_path: {img_path}')
-            await bot.send(event, File.animation(img_path))
+            await bot.send(event, Tg_File.animation(img_path))
         except Exception as e:
             logger.error(f'login error: {e}')
 
@@ -62,13 +61,13 @@ async def login(bot: Bot, event: Event, state: T_State):
     logger.info(f'auth_code_verifier: {auth_code_verifier}')
     if url:
         msg = ''
-        if isinstance(bot, TGBot):
+        if isinstance(bot, Tg_Bot):
             msg = f'''
 Navigate to this URL in your browser:
 {url}
 Log in, right click the "Select this account" button, copy the link address, and paste below. (Valid for 2 minutes)
             '''
-        elif isinstance(bot, (WXBot, KookBot)):
+        elif isinstance(bot, (V11_Bot, V12_Bot, Kook_Bot)):
             msg = f'''在浏览器中打开下面链接
 {url}
 登陆后，右键账号后面的红色按钮 (手机端长按复制)
@@ -98,18 +97,18 @@ async def login_id(bot: Bot, event: Event, state: T_State):
     logger.info(f'session_token: {session_token}')
     user_id = event.get_user_id()
     id_type = 'qq'
-    if isinstance(bot, TGBot):
+    if isinstance(bot, Tg_Bot):
         id_type = 'tg'
-    if isinstance(bot, WXBot):
+    if isinstance(bot, V12_Bot):
         id_type = 'wx'
-    if isinstance(bot, KookBot):
+    if isinstance(bot, Kook_Bot):
         id_type = 'kk'
     data = {
         'session_token': session_token,
         'user_id': user_id,
         'id_type': id_type,
     }
-    if isinstance(bot, (TGBot, KookBot)):
+    if isinstance(bot, (Tg_Bot, Kook_Bot)):
         data['report_type'] = 1
     set_db_info(**data)
     '''
@@ -122,7 +121,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 /start_push - start push mode
 /set_api_key - set stat.ink api_key, bot will sync your data to stat.ink
 """
-    if isinstance(bot, (WXBot, KookBot)):
+    if isinstance(bot, (V11_Bot, V12_Bot, Kook_Bot)):
         msg = f"""登录成功！机器人现在可以从App获取你的数据。
 /me - 显示你的信息
 /friends - 显示在线的喷喷好友
@@ -146,10 +145,8 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
     await notify_tg_channel(_msg)
 
 
-@on_command("clear_db_info", block=True).handle()
-@check_session_handler
+@on_command("clear_db_info", block=True, rule=_check_session_handler).handle()
 async def clear_db_info(bot: Bot, event: Event):
-
     if 'group' in event.get_event_name():
         await bot_send(bot, event, '请私聊机器人', parse_mode='Markdown')
         return
@@ -173,8 +170,7 @@ async def clear_db_info(bot: Bot, event: Event):
     await bot_send(bot, event, message=msg)
 
 
-@on_command("get_login_code", block=True).handle()
-@check_session_handler
+@on_command("get_login_code", block=True, rule=_check_session_handler).handle()
 async def get_login_code(bot: Bot, event: Event):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')
@@ -191,10 +187,9 @@ async def get_login_code(bot: Bot, event: Event):
     await bot_send(bot, event, message=msg)
 
 
-@on_command("set_login", block=True).handle()
-@check_session_handler
+@on_command("set_login", block=True, rule=_check_session_handler).handle()
 async def func_set_login(bot: QQ_Bot, event: Event):
-    if isinstance(bot, KookBot):
+    if isinstance(bot, Kook_Bot):
         await bot_send(bot, event, '暂不支持')
         return
 
@@ -237,11 +232,10 @@ async def func_set_login(bot: QQ_Bot, event: Event):
     set_db_info(user_id=user_id, id_type='qq', user_id_sp=player_code)
 
 
-matcher_set_battle_info = on_command("set_battle_info", aliases={'sbi'}, block=True)
+matcher_set_battle_info = on_command("set_battle_info", aliases={'sbi'}, block=True, rule=_check_session_handler)
 
 
 @matcher_set_battle_info.handle()
-@check_session_handler
 async def set_battle_info(bot: Bot, event: Event, matcher: matcher_set_battle_info):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')
@@ -259,7 +253,7 @@ set battle info, default 1): show name
 5 - weapon (name) byname
 6 - weapon (name)#nameId byname
 '''
-    if isinstance(bot, (WXBot, KookBot)):
+    if isinstance(bot, (V11_Bot, V12_Bot, Kook_Bot)):
         msg = '设置对战显示信息， 默认为 1): 名字' + msg.split('show name')[-1]
     await bot_send(bot, event, message=msg)
 
@@ -286,11 +280,10 @@ async def get_set_battle_info(bot: Bot, event: Event):
     await bot_send(bot, event, message=msg, parse_mode='Markdown')
 
 
-matcher_set_api_key = on_command("set_api_key", block=True)
+matcher_set_api_key = on_command("set_api_key", block=True, rule=_check_session_handler)
 
 
 @matcher_set_api_key.handle()
-@check_session_handler
 async def set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')
@@ -300,7 +293,7 @@ async def set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
         return
 
     msg = '''Please copy you api_key from https://stat.ink/profile then paste below'''
-    if isinstance(bot, (KookBot, WXBot)):
+    if isinstance(bot, (V11_Bot, V12_Bot, Kook_Bot)):
         msg = '''请从 https://stat.ink/profile 页面复制你的 api_key 后发送给机器人
 注册stat.ink账号后，无需其他操作，设置api_key
 机器人会同步你的数据到 stat.ink (App最多保存最近50*5场对战和50场打工数据)
@@ -323,7 +316,7 @@ async def get_set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     msg = f'''set_api_key success, bot will check every 2 hours and post your data to stat.ink.
 first sync will be in minutes.
     '''
-    if isinstance(bot, (WXBot, KookBot)):
+    if isinstance(bot, (V11_Bot, V12_Bot, Kook_Bot)):
         msg = f'''设置成功，机器人会检查一次并同步你的数据到 stat.ink
 /api_notify 关 - 设置关闭推送通知
         '''
@@ -334,8 +327,7 @@ first sync will be in minutes.
     threading.Thread(target=thread_function, args=(user_id,)).start()
 
 
-@on_command("sync_now", block=True).handle()
-@check_session_handler
+@on_command("sync_now", block=True, rule=_check_session_handler).handle()
 async def sync_now(bot: Bot, event: Event):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')
@@ -348,7 +340,7 @@ async def sync_now(bot: Bot, event: Event):
     u = get_or_set_user(user_id=user_id)
     if not (u and u.session_token and u.api_key):
         msg = 'Please set api_key first, /set_api_key'
-        if isinstance(bot, (WXBot, KookBot)):
+        if isinstance(bot, (V11_Bot, V12_Bot, Kook_Bot)):
             msg = '请先设置 api_key, /set_api_key'
         await bot_send(bot, event, msg)
         return
@@ -362,8 +354,7 @@ async def sync_now(bot: Bot, event: Event):
     return
 
 
-@on_command("api_notify", block=True).handle()
-@check_session_handler
+@on_command("api_notify", block=True, rule=_check_session_handler).handle()
 async def s_api_notify(bot: Bot, event: Event):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')
@@ -376,7 +367,7 @@ async def s_api_notify(bot: Bot, event: Event):
     u = get_or_set_user(user_id=user_id)
     if not (u and u.session_token and u.api_key):
         msg = 'Please set api_key first, /set_api_key'
-        if isinstance(bot, (WXBot, KookBot)):
+        if isinstance(bot, (V11_Bot, V12_Bot, Kook_Bot)):
             msg = '请先设置 api_key, /set_api_key'
         await bot_send(bot, event, msg)
         return
@@ -394,8 +385,7 @@ async def s_api_notify(bot: Bot, event: Event):
     await bot_send(bot, event, msg)
 
 
-@on_command("report", block=True).handle()
-@check_session_handler
+@on_command("report", block=True, rule=_check_session_handler).handle()
 async def report(bot: Bot, event: Event):
     cmd_list = event.get_plaintext().strip().split(' ')
     report_day = ''
@@ -426,8 +416,7 @@ async def report(bot: Bot, event: Event):
     await bot_send(bot, event, message=msg, parse_mode='Markdown')
 
 
-@on_command("unsubscribe", block=True).handle()
-@check_session_handler
+@on_command("unsubscribe", block=True, rule=_check_session_handler).handle()
 async def unsubscribe(bot: Bot, event: Event):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')

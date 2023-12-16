@@ -53,7 +53,6 @@ MSG_HELP_QQ = f'''机器人使用说明
 /last - 显示最近一场对战或打工
 /me - 显示你的喷喷信息
 
-/留言板 - 显示留言板，at机器人添加留言
 更多指令:
 https://docs.qq.com/sheet/DUkZHRWtCUkR0d2Nr?tab=BB08J2
 '''
