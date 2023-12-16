@@ -3,7 +3,6 @@ import json
 from nonebot import logger, on_startswith, on_command, get_driver, get_bots
 from nonebot.adapters import Event, Bot
 from nonebot.adapters.telegram import Bot as TGBot
-from nonebot.adapters.onebot.v11 import Bot as QQBot
 from nonebot.adapters.onebot.v12 import Bot as WXBot
 
 # kook协议
@@ -40,7 +39,7 @@ async def unknown_command(bot: Bot, event: Event):
     logger.info(f'unknown_command {event.get_event_name()}')
     if 'private' in event.get_event_name():
         _msg = "Sorry, I didn't understand that command. /help"
-        if isinstance(bot, (QQBot, WXBot)):
+        if isinstance(bot, (KookBot, WXBot)):
             _msg = '无效命令，输入 /help 查看帮助'
         logger.info(_msg)
         await bot.send(event, message=_msg)
@@ -51,7 +50,7 @@ async def _help(bot: Bot, event: Event):
     if isinstance(bot, TGBot):
         await bot_send(bot, event, message=MSG_HELP, disable_web_page_preview=True)
 
-    elif isinstance(bot, (QQBot, WXBot, KookBot)):
+    elif isinstance(bot, (WXBot, KookBot)):
         msg = MSG_HELP_QQ
         await bot_send(bot, event, message=msg)
 
@@ -78,7 +77,7 @@ async def bot_on_shutdown():
 @get_driver().on_bot_connect
 async def _(bot: Bot):
     bot_type = 'Telegram'
-    if isinstance(bot, QQBot):
+    if isinstance(bot, QQ_Bot):
         bot_type = 'QQ'
     elif isinstance(bot, WXBot):
         bot_type = 'WeChat'
@@ -106,7 +105,7 @@ async def _(bot: Bot):
 @get_driver().on_bot_disconnect
 async def _(bot: Bot):
     bot_type = 'Telegram'
-    if isinstance(bot, QQBot):
+    if isinstance(bot, QQ_Bot):
         bot_type = 'QQ'
     elif isinstance(bot, WXBot):
         bot_type = 'WeChat'

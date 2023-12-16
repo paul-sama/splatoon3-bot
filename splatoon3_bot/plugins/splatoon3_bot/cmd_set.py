@@ -9,7 +9,6 @@ from nonebot import on_command, logger
 from nonebot.adapters import Event, Bot
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.telegram.message import File
-from nonebot.adapters.onebot.v11 import Bot as QQBot
 from nonebot.adapters.onebot.v12 import Bot as WXBot
 from nonebot.adapters.kaiheila import Bot as KookBot
 from nonebot.typing import T_State
@@ -19,7 +18,7 @@ from .sp3iksm import log_in, login_2, A_VERSION
 from .splat import Splatoon
 from .sp3bot import get_last_battle_or_coop
 from .sp3job import get_post_stat_msg, update_s3si_ts, thread_function, threading, asyncio
-from .utils import bot_send, check_session_handler, KookBot, notify_tg_channel
+from .utils import bot_send, check_session_handler, KookBot, notify_tg_channel, QQ_Bot
 from .scripts.report import get_report
 
 
@@ -69,7 +68,7 @@ Navigate to this URL in your browser:
 {url}
 Log in, right click the "Select this account" button, copy the link address, and paste below. (Valid for 2 minutes)
             '''
-        elif isinstance(bot, (QQBot, WXBot, KookBot)):
+        elif isinstance(bot, (WXBot, KookBot)):
             msg = f'''在浏览器中打开下面链接
 {url}
 登陆后，右键账号后面的红色按钮 (手机端长按复制)
@@ -123,7 +122,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 /start_push - start push mode
 /set_api_key - set stat.ink api_key, bot will sync your data to stat.ink
 """
-    if isinstance(bot, (QQBot, WXBot, KookBot)):
+    if isinstance(bot, (WXBot, KookBot)):
         msg = f"""登录成功！机器人现在可以从App获取你的数据。
 /me - 显示你的信息
 /friends - 显示在线的喷喷好友
@@ -260,7 +259,7 @@ set battle info, default 1): show name
 5 - weapon (name) byname
 6 - weapon (name)#nameId byname
 '''
-    if isinstance(bot, (QQBot, WXBot)):
+    if isinstance(bot, (WXBot, KookBot)):
         msg = '设置对战显示信息， 默认为 1): 名字' + msg.split('show name')[-1]
     await bot_send(bot, event, message=msg)
 
@@ -301,7 +300,7 @@ async def set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
         return
 
     msg = '''Please copy you api_key from https://stat.ink/profile then paste below'''
-    if isinstance(bot, (QQBot, WXBot)):
+    if isinstance(bot, (KookBot, WXBot)):
         msg = '''请从 https://stat.ink/profile 页面复制你的 api_key 后发送给机器人
 注册stat.ink账号后，无需其他操作，设置api_key
 机器人会同步你的数据到 stat.ink (App最多保存最近50*5场对战和50场打工数据)
@@ -324,7 +323,7 @@ async def get_set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     msg = f'''set_api_key success, bot will check every 2 hours and post your data to stat.ink.
 first sync will be in minutes.
     '''
-    if isinstance(bot, (QQBot, WXBot, KookBot)):
+    if isinstance(bot, (WXBot, KookBot)):
         msg = f'''设置成功，机器人会检查一次并同步你的数据到 stat.ink
 /api_notify 关 - 设置关闭推送通知
         '''
@@ -349,7 +348,7 @@ async def sync_now(bot: Bot, event: Event):
     u = get_or_set_user(user_id=user_id)
     if not (u and u.session_token and u.api_key):
         msg = 'Please set api_key first, /set_api_key'
-        if isinstance(bot, (QQBot, WXBot, KookBot)):
+        if isinstance(bot, (WXBot, KookBot)):
             msg = '请先设置 api_key, /set_api_key'
         await bot_send(bot, event, msg)
         return
@@ -377,7 +376,7 @@ async def s_api_notify(bot: Bot, event: Event):
     u = get_or_set_user(user_id=user_id)
     if not (u and u.session_token and u.api_key):
         msg = 'Please set api_key first, /set_api_key'
-        if isinstance(bot, (QQBot, WXBot, KookBot)):
+        if isinstance(bot, (WXBot, KookBot)):
             msg = '请先设置 api_key, /set_api_key'
         await bot_send(bot, event, msg)
         return

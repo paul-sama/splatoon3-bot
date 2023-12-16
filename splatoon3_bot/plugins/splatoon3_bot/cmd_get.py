@@ -1,7 +1,5 @@
 from nonebot import on_command, logger
 from nonebot.adapters import Event, Bot
-from nonebot.adapters.onebot.v11 import Bot as QQBot
-from nonebot.adapters.onebot.v12 import Bot as WXBot
 
 from .sp3bot import (
     get_user_db_info, get_last_battle_or_coop, get_me, get_friends_msg, get_ns_friends_msg, get_x_top_msg,
