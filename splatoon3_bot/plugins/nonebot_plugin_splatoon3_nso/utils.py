@@ -199,11 +199,12 @@ def get_event_info(bot, event):
                 'id_type': 'qq',
                 'username': 'QQ群',
             })
-        if 'group' in event.get_event_name():
-            data.update({
-                'group_id': _event.get('guild_id') or _event.get('group_openid') or '',
-                'group_name': '',
-            })
+        # if 'group' in event.get_event_name():
+        # qq 都在群里使用
+        data.update({
+            'group_id': _event.get('guild_id') or _event.get('group_openid') or '',
+            'group_name': _event.get('guild_id') or _event.get('group_openid') or '',
+        })
     return data
 
 
