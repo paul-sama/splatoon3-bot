@@ -1,19 +1,16 @@
 from nonebot import on_command, logger
 from nonebot.adapters import Event, Bot
-from nonebot.adapters.onebot.v11 import Bot as QQBot
-from nonebot.adapters.onebot.v12 import Bot as WXBot
 
 from .sp3bot import (
     get_user_db_info, get_last_battle_or_coop, get_me, get_friends_msg, get_ns_friends_msg, get_x_top_msg,
     get_my_schedule_msg, get_screenshot_image, get_history_msg, get_friend_code, get_top, get_user
 )
-from .utils import bot_send, check_session_handler
+from .utils import bot_send, _check_session_handler
 
 __all__ = ['show_db_info', 'last', 'me']
 
 
-@on_command("show_db_info", aliases={'sdi'}, block=True).handle()
-@check_session_handler
+@on_command("show_db_info", aliases={'sdi'}, block=True, rule=_check_session_handler).handle()
 async def show_db_info(bot: Bot, event: Event):
 
     if 'group' in event.get_event_name():
@@ -26,8 +23,7 @@ async def show_db_info(bot: Bot, event: Event):
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
-@on_command("last", block=True).handle()
-@check_session_handler
+@on_command("last", block=True, rule=_check_session_handler).handle()
 async def last(bot: Bot, event: Event):
     user_id = event.get_user_id()
 
@@ -96,8 +92,7 @@ async def last(bot: Bot, event: Event):
                 await bot_send(bot, event, msg)
 
 
-@on_command("me", block=True).handle()
-@check_session_handler
+@on_command("me", block=True, rule=_check_session_handler).handle()
 async def me(bot: Bot, event: Event):
     user_id = event.get_user_id()
 
@@ -105,8 +100,7 @@ async def me(bot: Bot, event: Event):
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
-@on_command("friends", aliases={'fr'}, block=True).handle()
-@check_session_handler
+@on_command("friends", aliases={'fr'}, block=True, rule=_check_session_handler).handle()
 async def friends(bot: Bot, event: Event):
     get_text = False
     cmd_lst = event.get_plaintext().strip().split()
@@ -117,28 +111,25 @@ async def friends(bot: Bot, event: Event):
     await bot_send(bot, event, msg, parse_mode='Markdown', image_width=600)
 
 
-@on_command("ns_friends", aliases={'ns'}, block=True).handle()
-@check_session_handler
+@on_command("ns_friends", aliases={'ns'}, block=True, rule=_check_session_handler).handle()
 async def ns_friends(bot: Bot, event: Event):
     msg = await get_ns_friends_msg(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown', image_width=680)
 
 
-@on_command("x_top", block=True).handle()
+@on_command("x_top", block=True, rule=_check_session_handler).handle()
 async def x_top(bot: Bot, event: Event):
     msg = await get_x_top_msg()
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
-@on_command("my_schedule", block=True).handle()
-@check_session_handler
+@on_command("my_schedule", block=True, rule=_check_session_handler).handle()
 async def schedule(bot: Bot, event: Event):
     msg = await get_my_schedule_msg(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
-@on_command("screen_shot", aliases={'ss'}, block=True).handle()
-@check_session_handler
+@on_command("screen_shot", aliases={'ss'}, block=True, rule=_check_session_handler).handle()
 async def screen_shot(bot: Bot, event: Event):
     key = ''
     if ' ' in event.get_plaintext():
@@ -150,8 +141,7 @@ async def screen_shot(bot: Bot, event: Event):
     await bot_send(bot, event, message=message, photo=img)
 
 
-@on_command("history", block=True).handle()
-@check_session_handler
+@on_command("history", block=True, rule=_check_session_handler).handle()
 async def history(bot: Bot, event: Event):
     _type = 'open'
     await bot_send(bot, event, '`开始努力作图，请稍等~`', parse_mode='Markdown', skip_log_cmd=True)
@@ -169,15 +159,13 @@ async def history(bot: Bot, event: Event):
     await bot_send(bot, event, msg, parse_mode='Markdown', image_width=1000)
 
 
-@on_command("friend_code", aliases={'fc'}, block=True).handle()
-@check_session_handler
+@on_command("friend_code", aliases={'fc'}, block=True, rule=_check_session_handler).handle()
 async def friend_code(bot: Bot, event: Event):
     msg = get_friend_code(event.get_user_id())
     await bot_send(bot, event, msg, parse_mode='Markdown')
 
 
-@on_command("top", block=True).handle()
-@check_session_handler
+@on_command("top", block=True, rule=_check_session_handler).handle()
 async def _top(bot: Bot, event: Event):
 
     cmd_message = event.get_plaintext()[4:].strip()

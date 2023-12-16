@@ -47,3 +47,4 @@ nonebot-adapter-kaiheila
 nonebot2
 cfscrape
 awaits
+nonebot-adapter-qq

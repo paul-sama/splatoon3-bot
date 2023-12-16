@@ -1,17 +1,6 @@
 import json
 
 from nonebot import logger, on_startswith, on_command, get_driver, get_bots
-from nonebot.adapters import Event, Bot
-from nonebot.adapters.telegram import Bot as TGBot
-from nonebot.adapters.onebot.v11 import Bot as QQBot
-from nonebot.adapters.onebot.v12 import Bot as WXBot
-
-# kook协议
-from nonebot.adapters.kaiheila import Bot as KookBot
-from nonebot.adapters.kaiheila.event import MessageEvent as Kook_ME
-from nonebot.adapters.kaiheila import MessageSegment as Kook_MsgSeg
-from nonebot.adapters.kaiheila.event import PrivateMessageEvent as Kook_PME
-from nonebot.adapters.kaiheila.event import ChannelMessageEvent as Kook_CME
 
 from nonebot.message import event_preprocessor
 from nonebot.permission import SUPERUSER
@@ -19,7 +8,7 @@ from nonebot.permission import SUPERUSER
 from .db_sqlite import set_db_info
 from .sp3msg import MSG_HELP, MSG_HELP_QQ
 from .sp3job import cron_job
-from .utils import bot_send, notify_tg_channel, get_event_info
+from .utils import bot_send, notify_tg_channel, get_event_info, Kook_Bot, Tg_Bot, V11_Bot, V12_Bot, QQ_Bot
 
 from .cmd_get import *
 from .cmd_push import *
@@ -40,7 +29,7 @@ async def unknown_command(bot: Bot, event: Event):
     logger.info(f'unknown_command {event.get_event_name()}')
     if 'private' in event.get_event_name():
         _msg = "Sorry, I didn't understand that command. /help"
-        if isinstance(bot, (QQBot, WXBot)):
+        if isinstance(bot, (QQ_Bot, V12_Bot, Kook_Bot)):
             _msg = '无效命令，输入 /help 查看帮助'
         logger.info(_msg)
         await bot.send(event, message=_msg)
@@ -48,10 +37,10 @@ async def unknown_command(bot: Bot, event: Event):
 
 @on_command("help", aliases={'h', '帮助', '说明', '文档'}, block=True).handle()
 async def _help(bot: Bot, event: Event):
-    if isinstance(bot, TGBot):
+    if isinstance(bot, Tg_Bot):
         await bot_send(bot, event, message=MSG_HELP, disable_web_page_preview=True)
 
-    elif isinstance(bot, (QQBot, WXBot, KookBot)):
+    elif isinstance(bot, (QQ_Bot, V12_Bot, Kook_Bot,)):
         msg = MSG_HELP_QQ
         await bot_send(bot, event, message=msg)
 
@@ -78,11 +67,11 @@ async def bot_on_shutdown():
 @get_driver().on_bot_connect
 async def _(bot: Bot):
     bot_type = 'Telegram'
-    if isinstance(bot, QQBot):
+    if isinstance(bot, QQ_Bot):
         bot_type = 'QQ'
-    elif isinstance(bot, WXBot):
+    elif isinstance(bot, V12_Bot):
         bot_type = 'WeChat'
-    elif isinstance(bot, KookBot):
+    elif isinstance(bot, Kook_Bot):
         bot_type = 'Kook'
 
     logger.info(f' {bot_type} bot connect {bot.self_id} '.center(60, '-').center(120, ' '))
@@ -106,11 +95,11 @@ async def _(bot: Bot):
 @get_driver().on_bot_disconnect
 async def _(bot: Bot):
     bot_type = 'Telegram'
-    if isinstance(bot, QQBot):
+    if isinstance(bot, QQ_Bot):
         bot_type = 'QQ'
-    elif isinstance(bot, WXBot):
+    elif isinstance(bot, V12_Bot):
         bot_type = 'WeChat'
-    elif isinstance(bot, KookBot):
+    elif isinstance(bot, Kook_Bot):
         bot_type = 'Kook'
 
     text = f'bot {bot_type}: {bot.self_id} disconnect !!!!!!!!!!!!!!!!!!!'
@@ -118,7 +107,7 @@ async def _(bot: Bot):
 
 
 @event_preprocessor
-async def tg_private_msg(bot: TGBot, event: Event):
+async def tg_private_msg(bot: Tg_Bot, event: Event):
     try:
         user_id = event.get_user_id()
         message = event.get_plaintext().strip()
@@ -142,7 +131,7 @@ async def tg_private_msg(bot: TGBot, event: Event):
 
 
 @event_preprocessor
-async def kk_private_msg(bot: KookBot, event: Event):
+async def kk_private_msg(bot: Kook_Bot, event: Event):
     try:
         user_id = event.get_user_id()
         message = event.get_plaintext().strip()
@@ -191,7 +180,7 @@ async def admin_cmd(bot: Bot, event: Event):
         if not user:
             await bot_send(bot, event, message=f'no user: {u_id}')
             return
-        if key in ('push', ):
+        if key in ('push',):
             val = int(val)
         _d = {'user_id': u_id, key: val}
         get_or_set_user(**_d)

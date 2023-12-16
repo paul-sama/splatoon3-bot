@@ -5,9 +5,6 @@ from collections import defaultdict
 from datetime import datetime as dt, timedelta
 from nonebot import logger
 from nonebot.adapters import Event, Bot
-from nonebot.adapters.telegram import Bot as TGBot
-from nonebot.adapters.onebot.v11 import Bot as QQBot
-from nonebot.adapters.onebot.v12 import Bot as WXBot
 
 from .db_sqlite import get_user, get_or_set_user, get_all_user
 from .splat import Splatoon, API_URL
@@ -19,7 +16,7 @@ from .sp3msg_md import (
     get_ns_friends, get_top_md
 )
 from .splatnet_image import get_app_screenshot
-from .utils import bot_send, INTERVAL, notify_tg_channel
+from .utils import bot_send, INTERVAL, notify_tg_channel, Tg_Bot, V11_Bot, V12_Bot, QQ_Bot
 
 
 def get_user_db_info(user_id):
@@ -207,7 +204,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
     data = job_data or {}
 
     # QQ 群聊2分钟内撤回
-    if isinstance(bot, QQBot) and push_cnt == 10 and job_data.get('group_id'):
+    if isinstance(bot, V11_Bot) and push_cnt == 10 and job_data.get('group_id'):
         if data.get('last_group_msg_id'):
             try:
                 await bot.call_api('delete_msg', message_id=data['last_group_msg_id'])
@@ -233,7 +230,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
                 scheduler.remove_job(job_id)
                 get_or_set_user(user_id=user_id, push=False)
                 msg = 'No game record for 30 minutes, stop push.'
-                if isinstance(bot, (QQBot, WXBot)):
+                if isinstance(bot, (V11_Bot, V12_Bot)):
                     msg = '30分钟内没有游戏记录，停止推送。'
                     if not user.api_key:
                         msg += '''\n/set_api_key 可保存数据到 stat.ink\n(App最多可查看最近50*5场对战和50场打工)'''
@@ -243,7 +240,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
                 logger.info(f'{user.username}, {msg}')
                 await bot_send(bot, event, message=msg, parse_mode='Markdown', skip_log_cmd=True)
 
-                bot_type = 'tg' if isinstance(bot, TGBot) else 'qq'
+                bot_type = 'tg' if isinstance(bot, Tg_Bot) else 'qq'
                 msg = f"#{bot_type}{user_id} {user.nickname or ''}\n 30分钟内没有游戏记录，停止推送。"
                 await notify_tg_channel(msg)
                 return
@@ -261,12 +258,12 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
                        reply_to_message_id=None, image_width=image_width, skip_log_cmd=True)
     if job_data.get('group_id') and r:
         message_id = ''
-        if isinstance(bot, QQBot):
+        if isinstance(bot, V11_Bot):
             message_id = r.get('message_id')
             # qq 五分钟后消息撤回失效
             # if data.get('last_group_msg_id'):
             #     await bot.call_api('delete_msg', message_id=data['last_group_msg_id'])
-        elif isinstance(bot, TGBot):
+        elif isinstance(bot, Tg_Bot):
             message_id = r.message_id
             if data.get('last_group_msg_id'):
                await bot.call_api('delete_message', message_id=data['last_group_msg_id'], chat_id=r.chat.id)
