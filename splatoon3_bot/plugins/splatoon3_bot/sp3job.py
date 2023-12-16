@@ -9,7 +9,6 @@ from collections import defaultdict
 from datetime import datetime as dt
 from nonebot import Bot, logger, get_driver
 from nonebot.adapters.telegram import Bot as TGBot
-from nonebot.adapters.onebot.v11 import Bot as QQBot
 from nonebot.adapters.kaiheila import Bot as KookBot
 from nonebot.adapters.onebot.v12 import Bot as WXBot, MessageSegment as WXMsgSeg, Message as WXMsg
 
@@ -76,7 +75,7 @@ async def send_user_msg(bot, users):
     for u in users:
         # if not u.api_key or not u.session_token:
         #     continue
-        if (isinstance(bot, TGBot) and not u.user_id_tg) or (isinstance(bot, QQBot) and not u.user_id_qq) or (
+        if (isinstance(bot, TGBot) and not u.user_id_tg) or (
                 isinstance(bot, WXBot) and not u.user_id_wx) or (isinstance(bot, KookBot) and not u.user_id_kk):
             continue
         file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
@@ -99,10 +98,6 @@ async def send_user_msg(bot, users):
                         if '早报' in msg:
                             msg = '#report\n' + msg
                         ret = await bot.send_message(chat_id=u.user_id_tg, text=msg, parse_mode='Markdown')
-                elif isinstance(bot, QQBot):
-                    _text += f'#qq{u.user_id_qq}'
-                    msg = msg.replace('```', '').strip()
-                    ret = await bot.send_private_msg(user_id=u.user_id_qq, message=msg)
                 elif isinstance(bot, WXBot):
                     _text += f'#wx{u.user_id_wx}'
                     msg = msg.replace('```', '').strip()
@@ -111,7 +106,7 @@ async def send_user_msg(bot, users):
                 elif isinstance(bot, KookBot):
                     _text += f'#kk{u.user_id_kk}'
                     logger.info(f'uuu {u.id}, {u.user_id_kk}')
-                    ret = await bot.call_api('direct-message_create', chat_code=u.user_id_kk, content=msg)
+                    ret = await bot.send_private_msg(user_id=u.user_id_kk, message=msg)
 
                 logger.debug(f"{u.id} send message: {ret}")
 

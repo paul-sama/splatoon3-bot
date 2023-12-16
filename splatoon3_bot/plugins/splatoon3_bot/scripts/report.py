@@ -73,9 +73,9 @@ async def set_user_info(user_id, skip_report=False):
             _report = await set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code)
 
             # tg, kk 才发早报
-            _user_id_sp = u.user_id_sp if u.report_type and id_type in ('tg', 'kk') else ''
+            _user_id = u.id if u.report_type and id_type in ('tg', 'kk') else ''
 
-            return _dict, _report, _user_id_sp
+            return _dict, _report, _user_id
 
     except Exception as ex:
         logger.warning(f'set_user_info error: {user_id}, {ex}')
@@ -169,17 +169,21 @@ async def update_user_info():
         for r in res:
             if not r:
                 continue
-            _dict, _report, _uid = r
-            if _dict:
-                set_db_info(**_dict)
-            if _report:
-                model_add_report(**_report)
-            if _uid:
-                msg = get_report(_uid)
-                if msg:
-                    file_msg_path = os.path.join(path_folder, f'msg_{_uid}.txt')
-                    with open(file_msg_path, 'a') as f:
-                        f.write(msg)
+            try:
+                _dict, _report, _uid = r
+                if _dict:
+                    set_db_info(**_dict)
+                if _report:
+                    model_add_report(**_report)
+                if _uid:
+                    msg = get_report(_uid)
+                    if msg:
+                        file_msg_path = os.path.join(path_folder, f'msg_{_uid}.txt')
+                        with open(file_msg_path, 'a') as f:
+                            f.write(msg)
+            except Exception as ex:
+                logger.warning(f'update_user_info ex: {ex}')
+                continue
 
     logger.info(f'update_user_info_end: {dt.utcnow() - t}')
 

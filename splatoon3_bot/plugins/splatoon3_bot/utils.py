@@ -7,7 +7,6 @@ from nonebot import logger, get_driver, get_bots
 from nonebot.adapters import Bot, Event
 from nonebot.adapters.telegram import Bot as TGBot
 from nonebot.adapters.telegram.message import File
-from nonebot.adapters.onebot.v11 import Bot as QQBot, MessageSegment
 from nonebot.adapters.onebot.v12 import Bot as WXBot, MessageSegment as WXMsgSeg
 # qq官方协议
 from nonebot.adapters.qq import Bot as QQ_Bot
@@ -24,7 +23,7 @@ require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
 INTERVAL = 10
-BOT_VERSION = '1.5.1'
+BOT_VERSION = '1.5.2'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 
 
@@ -45,7 +44,6 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
 
     if img_data:
         rr = None
-
         if isinstance(bot, TGBot):
             if 'reply_to_message_id' not in kwargs:
                 rr = await bot.send(event, File.photo(img_data), reply_to_message_id=event.dict().get('message_id'))
@@ -54,7 +52,10 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
 
         elif isinstance(bot, KookBot):
             url = await bot.upload_file(img_data)
-            await bot.send(event, Kook_MsgSeg.image(url), reply_sender=True)
+            if 'reply_to_message_id' not in kwargs:
+                rr = await bot.send(event, Kook_MsgSeg.image(url), quote=event.dict().get('message_id'))
+            else:
+                rr = await bot.send(event, Kook_MsgSeg.image(url))
 
         elif isinstance(bot, QQ_Bot):
             if not isinstance(event, GroupAtMessageCreateEvent):
@@ -91,7 +92,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
 
     try:
         if isinstance(bot, KookBot):
-            r = await bot.send(event, message=Kook_MsgSeg.text(message))
+            r = await bot.send(event, message=Kook_MsgSeg.text(message), quote=event.dict().get('message_id'))
         elif isinstance(bot, QQ_Bot):
             r = bot.send(event, message=QQ_MsgSeg.text(message))
         else:
@@ -120,7 +121,7 @@ def check_session_handler(func):
         user = get_user(user_id=event.get_user_id())
         if not user or not user.session_token:
             _msg = "Permission denied. /login first."
-            if isinstance(bot, (QQBot, WXBot, KookBot, QQ_Bot)):
+            if isinstance(bot, (WXBot, KookBot, QQ_Bot)):
                 _msg = '无权限查看，请先 /login 登录'
 
             matcher = kwargs.get('matcher')
@@ -128,9 +129,6 @@ def check_session_handler(func):
                 await matcher.finish(_msg)
                 return False
 
-            if isinstance(bot, QQBot):
-                await bot.send(event, message=_msg, reply_message=True)
-                return False
             elif isinstance(bot, QQ_Bot):
                 await bot.send(event, message=QQ_MsgSeg.text(_msg))
                 return False
@@ -257,4 +255,8 @@ async def notify_tg_channel(_msg, _type='msg', **kwargs):
         for bot in get_bots().values():
             logger.debug(f'bot_qq_send_user_msg: {bot}')
             if isinstance(bot, KookBot):
-                await bot.send_channel_msg(channel_id=kk_channel_chat_id, message=Kook_MsgSeg.text(_msg))
+                _msg = f'```\n{_msg}\n```'
+                try:
+                    await bot.send_channel_msg(channel_id=kk_channel_chat_id, message=Kook_MsgSeg.text(_msg))
+                except Exception as ex:
+                    logger.warning(f'kk send_channel_msg ex: {ex}')
