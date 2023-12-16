@@ -115,7 +115,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
     if isinstance(bot, (Tg_Bot, Kook_Bot, QQ_Bot)):
         if 'group' in event.get_event_name() and 'reply_to_message_id' not in kwargs:
             kwargs['reply_to_message_id'] = event.dict().get('message_id')
-        if 'group' in event.get_event_name():
+        if 'group' in event.get_event_name() or isinstance(bot, QQ_Bot):
             # /me 截断
             if '开放' in message and ': (+' not in message:
                 coop_lst = message.split('2022-')[-1].split('2023-')[-1].strip().split('\n')
@@ -129,6 +129,7 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
         if isinstance(bot, Kook_Bot):
             r = await bot.send(event, message=Kook_MsgSeg.text(message), quote=event.dict().get('message_id'))
         elif isinstance(bot, QQ_Bot):
+            message = message.replace('```', '').replace('\_', '_').strip().strip('`')
             r = await bot.send(event, message=QQ_MsgSeg.text(message))
         else:
             r = await bot.send(event, message, **kwargs)
