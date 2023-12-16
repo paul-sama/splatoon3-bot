@@ -1,15 +1,12 @@
-
 from collections import defaultdict
 from datetime import datetime as dt, timedelta
 
 from nonebot import on_command, logger, require
 from nonebot.adapters import Event, Bot
-from nonebot.adapters.onebot.v11 import Bot as QQBot
-from nonebot.adapters.onebot.v12 import Bot as WXBot
 from nonebot.typing import T_State
 
 from .db_sqlite import get_or_set_user, get_user
-from .utils import INTERVAL, bot_send, _check_session_handler, Kook_Bot, QQ_Bot
+from .utils import INTERVAL, bot_send, _check_session_handler, Kook_Bot, QQ_Bot, V12_Bot
 from .sp3bot import push_latest_battle
 from .sp3msg import get_statics
 
@@ -72,7 +69,7 @@ async def start_push(bot: Bot, event: Event, state: T_State):
         misfire_grace_time=INTERVAL - 1, coalesce=True, max_instances=1
     )
     msg = f'Start push! check new data(battle or coop) every {INTERVAL} seconds. /stop_push to stop'
-    if isinstance(bot, (QQBot, WXBot, Kook_Bot)):
+    if isinstance(bot, (V12_Bot, Kook_Bot)):
         str_i = '图片' if get_image else '文字'
         msg = f'开启{str_i}推送模式，每10秒钟查询一次最新数据(对战或打工)\n/stop_push 停止推送'
     await bot_send(bot, event, msg)
@@ -89,7 +86,7 @@ async def stop_push(bot: Bot, event: Event):
     user_id = event.get_user_id()
     get_or_set_user(user_id=user_id, push=False)
 
-    if isinstance(bot, (QQBot, WXBot, Kook_Bot)):
+    if isinstance(bot, (V12_Bot, Kook_Bot)):
         msg = '停止推送！'
         user = get_user(user_id=user_id)
         if not user.api_key:
