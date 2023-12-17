@@ -1,14 +1,13 @@
-
 from collections import defaultdict
 from datetime import datetime as dt, timedelta
 
 from nonebot import on_command, logger, require
 from nonebot.adapters import Event, Bot
-from nonebot.adapters.onebot.v12 import Bot as WXBot
 from nonebot.typing import T_State
+from nonebot.internal.params import Depends
 
 from .db_sqlite import get_or_set_user, get_user
-from .utils import INTERVAL, bot_send, check_session_handler, KookBot, QQ_Bot
+from .utils import INTERVAL, bot_send, _check_session_handler, Kook_Bot, QQ_Bot, V12_Bot
 from .sp3bot import push_latest_battle
 from .sp3msg import get_statics
 
@@ -18,8 +17,7 @@ from nonebot_plugin_apscheduler import scheduler
 __all__ = ['start_push', 'stop_push', 'scheduler']
 
 
-@on_command("start_push", aliases={'sp', 'push', 'start'}, block=True).handle()
-@check_session_handler
+@on_command("start_push", aliases={'sp', 'push', 'start'}, priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])
 async def start_push(bot: Bot, event: Event, state: T_State):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')
@@ -72,14 +70,13 @@ async def start_push(bot: Bot, event: Event, state: T_State):
         misfire_grace_time=INTERVAL - 1, coalesce=True, max_instances=1
     )
     msg = f'Start push! check new data(battle or coop) every {INTERVAL} seconds. /stop_push to stop'
-    if isinstance(bot, (WXBot, KookBot)):
+    if isinstance(bot, (V12_Bot, Kook_Bot)):
         str_i = '图片' if get_image else '文字'
         msg = f'开启{str_i}推送模式，每10秒钟查询一次最新数据(对战或打工)\n/stop_push 停止推送'
     await bot_send(bot, event, msg)
 
 
-@on_command("stop_push", aliases={'stop', 'st', 'stp'}, block=True).handle()
-@check_session_handler
+@on_command("stop_push", aliases={'stop', 'st', 'stp'}, priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])
 async def stop_push(bot: Bot, event: Event):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')
@@ -90,7 +87,7 @@ async def stop_push(bot: Bot, event: Event):
     user_id = event.get_user_id()
     get_or_set_user(user_id=user_id, push=False)
 
-    if isinstance(bot, (WXBot, KookBot)):
+    if isinstance(bot, (V12_Bot, Kook_Bot)):
         msg = '停止推送！'
         user = get_user(user_id=user_id)
         if not user.api_key:

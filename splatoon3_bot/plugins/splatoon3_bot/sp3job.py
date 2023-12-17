@@ -8,17 +8,17 @@ import concurrent.futures
 from collections import defaultdict
 from datetime import datetime as dt
 from nonebot import Bot, logger, get_driver
-from nonebot.adapters.telegram import Bot as TGBot
-from nonebot.adapters.kaiheila import Bot as KookBot
-from nonebot.adapters.onebot.v12 import Bot as WXBot, MessageSegment as WXMsgSeg, Message as WXMsg
 
+from . import plugin_config
 from .db_sqlite import get_or_set_user, get_all_user
 from .scripts.top_player import get_x_player
 from .scripts.report import update_user_info, update_user_info_first
 from .scripts.user_friend import task_get_user_friend, update_qq_group_info, update_wx_group_info
-
+from .utils import bot_send, notify_tg_channel, get_event_info, Kook_Bot, Tg_Bot, V11_Bot, V12_Bot, QQ_Bot, V12_MsgSeg, \
+    V12_ME
 
 logger = logger.bind(cron=True)
+
 
 async def cron_job(bot: Bot):
     """定时任务， 每1分钟每个bot执行"""
@@ -30,8 +30,10 @@ async def cron_job(bot: Bot):
 
     await send_user_msg(bot, users)
 
-    # 其他定时任务全在tg bot上执行
-    if not isinstance(bot, TGBot):
+    # 其他定时任务全在指定bot上执行
+    bot_id = bot.self_id
+    cron_job_bot_id = plugin_config.splatoon3_cron_job_execute_bot_id
+    if not (bot_id == cron_job_bot_id):
         return
 
     # parse x rank player at 2:40
@@ -75,8 +77,8 @@ async def send_user_msg(bot, users):
     for u in users:
         # if not u.api_key or not u.session_token:
         #     continue
-        if (isinstance(bot, TGBot) and not u.user_id_tg) or (
-                isinstance(bot, WXBot) and not u.user_id_wx) or (isinstance(bot, KookBot) and not u.user_id_kk):
+        if (isinstance(bot, Tg_Bot) and not u.user_id_tg) or (isinstance(bot, V11_Bot) and not u.user_id_qq) or (
+                isinstance(bot, V12_Bot) and not u.user_id_wx) or (isinstance(bot, Kook_Bot) and not u.user_id_kk):
             continue
         file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
         if not os.path.exists(file_msg_path):
@@ -89,7 +91,7 @@ async def send_user_msg(bot, users):
             _text = ''
             try:
                 ret = None
-                if isinstance(bot, TGBot):
+                if isinstance(bot, Tg_Bot):
                     _text += f'#tg{u.user_id_tg}'
                     if 'stat.ink' in msg:
                         msg = msg.replace('Exported', '#Exported')
@@ -98,12 +100,12 @@ async def send_user_msg(bot, users):
                         if '早报' in msg:
                             msg = '#report\n' + msg
                         ret = await bot.send_message(chat_id=u.user_id_tg, text=msg, parse_mode='Markdown')
-                elif isinstance(bot, WXBot):
+                elif isinstance(bot, V12_Bot):
                     _text += f'#wx{u.user_id_wx}'
                     msg = msg.replace('```', '').strip()
-                    _msg = WXMsg(WXMsgSeg.text(msg))
+                    _msg = V12_ME(V12_MsgSeg.text(msg))
                     ret = await bot.send_message(detail_type="private", user_id=u.user_id_wx, message=_msg)
-                elif isinstance(bot, KookBot):
+                elif isinstance(bot, Kook_Bot):
                     _text += f'#kk{u.user_id_kk}'
                     logger.info(f'uuu {u.id}, {u.user_id_kk}')
                     ret = await bot.send_private_msg(user_id=u.user_id_kk, message=msg)
@@ -113,7 +115,7 @@ async def send_user_msg(bot, users):
             except Exception as e:
                 # logger.exception(f"{u.id}, send_user_msg: {e}, {msg}")
                 _text += ' failed!'
-                if isinstance(bot, WXBot):
+                if isinstance(bot, V12_Bot):
                     logger.warning(f"{u.id}, send_user_msg: {e}, {msg}")
                 else:
                     logger.exception(f"{u.id}, send_user_msg: {e}, {msg}")

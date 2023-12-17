@@ -1,18 +1,17 @@
-
 import json
 from collections import defaultdict
 from datetime import datetime as dt
 
 from nonebot import on_command, logger, get_bots, permission
 from nonebot.adapters import Bot, Event
-from nonebot.adapters.onebot.v11 import Bot as QQBot, Message
-from .utils import check_session_handler, bot_send
+from nonebot.internal.params import Depends
+
+from .utils import _check_session_handler, bot_send, Kook_Bot, Tg_Bot, V11_Bot, V11_ME, V12_Bot, QQ_Bot
 from .db_sqlite import get_user, get_or_set_user, get_all_group
 
 
-@on_command("broadcast", block=True).handle()
-@check_session_handler
-async def _broadcast(bot: QQBot, event: Event):
+@on_command("broadcast",  priority=10, block=True, permission=permission.SUPERUSER).handle(parameterless=[Depends(_check_session_handler)])
+async def _broadcast(bot: V11_Bot, event: Event):
     user_id = event.get_user_id()
     user = get_user(user_id=user_id)
 
@@ -53,7 +52,7 @@ async def _broadcast(bot: QQBot, event: Event):
 
     _msg = "设置: /广播消息 关闭\n发送: /broadcast 消息\n"
     msg = f"[CQ:at,qq={user_id}] 发送\n{text}\n"
-    message = Message(_msg) + Message(msg)
+    message = V11_ME(_msg) + V11_ME(msg)
 
     logger.debug(f'broadcast: {user_id}, {g_id_lst}\n{msg}')
     for g_id in g_id_lst:
@@ -64,8 +63,7 @@ async def _broadcast(bot: QQBot, event: Event):
 
 
 # 预留管理员使用
-@on_command("bc", block=True, permission=permission.SUPERUSER).handle()
-@check_session_handler
+@on_command("bc", priority=10, block=True, permission=permission.SUPERUSER).handle(parameterless=[Depends(_check_session_handler)])
 async def _broadcast(bot: Bot, event: Event):
     is_group = False
     cmd_lst = event.get_plaintext().strip().split()
@@ -94,7 +92,7 @@ async def bot_qq_send_user_msg(msg, q_id):
     r = None
     for bot in bots.values():
         logger.debug(f'bot_qq_send_user_msg: {bot}')
-        if isinstance(bot, QQBot):
+        if isinstance(bot, V11_Bot):
             try:
                 r = await bot.send_msg(message=msg, user_id=q_id)
                 logger.debug(f'bot_qq_send_user_msg: {q_id}, {msg}\n{r}')
@@ -108,7 +106,7 @@ async def bot_qq_send_group_msg(msg, g_id):
     r = None
     for bot in bots.values():
         logger.debug(f'bot_qq_send_group_msg: {bot}')
-        if isinstance(bot, QQBot):
+        if isinstance(bot, V11_Bot):
             try:
                 r = await bot.send_msg(message=msg, group_id=g_id)
                 logger.debug(f'bot_qq_send_group_msg: {g_id}, {msg}\n{r}')
