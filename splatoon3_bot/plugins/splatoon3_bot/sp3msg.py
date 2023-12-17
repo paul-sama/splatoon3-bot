@@ -45,7 +45,7 @@ settings:
 https://docs.qq.com/sheet/DUkZHRWtCUkR0d2Nr?tab=BB08J2
 """
 
-MSG_HELP_QQ = f'''机器人使用说明
+MSG_HELP_CN = f'''机器人使用说明
 命令起始字符 / 或 、
 
 /help - 显示此帮助信息 {BOT_VERSION}
@@ -55,6 +55,16 @@ MSG_HELP_QQ = f'''机器人使用说明
 
 更多指令:
 https://docs.qq.com/sheet/DUkZHRWtCUkR0d2Nr?tab=BB08J2
+'''
+
+MSG_HELP_QQ = f'''机器人使用说明
+命令起始字符 / 或 、
+
+/help - 显示此帮助信息 {BOT_VERSION}
+/login - 登录喷喷账号
+/last - 显示最近一场对战或打工
+/me - 显示你的喷喷信息
+
 '''
 
 

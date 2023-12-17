@@ -4,6 +4,7 @@ from datetime import datetime as dt, timedelta
 from nonebot import on_command, logger, require
 from nonebot.adapters import Event, Bot
 from nonebot.typing import T_State
+from nonebot.internal.params import Depends
 
 from .db_sqlite import get_or_set_user, get_user
 from .utils import INTERVAL, bot_send, _check_session_handler, Kook_Bot, QQ_Bot, V12_Bot
@@ -16,7 +17,7 @@ from nonebot_plugin_apscheduler import scheduler
 __all__ = ['start_push', 'stop_push', 'scheduler']
 
 
-@on_command("start_push", aliases={'sp', 'push', 'start'}, block=True, rule=_check_session_handler).handle()
+@on_command("start_push", aliases={'sp', 'push', 'start'}, priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])
 async def start_push(bot: Bot, event: Event, state: T_State):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')
@@ -75,7 +76,7 @@ async def start_push(bot: Bot, event: Event, state: T_State):
     await bot_send(bot, event, msg)
 
 
-@on_command("stop_push", aliases={'stop', 'st', 'stp'}, block=True, rule=_check_session_handler).handle()
+@on_command("stop_push", aliases={'stop', 'st', 'stp'}, priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])
 async def stop_push(bot: Bot, event: Event):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')

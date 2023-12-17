@@ -4,12 +4,13 @@ from datetime import datetime as dt
 
 from nonebot import on_command, logger, get_bots, permission
 from nonebot.adapters import Bot, Event
+from nonebot.internal.params import Depends
 
 from .utils import _check_session_handler, bot_send, Kook_Bot, Tg_Bot, V11_Bot, V11_ME, V12_Bot, QQ_Bot
 from .db_sqlite import get_user, get_or_set_user, get_all_group
 
 
-@on_command("broadcast", block=True, permission=permission.SUPERUSER, rule=_check_session_handler).handle()
+@on_command("broadcast",  priority=10, block=True, permission=permission.SUPERUSER).handle(parameterless=[Depends(_check_session_handler)])
 async def _broadcast(bot: V11_Bot, event: Event):
     user_id = event.get_user_id()
     user = get_user(user_id=user_id)
@@ -62,7 +63,7 @@ async def _broadcast(bot: V11_Bot, event: Event):
 
 
 # 预留管理员使用
-@on_command("bc", block=True, permission=permission.SUPERUSER, rule=_check_session_handler).handle()
+@on_command("bc", priority=10, block=True, permission=permission.SUPERUSER).handle(parameterless=[Depends(_check_session_handler)])
 async def _broadcast(bot: Bot, event: Event):
     is_group = False
     cmd_lst = event.get_plaintext().strip().split()

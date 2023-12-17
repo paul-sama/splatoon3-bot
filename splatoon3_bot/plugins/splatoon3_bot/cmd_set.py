@@ -7,31 +7,33 @@ from datetime import datetime as dt
 
 from nonebot import on_command, logger, get_driver
 from nonebot.adapters import Event, Bot
+from nonebot.internal.matcher import Matcher
+from nonebot.internal.params import Depends
 from nonebot.typing import T_State
 
+from .config import plugin_config
 from .db_sqlite import set_db_info, get_user, get_or_set_user, get_all_user
 from .sp3iksm import log_in, login_2, A_VERSION
 from .splat import Splatoon
 from .sp3bot import get_last_battle_or_coop
 from .sp3job import get_post_stat_msg, update_s3si_ts, thread_function, threading, asyncio
-from .utils import bot_send, _check_session_handler, Kook_Bot, QQ_Bot, Tg_Bot, V11_Bot, V12_Bot, Tg_File, QQ_GME
+from .utils import bot_send, _check_session_handler, Kook_Bot, QQ_Bot, Tg_Bot, V11_Bot, V12_Bot, Tg_File, QQ_GME, \
+    notify_tg_channel
 from .scripts.report import get_report
 
 __all__ = ['login', 'login_id', 'clear_db_info', 'set_db_info', 'get_set_battle_info']
 MSG_PRIVATE = '请私信机器人完成登录操作'
 
-matcher_login = on_command("login", block=True)
+matcher_login = on_command("login", priority=10, block=True)
 
 
 @matcher_login.handle()
-async def login(bot: Bot, event: Event, state: T_State):
-    if isinstance(bot, QQ_Bot) and isinstance(event, QQ_GME):
-        configs = get_driver().config
-        splatoon3_qq_channel_invite_url = getattr(configs, 'splatoon3_notify_kk_bot_id', "")
-        splatoon3_kk_channel_invite_url = getattr(configs, 'splatoon3_notify_kk_bot_id', "")
-
-        msg = f"Q群当前无法登录nso，请至其他平台完成登录后回到Q群绑定识别码\nQQ频道:{splatoon3_qq_channel_invite_url} \nkook频道:{splatoon3_kk_channel_invite_url}"
-        await bot_send(bot, event, '')
+async def login(bot: Bot, event: Event, matcher: Matcher, state: T_State):
+    if isinstance(bot, QQ_Bot):
+        kk_guild_id = plugin_config.splatoon3_kk_guild_id
+        msg = f"Q群当前无法登录nso，请至其他平台完成登录后获取绑定码\nKook服务器id：{kk_guild_id}"
+        await bot_send(bot, event, msg)
+        await matcher.finish()
         return
 
     if 'group' in event.get_event_name():
@@ -39,12 +41,14 @@ async def login(bot: Bot, event: Event, state: T_State):
             await matcher_login.finish(MSG_PRIVATE)
             return
         await matcher_login.finish(MSG_PRIVATE, reply_message=True)
+        await matcher.finish()
         return
 
     u = get_or_set_user(user_id=event.get_user_id())
     if u and u.session_token:
         msg = '用户已经登录\n如需重新登录或切换账号请继续下面操作\n登出或清空账号数据 /clear_db_info'
         await bot_send(bot, event, msg)
+        await matcher.finish()
 
     dir_path = os.path.dirname(os.path.abspath(__file__))
     img_path = f'{dir_path}/resource/sp3bot-login.gif'
@@ -145,7 +149,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
     await notify_tg_channel(_msg)
 
 
-@on_command("clear_db_info", block=True, rule=_check_session_handler).handle()
+@on_command("clear_db_info", priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])
 async def clear_db_info(bot: Bot, event: Event):
     if 'group' in event.get_event_name():
         await bot_send(bot, event, '请私聊机器人', parse_mode='Markdown')
@@ -170,7 +174,7 @@ async def clear_db_info(bot: Bot, event: Event):
     await bot_send(bot, event, message=msg)
 
 
-@on_command("get_login_code", block=True, rule=_check_session_handler).handle()
+@on_command("get_login_code", priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])
 async def get_login_code(bot: Bot, event: Event):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')
@@ -182,33 +186,33 @@ async def get_login_code(bot: Bot, event: Event):
     user_id = event.get_user_id()
     _code = secrets.token_urlsafe(20)
     # 生成一次性 code
-    get_or_set_user(user_id=user_id, user_id_wx=_code)
-    msg = f'请至QQ机器人输入下行指令完成登录\n/set_login {_code}'
+    get_or_set_user(user_id=user_id, user_id_bind=_code)
+    msg = f'请至QQ机器人艾特后输入下行指令完成登录\n/set_login {_code}'
     await bot_send(bot, event, message=msg)
 
 
-@on_command("set_login", block=True, rule=_check_session_handler).handle()
+@on_command("set_login", priority=10, block=True).handle()
 async def func_set_login(bot: QQ_Bot, event: Event):
     if isinstance(bot, Kook_Bot):
         await bot_send(bot, event, '暂不支持')
         return
 
-    _code = event.get_plaintext()[10:].strip()
+    _code = event.get_plaintext().strip()[10:].strip()
     user_id = event.get_user_id()
     all_user = get_all_user()
 
     u = ''
     for user in all_user:
-        if user.user_id_wx == _code:
+        if user.user_id_bind == _code:
             u = user
             break
 
     if not u:
-        await bot_send(bot, event, '错误信息')
+        await bot_send(bot, event, 'code错误，账号绑定失败')
         return
 
     # 清空 code
-    get_or_set_user(user_id=u.id, user_id_wx='')
+    get_or_set_user(user_id=u.id, user_id_bind='')
 
     # 复制 session_token
     get_or_set_user(user_id=user_id, session_token=u.session_token)
@@ -232,10 +236,10 @@ async def func_set_login(bot: QQ_Bot, event: Event):
     set_db_info(user_id=user_id, id_type='qq', user_id_sp=player_code)
 
 
-matcher_set_battle_info = on_command("set_battle_info", aliases={'sbi'}, block=True, rule=_check_session_handler)
+matcher_set_battle_info = on_command("set_battle_info", aliases={'sbi'}, priority=10, block=True)
 
 
-@matcher_set_battle_info.handle()
+@matcher_set_battle_info.handle(parameterless=[Depends(_check_session_handler)])
 async def set_battle_info(bot: Bot, event: Event, matcher: matcher_set_battle_info):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')
@@ -280,13 +284,13 @@ async def get_set_battle_info(bot: Bot, event: Event):
     await bot_send(bot, event, message=msg, parse_mode='Markdown')
 
 
-matcher_set_api_key = on_command("set_api_key", block=True, rule=_check_session_handler)
+matcher_set_api_key = on_command("set_api_key", priority=10, block=True)
 
 
-@matcher_set_api_key.handle()
+@matcher_set_api_key.handle(parameterless=[Depends(_check_session_handler)])
 async def set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     if isinstance(bot, QQ_Bot):
-        await bot_send(bot, event, '暂不支持')
+        await bot_send(bot, event, 'Q群不支持该命令，请从其他平台进行绑定')
         return
     if 'group' in event.get_event_name():
         await matcher_set_battle_info.finish(MSG_PRIVATE)
@@ -327,7 +331,7 @@ first sync will be in minutes.
     threading.Thread(target=thread_function, args=(user_id,)).start()
 
 
-@on_command("sync_now", block=True, rule=_check_session_handler).handle()
+@on_command("sync_now", priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])
 async def sync_now(bot: Bot, event: Event):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')
@@ -354,7 +358,7 @@ async def sync_now(bot: Bot, event: Event):
     return
 
 
-@on_command("api_notify", block=True, rule=_check_session_handler).handle()
+@on_command("api_notify", priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])
 async def s_api_notify(bot: Bot, event: Event):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')
@@ -385,7 +389,7 @@ async def s_api_notify(bot: Bot, event: Event):
     await bot_send(bot, event, msg)
 
 
-@on_command("report", block=True, rule=_check_session_handler).handle()
+@on_command("report", priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])
 async def report(bot: Bot, event: Event):
     cmd_list = event.get_plaintext().strip().split(' ')
     report_day = ''
@@ -416,7 +420,7 @@ async def report(bot: Bot, event: Event):
     await bot_send(bot, event, message=msg, parse_mode='Markdown')
 
 
-@on_command("unsubscribe", block=True, rule=_check_session_handler).handle()
+@on_command("unsubscribe", block=True).handle(parameterless=[Depends(_check_session_handler)])
 async def unsubscribe(bot: Bot, event: Event):
     if isinstance(bot, QQ_Bot):
         await bot_send(bot, event, '暂不支持')

@@ -9,6 +9,7 @@ from collections import defaultdict
 from datetime import datetime as dt
 from nonebot import Bot, logger, get_driver
 
+from . import plugin_config
 from .db_sqlite import get_or_set_user, get_all_user
 from .scripts.top_player import get_x_player
 from .scripts.report import update_user_info, update_user_info_first
@@ -29,8 +30,10 @@ async def cron_job(bot: Bot):
 
     await send_user_msg(bot, users)
 
-    # 其他定时任务全在tg bot上执行
-    if not isinstance(bot, Tg_Bot):
+    # 其他定时任务全在指定bot上执行
+    bot_id = bot.self_id
+    cron_job_bot_id = plugin_config.splatoon3_cron_job_execute_bot_id
+    if not (bot_id == cron_job_bot_id):
         return
 
     # parse x rank player at 2:40

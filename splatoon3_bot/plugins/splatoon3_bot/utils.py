@@ -4,6 +4,7 @@ from datetime import datetime as dt
 
 from nonebot import logger, get_driver, get_bots
 from nonebot.adapters import Bot, Event
+from nonebot.internal.matcher import Matcher
 from nonebot.typing import T_State
 
 # onebot11 协议
@@ -48,9 +49,11 @@ from nonebot.adapters.qq.event import C2CMessageCreateEvent as QQ_C2CME  # Q私�
 from nonebot.adapters.qq.event import DirectMessageCreateEvent as QQ_PME  # 频道私聊信息
 from nonebot.adapters.qq.event import AtMessageCreateEvent as QQ_CME  # 频道艾特信息
 
+from .config import plugin_config
 from .db_sqlite import get_user, get_all_group, set_db_info
 
 from nonebot import require
+
 require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
@@ -138,8 +141,8 @@ async def bot_send(bot: Bot, event: Event, message: str, **kwargs):
     return r
 
 
-async def _check_session_handler(bot: Bot, event: Event, state: T_State):
-    """ nonebot rule    Check if user has logged in."""
+async def _check_session_handler(bot: Bot, event: Event, matcher: Matcher):
+    """ nonebot 子依赖注入    Check if user has logged in."""
     # logger.info(f'_check_session_handler: {args}, {kwargs.keys()}, {func.__name__}')
 
     user = get_user(user_id=event.get_user_id())
@@ -149,9 +152,7 @@ async def _check_session_handler(bot: Bot, event: Event, state: T_State):
             _msg = "Permission denied. /login first."
         elif isinstance(bot, (V11_Bot, V12_Bot, Kook_Bot, QQ_Bot)):
             _msg = '无权限查看，请先 /login 登录'
-        if not _msg:
-            await bot_send(bot, event, _msg)
-        return False
+        await matcher.finish(_msg)
 
 
 def get_event_info(bot, event):
@@ -237,13 +238,11 @@ async def log_cmd_to_db(bot, event, get_map=False):
 
 
 async def notify_tg_channel(_msg, _type='msg', **kwargs):
-    configs = get_driver().config
-
     # log to telegram
-    notify_tg_bot_id = getattr(configs, 'splatoon3_notify_tg_bot_id', None)
-    tg_channel_chat_id = getattr(configs, 'splatoon3_tg_channel_msg_chat_id', None)
+    notify_tg_bot_id = plugin_config.splatoon3_notify_tg_bot_id
+    tg_channel_chat_id = plugin_config.splatoon3_tg_channel_msg_chat_id
     if _type == 'job':
-        tg_channel_chat_id = getattr(configs, 'splatoon3_tg_channel_job_chat_id', None)
+        tg_channel_chat_id = plugin_config.splatoon3_tg_channel_job_chat_id
 
     if 'notify_tg_bot_id' in kwargs:
         notify_tg_bot_id = kwargs.get('notify_tg_bot_id')
@@ -251,18 +250,18 @@ async def notify_tg_channel(_msg, _type='msg', **kwargs):
         tg_channel_chat_id = kwargs.get('tg_channel_chat_id')
 
     # log to kook
-    notify_kk_bot_id = getattr(configs, 'splatoon3_notify_kk_bot_id', None)
-    kk_channel_chat_id = getattr(configs, 'splatoon3_kk_channel_msg_chat_id', None)
+    notify_kk_bot_id = plugin_config.splatoon3_notify_kk_bot_id
+    kk_channel_chat_id = plugin_config.splatoon3_kk_channel_msg_chat_id
     if _type == 'job':
-        kk_channel_chat_id = getattr(configs, 'splatoon3_kk_channel_job_chat_id', None)
+        kk_channel_chat_id = plugin_config.splatoon3_kk_channel_job_chat_id
 
     for bot in get_bots().values():
         if isinstance(bot, Tg_Bot):
             # 推送至tg
-            if notify_tg_bot_id and tg_channel_chat_id and bot.self_id == notify_tg_bot_id:
+            if notify_tg_bot_id and tg_channel_chat_id and (bot.self_id == notify_tg_bot_id):
                 await bot.send_message(tg_channel_chat_id, _msg)
 
         if isinstance(bot, Kook_Bot):
             # 推送至kook
-            if notify_kk_bot_id and kk_channel_chat_id and bot.self_id == notify_kk_bot_id:
-                await bot.send_channel_msg(channel_id=kk_channel_chat_id, message=Kook_MsgSeg.text(_msg))
+            if notify_kk_bot_id and kk_channel_chat_id and (bot.self_id == notify_kk_bot_id):
+                await bot.send_channel_msg(channel_id=kk_channel_chat_id, message=Kook_MsgSeg.KMarkdown(f"```\n{_msg}```"))

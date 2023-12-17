@@ -27,6 +27,7 @@ class UserTable(Base):
     user_id_qq = Column(String(), unique=True, nullable=True)
     user_id_wx = Column(String(), unique=True, nullable=True)
     user_id_kk = Column(String(), unique=True, nullable=True)
+    user_id_bind = Column(String(), unique=True, nullable=True)
     username = Column(String(), nullable=True)
     first_name = Column(String(), nullable=True)
     last_name = Column(String(), nullable=True)

@@ -5,6 +5,7 @@ from nonebot import logger, on_startswith, on_command, get_driver, get_bots
 from nonebot.message import event_preprocessor
 from nonebot.permission import SUPERUSER
 
+from .config import plugin_config
 from .db_sqlite import set_db_info
 from .sp3msg import MSG_HELP, MSG_HELP_QQ
 from .sp3job import cron_job
@@ -24,25 +25,28 @@ async def all_command(bot: Bot, event: Event):
     set_db_info(**data)
 
 
-@on_startswith(("/", "、"), priority=10).handle()
+@on_startswith(("/", "、"), priority=99).handle()
 async def unknown_command(bot: Bot, event: Event):
     logger.info(f'unknown_command {event.get_event_name()}')
     if 'private' in event.get_event_name():
         _msg = "Sorry, I didn't understand that command. /help"
         if isinstance(bot, (QQ_Bot, V12_Bot, Kook_Bot)):
             _msg = '无效命令，输入 /help 查看帮助'
-        logger.info(_msg)
         await bot.send(event, message=_msg)
 
 
-@on_command("help", aliases={'h', '帮助', '说明', '文档'}, block=True).handle()
+@on_command("help", aliases={'h', '帮助', '说明', '文档'}, priority=10).handle()
 async def _help(bot: Bot, event: Event):
-    if isinstance(bot, Tg_Bot):
-        await bot_send(bot, event, message=MSG_HELP, disable_web_page_preview=True)
+    # 查图插件优先模式
+    if plugin_config.splatoon3_query_plugin_priority_mode:
+        return
+    else:
+        if isinstance(bot, Tg_Bot):
+            await bot_send(bot, event, message=MSG_HELP, disable_web_page_preview=True)
 
-    elif isinstance(bot, (QQ_Bot, V12_Bot, Kook_Bot,)):
-        msg = MSG_HELP_QQ
-        await bot_send(bot, event, message=msg)
+        elif isinstance(bot, (QQ_Bot, V12_Bot, Kook_Bot,)):
+            msg = MSG_HELP_QQ
+            await bot_send(bot, event, message=msg)
 
 
 @get_driver().on_startup
