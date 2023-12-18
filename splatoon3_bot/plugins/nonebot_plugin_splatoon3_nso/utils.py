@@ -223,6 +223,12 @@ async def log_cmd_to_db(bot, event, get_map=False):
         else:
             data['cmd_cnt'] = 1
 
+        # 已经登录的玩家，显示 player name
+        if data.get('username') == 'QQ群':
+            user = get_user(user_id=user_id)
+            if user and user.nickname:
+                data['username'] = user.nickname
+
         set_db_info(**data)
 
         # log to tg channel
