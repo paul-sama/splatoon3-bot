@@ -15,7 +15,7 @@ from .scripts.top_player import get_x_player
 from .scripts.report import update_user_info, update_user_info_first
 from .scripts.user_friend import task_get_user_friend, update_qq_group_info, update_wx_group_info
 from .utils import bot_send, notify_tg_channel, get_event_info, Kook_Bot, Tg_Bot, V11_Bot, V12_Bot, QQ_Bot, V12_MsgSeg, \
-    V12_ME
+    V12_ME, GLOBAL_LOGIN_STATUS_DICT
 
 logger = logger.bind(cron=True)
 
@@ -39,6 +39,10 @@ async def cron_job(bot: Bot):
     # parse x rank player at 2:40
     if now.hour == 2 and now.minute == 39:
         threading.Thread(target=asyncio.run, args=(get_x_player(),)).start()
+
+    # clean GLOBAL_LOGIN_STATUS_DICT
+    if now.hour == 5 and now.minute == 0:
+        GLOBAL_LOGIN_STATUS_DICT.clear()
 
     # update gtoken at 7:00
     if now.hour == 7 and now.minute == 0:
