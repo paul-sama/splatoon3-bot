@@ -191,7 +191,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
     user = get_user(user_id=user_id)
     if not user or user.push is False:
         logger.info(f'stop by user clear db: {job_id} stop')
-        from splatoon3_bot.plugins.nonebot_plugin_splatoon3_nso import scheduler
+        from splatoon3_bot.plugins.splatoon3_nso import scheduler
         scheduler.remove_job(job_id)
         return
 
@@ -218,7 +218,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
         # logger.info(f'last_battle_id: {last_battle_id}')
         if last_battle_id == battle_id:
             if push_cnt * INTERVAL / 60 > 30:
-                from splatoon3_bot.plugins.nonebot_plugin_splatoon3_nso import scheduler
+                from splatoon3_bot.plugins.splatoon3_nso import scheduler
                 scheduler.remove_job(job_id)
                 get_or_set_user(user_id=user_id, push=False)
                 msg = 'No game record for 30 minutes, stop push.'
