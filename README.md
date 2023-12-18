@@ -1,6 +1,6 @@
 # splatoon3-bot
-  <a href="">
-    <img src="https://img.shields.io/badge/QQ-1947343180-orange?style=flat-square" alt="QQ Chat">
+  <a href="https://www.kookapp.cn/app/oauth2/authorize?id=23970&permissions=675840&client_id=eg8iC9ZeLKLj46G_&redirect_uri=&scope=bot">
+    <img src="https://img.shields.io/badge/Kook-splatoon3-orange?style=flat-square" alt="QQ Chat">
   </a>
   <a href="https://t.me/splatoon3_bot">
     <img src="https://img.shields.io/badge/telegram-splatoon3bot-blue?style=flat-square" alt="Telegram">
