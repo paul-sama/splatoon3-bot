@@ -79,6 +79,8 @@ Log in, right click the "Select this account" button, copy the link address, and
 '''
         if msg:
             await bot.send(event, message=msg)
+            await bot.send(event, message='我是分割线,移动端复制下面链接至其他浏览器'.center(120, '-'))
+            await bot.send(event, message=url)
 
 
 @matcher_login.receive('id')
