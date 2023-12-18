@@ -60,6 +60,7 @@ from nonebot_plugin_htmlrender import md_to_pic
 INTERVAL = 10
 BOT_VERSION = '1.5.2'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
+GLOBAL_LOGIN_STATUS_DICT: dict = {}
 
 
 async def bot_send(bot: Bot, event: Event, message: str, **kwargs):

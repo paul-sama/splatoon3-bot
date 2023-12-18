@@ -5,7 +5,7 @@ import secrets
 from collections import defaultdict
 from datetime import datetime as dt
 
-from nonebot import on_command, logger, get_driver
+from nonebot import on_command, logger, get_driver, on_startswith
 from nonebot.adapters import Event, Bot
 from nonebot.internal.matcher import Matcher
 from nonebot.internal.params import Depends
@@ -18,7 +18,7 @@ from .splat import Splatoon
 from .sp3bot import get_last_battle_or_coop
 from .sp3job import get_post_stat_msg, update_s3si_ts, thread_function, threading, asyncio
 from .utils import bot_send, _check_session_handler, Kook_Bot, QQ_Bot, Tg_Bot, V11_Bot, V12_Bot, Tg_File, QQ_GME, \
-    notify_tg_channel
+    notify_tg_channel, GLOBAL_LOGIN_STATUS_DICT, get_event_info
 from .scripts.report import get_report
 
 __all__ = ['login', 'login_id', 'clear_db_info', 'set_db_info', 'get_set_battle_info']
@@ -44,7 +44,8 @@ async def login(bot: Bot, event: Event, matcher: Matcher, state: T_State):
         await matcher.finish()
         return
 
-    u = get_or_set_user(user_id=event.get_user_id())
+    user_id = event.get_user_id()
+    u = get_or_set_user(user_id=user_id)
     if u and u.session_token:
         msg = '用户已经登录\n如需重新登录或切换账号请继续下面操作\n登出或清空账号数据 /clear_db_info'
         await bot_send(bot, event, msg)
@@ -60,7 +61,8 @@ async def login(bot: Bot, event: Event, matcher: Matcher, state: T_State):
             logger.error(f'login error: {e}')
 
     url, auth_code_verifier = log_in(A_VERSION)
-    state['auth_code_verifier'] = auth_code_verifier
+    GLOBAL_LOGIN_STATUS_DICT.update(
+        {user_id: {"auth_code_verifier": auth_code_verifier, "create_time": dt.now().strftime("%Y-%m-%d %H:%M:%S")}})
     logger.info(f'get login url: {url}')
     logger.info(f'auth_code_verifier: {auth_code_verifier}')
     if url:
@@ -72,25 +74,29 @@ Navigate to this URL in your browser:
 Log in, right click the "Select this account" button, copy the link address, and paste below. (Valid for 2 minutes)
             '''
         elif isinstance(bot, (V11_Bot, V12_Bot, Kook_Bot)):
-            msg = f'''在浏览器中打开下面链接
-{url}
+            msg = f'''在浏览器中打开下面链接（移动端复制链接至其他浏览器）,
 登陆后，右键账号后面的红色按钮 (手机端长按复制)
 复制链接后发送给机器人 (两分钟内有效！)
 '''
         if msg:
             await bot.send(event, message=msg)
-            await bot.send(event, message='我是分割线,移动端复制下面链接至其他浏览器'.center(120, '-'))
+            await bot.send(event, message='我是分割线'.center(120, '-'))
             await bot.send(event, message=url)
 
 
-@matcher_login.receive('id')
+@on_startswith("npf", priority=10).handle()
 async def login_id(bot: Bot, event: Event, state: T_State):
     text = event.get_plaintext()
+    user_id = event.get_user_id()
+    # 查找用户登录字典
+    user_login_info = GLOBAL_LOGIN_STATUS_DICT.get(user_id)
+    if user_login_info is None:
+        return
 
-    auth_code_verifier = state.get('auth_code_verifier')
+    auth_code_verifier = user_login_info.get("auth_code_verifier")
 
     err_msg = '登录失败，请 /login 重试, 复制新链接'
-    if not text or len(text) < 500 or not text.startswith('npf') or not auth_code_verifier:
+    if (not text) or (len(text) < 500) or (not text.startswith('npf')) or (auth_code_verifier is None):
         logger.info(err_msg)
         await bot.send(event, message=err_msg)
         return
@@ -102,6 +108,9 @@ async def login_id(bot: Bot, event: Event, state: T_State):
         return
     logger.info(f'session_token: {session_token}')
     user_id = event.get_user_id()
+
+    event_info = get_event_info(bot, event)
+    user_name = event_info.get('username')
     id_type = 'qq'
     if isinstance(bot, Tg_Bot):
         id_type = 'tg'
@@ -128,7 +137,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 /set_api_key - set stat.ink api_key, bot will sync your data to stat.ink
 """
     if isinstance(bot, (V11_Bot, V12_Bot, Kook_Bot)):
-        msg = f"""登录成功！机器人现在可以从App获取你的数据。\n如果希望在q群使用nso查询，请发送 /get_login_code 获取一次性跨平台绑定码
+        msg = f"""登录成功！机器人现在可以从App获取你的数据。\n如果希望在q群使用nso查询，请发送 /get_login_code 获取一次性跨平台绑定码\n\n
 /me - 显示你的信息
 /friends - 显示在线的喷喷好友
 /last - 显示最近一场对战或打工
@@ -139,7 +148,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 """
     await bot.send(event, message=msg)
 
-    logger.info(f'login success: {user_id}\n{msg}')
+    logger.info(f'login success:{user_name} {user_id}')
     user = get_user(user_id=user_id)
     _splt = Splatoon(user.id, user.session_token)
     await _splt.set_gtoken_and_bullettoken()
@@ -148,7 +157,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
     b_info = res_battle['data']['latestBattleHistories']['historyGroups']['nodes'][0]['historyDetails']['nodes'][0]
     player_code = base64.b64decode(b_info['player']['id']).decode('utf-8').split(':')[-1][2:]
     set_db_info(user_id=user_id, id_type=data['id_type'], user_id_sp=player_code)
-    _msg = f'new_login_user:{player_code}\n{session_token}'
+    _msg = f'new_login_user: 会话昵称:{user_name}\nns_player_code:{player_code}\n{session_token}'
     await notify_tg_channel(_msg)
 
 
