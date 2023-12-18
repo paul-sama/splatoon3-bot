@@ -137,15 +137,21 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 /set_api_key - set stat.ink api_key, bot will sync your data to stat.ink
 """
     if isinstance(bot, (V11_Bot, V12_Bot, Kook_Bot)):
-        msg = f"""登录成功！机器人现在可以从App获取你的数据。\n如果希望在q群使用nso查询，请发送 /get_login_code 获取一次性跨平台绑定码\n\n
-/me - 显示你的信息
-/friends - 显示在线的喷喷好友
-/last - 显示最近一场对战或打工
-/report - 订阅喷喷早报
-/start_push - 开启推送模式
-/set_api_key - 设置 api_key, 同步数据到 https://stat.ink
-
-"""
+        msg = f"""登录成功！机器人现在可以从App获取你的数据。
+        如果希望在q群使用nso查询，请发送
+        /get_login_code
+        获取一次性跨平台绑定码
+        
+        常用指令:
+        /me - 显示你的信息
+        /friends - 显示在线的喷喷好友
+        /last - 显示最近一场对战或打工
+        /report - 订阅喷喷早报
+        /start_push - 开启推送模式
+        /set_api_key - 设置 api_key, 同步数据到 https://stat.ink
+        更多完整nso操作指令:
+        https://docs.qq.com/sheet/DUkZHRWtCUkR0d2Nr?tab=BB08J2
+        """
     await bot.send(event, message=msg)
 
     logger.info(f'login success:{user_name} {user_id}')
