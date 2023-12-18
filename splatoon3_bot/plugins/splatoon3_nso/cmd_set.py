@@ -146,7 +146,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
         /me - 显示你的信息
         /friends - 显示在线的喷喷好友
         /last - 显示最近一场对战或打工
-        /report - 订阅喷喷早报
+        /report - 获取昨天或指定日期的日报数据
         /start_push - 开启推送模式
         /set_api_key - 设置 api_key, 同步数据到 https://stat.ink
         更多完整nso操作指令:

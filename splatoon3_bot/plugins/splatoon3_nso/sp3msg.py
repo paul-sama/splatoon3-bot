@@ -48,10 +48,14 @@ https://docs.qq.com/sheet/DUkZHRWtCUkR0d2Nr?tab=BB08J2
 MSG_HELP_CN = f'''机器人使用说明
 命令起始字符 / 或 、
 
+常用指令:
 /help - 显示此帮助信息 {BOT_VERSION}
 /login - 登录喷喷账号
+/report - 获取昨天或指定日期的日报数据
 /last - 显示最近一场对战或打工
+/friends - 显示在线的喷喷好友
 /me - 显示你的喷喷信息
+
 
 更多指令:
 https://docs.qq.com/sheet/DUkZHRWtCUkR0d2Nr?tab=BB08J2
