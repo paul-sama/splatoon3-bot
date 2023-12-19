@@ -16,7 +16,7 @@ from .db_sqlite import set_db_info, get_user, get_or_set_user, get_all_user
 from .sp3iksm import log_in, login_2, A_VERSION
 from .splat import Splatoon
 from .sp3bot import get_last_battle_or_coop
-from .sp3job import get_post_stat_msg, update_s3si_ts, thread_function, threading, asyncio
+from .sp3job import get_post_stat_msg, update_s3si_ts, sync_stat_ink_func, threading, asyncio
 from .utils import bot_send, _check_session_handler, Kook_Bot, QQ_Bot, Tg_Bot, V11_Bot, V12_Bot, Tg_File, QQ_GME, \
     notify_tg_channel, GLOBAL_LOGIN_STATUS_DICT, get_event_info
 from .scripts.report import get_report
@@ -346,7 +346,7 @@ first sync will be in minutes.
 
     update_s3si_ts()
 
-    threading.Thread(target=thread_function, args=(user_id,)).start()
+    threading.Thread(target=sync_stat_ink_func, args=(user_id,)).start()
 
 
 @on_command("sync_now", priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])

@@ -6,14 +6,14 @@ from ..db_sqlite import get_all_user, get_user, model_set_user_friend, get_all_g
 from ..splat import Splatoon
 from ..sp3msg import utils
 
-logger = logger.bind(report=True)
+cron_logger = logger.bind(report=True)
 
 
 async def task_get_user_friend(db_table_user_readonly=True):
     if dt.now().hour == 6:
         return
 
-    logger.debug(f'task_get_user_friend start')
+    cron_logger.info(f'task_get_user_friend start')
     t = dt.utcnow()
     r_lst = []
     u = [u.id for u in get_all_user() if u and u.session_token]
@@ -21,7 +21,7 @@ async def task_get_user_friend(db_table_user_readonly=True):
     _pool = 50
     for i in range(0, len(u), _pool):
         _u_id_lst = u[i:i+_pool]
-        logger.info(f'get friends for {i}-{i+_pool} ...')
+        cron_logger.info(f'get friends for {i}-{i+_pool} ...')
         tasks = [get_friends(_id, db_table_user_readonly) for _id in _u_id_lst]
 
         res = await asyncio.gather(*tasks)
@@ -30,9 +30,9 @@ async def task_get_user_friend(db_table_user_readonly=True):
                 continue
             model_set_user_friend(r)
             r_lst.extend(r)
-    logger.info(f'get friends: {len(r_lst)}')
+    cron_logger.info(f'get friends: {len(r_lst)}')
 
-    logger.debug(f'task_get_user_friend end: {(dt.utcnow() - t).seconds}')
+    cron_logger.info(f'task_get_user_friend end: {(dt.utcnow() - t).seconds}')
 
 
 async def get_friends(user_id, db_table_user_readonly=True):
