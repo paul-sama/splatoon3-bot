@@ -1,3 +1,4 @@
+import asyncio
 import json
 import threading
 
@@ -8,6 +9,7 @@ from nonebot.permission import SUPERUSER
 
 from .config import plugin_config
 from .db_sqlite import set_db_info
+from .scripts.report import update_user_info_first, update_user_info
 from .sp3msg import MSG_HELP, MSG_HELP_QQ, MSG_HELP_CN
 from .sp3job import cron_job, sync_stat_ink
 from .utils import bot_send, notify_tg_channel, get_event_info, Kook_Bot, Tg_Bot, V11_Bot, V12_Bot, QQ_Bot
@@ -218,10 +220,18 @@ async def admin_cmd(bot: Bot, event: Event):
         msg = f'```\n{msg}```' if msg else 'no data'
         await bot_send(bot, event, message=msg, parse_mode='Markdown')
 
+    elif plain_text == 'update_user_info_first':
+        await bot_send(bot, event, message="即将开始update_user_info_first", parse_mode='Markdown')
+        threading.Thread(target=asyncio.run, args=(update_user_info_first(),)).start()
+
+    elif plain_text == 'update_user_info':
+        await bot_send(bot, event, message="即将开始整理并发送日报", parse_mode='Markdown')
+        threading.Thread(target=asyncio.run, args=(update_user_info(),)).start()
+
     elif plain_text == 'sync_stat_ink':
         from .db_sqlite import get_all_user
         users = get_all_user()
-        await bot_send(bot, event, message="即将开始同步stat.ink")
+        await bot_send(bot, event, message="即将开始sync_stat_ink", parse_mode='Markdown')
 
         u_id_lst = [u.id for u in users if u.session_token and u.api_key]
 
@@ -229,6 +239,3 @@ async def admin_cmd(bot: Bot, event: Event):
             return
 
         threading.Thread(target=sync_stat_ink, args=(u_id_lst,)).start()
-
-
-

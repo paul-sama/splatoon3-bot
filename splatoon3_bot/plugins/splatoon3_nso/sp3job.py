@@ -223,8 +223,7 @@ def exported_to_stat_ink(user_id, session_token, api_key, user_lang):
             cron_logger.debug(f'cli: {cmd}')
             os.system(cmd)
 
-    configs = get_driver().config
-    deno_path = getattr(configs, 'deno_path', None)
+    deno_path = plugin_config.splatoon3_deno_path
     if not deno_path or not os.path.exists(deno_path):
         cron_logger.info(f'deno_path not set: {deno_path or ""} '.center(120, '-'))
         return

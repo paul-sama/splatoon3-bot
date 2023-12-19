@@ -266,22 +266,20 @@ async def notify_tg_channel(_msg, _type='msg', **kwargs):
     kk_channel_chat_id = plugin_config.splatoon3_kk_channel_msg_chat_id
     if _type == 'job':
         kk_channel_chat_id = plugin_config.splatoon3_kk_channel_job_chat_id
+    for bot in get_bots().values():
+        if isinstance(bot, Tg_Bot):
+            try:
+                # 推送至tg
+                if notify_tg_bot_id and tg_channel_chat_id and (bot.self_id == notify_tg_bot_id):
+                    await bot.send_message(tg_channel_chat_id, _msg)
+            except Exception as e:
+                    logger.warning(f'tg频道通知消息失败: {e}')
 
-
-        for bot in get_bots().values():
-            if isinstance(bot, Tg_Bot):
-                try:
-                    # 推送至tg
-                    if notify_tg_bot_id and tg_channel_chat_id and (bot.self_id == notify_tg_bot_id):
-                        await bot.send_message(tg_channel_chat_id, _msg)
-                except Exception as e:
-                        logger.warning(f'tg频道通知消息失败: {e}')
-
-            if isinstance(bot, Kook_Bot):
-                try:
-                    # 推送至kook
-                    if notify_kk_bot_id and kk_channel_chat_id and (bot.self_id == notify_kk_bot_id):
-                        await bot.send_channel_msg(channel_id=kk_channel_chat_id,
-                                                   message=Kook_MsgSeg.KMarkdown(f"```\n{_msg}```"))
-                except Exception as e:
-                        logger.warning(f'kook频道通知消息失败: {e}')
+        if isinstance(bot, Kook_Bot):
+            try:
+                # 推送至kook
+                if notify_kk_bot_id and kk_channel_chat_id and (bot.self_id == notify_kk_bot_id):
+                    await bot.send_channel_msg(channel_id=kk_channel_chat_id,
+                                               message=Kook_MsgSeg.KMarkdown(f"```\n{_msg}```"))
+            except Exception as e:
+                    logger.warning(f'kook频道通知消息失败: {e}')
