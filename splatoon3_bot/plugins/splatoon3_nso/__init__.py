@@ -1,4 +1,5 @@
 import json
+import threading
 
 from nonebot import logger, on_startswith, on_command, get_driver, get_bots
 
@@ -8,7 +9,7 @@ from nonebot.permission import SUPERUSER
 from .config import plugin_config
 from .db_sqlite import set_db_info
 from .sp3msg import MSG_HELP, MSG_HELP_QQ, MSG_HELP_CN
-from .sp3job import cron_job
+from .sp3job import cron_job, sync_stat_ink
 from .utils import bot_send, notify_tg_channel, get_event_info, Kook_Bot, Tg_Bot, V11_Bot, V12_Bot, QQ_Bot
 
 from .cmd_get import *
@@ -182,6 +183,7 @@ async def admin_cmd(bot: Bot, event: Event):
         user = get_or_set_user(user_id=user_id)
         splt = Splatoon(user_id, user.session_token)
         await task_get_league_player(splt)
+        await bot_send(bot, event, message=f'get_event_top end')
 
     elif plain_text == 'get_user_friend':
         from .scripts.user_friend import task_get_user_friend
@@ -215,3 +217,18 @@ async def admin_cmd(bot: Bot, event: Event):
             msg += f'{u.id:>4}, {u.push_cnt:>3}, {u.username}, {u.nickname}\n'
         msg = f'```\n{msg}```' if msg else 'no data'
         await bot_send(bot, event, message=msg, parse_mode='Markdown')
+
+    elif plain_text == 'sync_stat_ink':
+        from .db_sqlite import get_all_user
+        users = get_all_user()
+        await bot_send(bot, event, message="即将开始同步stat.ink")
+
+        u_id_lst = [u.id for u in users if u.session_token and u.api_key]
+
+        if not u_id_lst:
+            return
+
+        threading.Thread(target=sync_stat_ink, args=(u_id_lst,)).start()
+
+
+

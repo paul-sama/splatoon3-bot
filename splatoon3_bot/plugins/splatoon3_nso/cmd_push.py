@@ -7,20 +7,18 @@ from nonebot.typing import T_State
 from nonebot.internal.params import Depends
 
 from .db_sqlite import get_or_set_user, get_user
-from .utils import INTERVAL, bot_send, _check_session_handler, Kook_Bot, QQ_Bot, V12_Bot
+from .utils import INTERVAL, bot_send, _check_session_handler, Kook_Bot, QQ_Bot, V12_Bot, scheduler
 from .sp3bot import push_latest_battle
 from .sp3msg import get_statics
-
-require("nonebot_plugin_apscheduler")
-from nonebot_plugin_apscheduler import scheduler
 
 __all__ = ['start_push', 'stop_push', 'scheduler']
 
 
-@on_command("start_push", aliases={'sp', 'push', 'start'}, priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])
+@on_command("start_push", aliases={'sp', 'push', 'start'}, priority=10, block=True).handle(
+    parameterless=[Depends(_check_session_handler)])
 async def start_push(bot: Bot, event: Event, state: T_State):
     if isinstance(bot, QQ_Bot):
-        await bot_send(bot, event, '暂不支持')
+        await bot_send(bot, event, 'q群不支持该功能，该功能可在其他平台使用')
         return
     user_id = event.get_user_id()
     user = get_user(user_id=user_id)
@@ -76,10 +74,11 @@ async def start_push(bot: Bot, event: Event, state: T_State):
     await bot_send(bot, event, msg)
 
 
-@on_command("stop_push", aliases={'stop', 'st', 'stp'}, priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])
+@on_command("stop_push", aliases={'stop', 'st', 'stp'}, priority=10, block=True).handle(
+    parameterless=[Depends(_check_session_handler)])
 async def stop_push(bot: Bot, event: Event):
     if isinstance(bot, QQ_Bot):
-        await bot_send(bot, event, '暂不支持')
+        await bot_send(bot, event, 'q群不支持该功能，该功能可在其他平台使用')
         return
     msg = f'Stop push!'
 
