@@ -69,12 +69,12 @@ require("nonebot_plugin_apscheduler")
 from nonebot_plugin_apscheduler import scheduler
 
 __plugin_meta__ = PluginMetadata(
-    name="nonebot-plugin-splatoon3",
+    name="splatoon3游戏日程查询",
     description="一个基于nonebot2框架的splatoon3游戏日程查询插件",
     usage="发送 帮助 或 help 可查看详细指令\n",
     type="application",
     # 发布必填，当前有效类型有：`library`（为其他插件编写提供功能），`application`（向机器人用户提供功能）。
-    homepage="https://github.com/Skyminers/Bot-Splatoon3",
+    homepage="https://github.com/Cypas/splatoon3-schedule",
     # 发布必填。
     supported_adapters={"~onebot.v11", "~onebot.v12", "~telegram", "~kaiheila", "~qq"},
 )
@@ -315,8 +315,6 @@ async def _(bot: BOT, matcher: Matcher, event: MESSAGE_EVENT, re_tuple: Tuple = 
     # 输出格式为 ["", null, "下下", "挑战", null] 涉及?匹配且没有提供该值的是null
     # 索引 全部 下 匹配1 匹配2
 
-    await matcher.finish()
-
     plain_text = ""
     if re_list[0]:
         plain_text = plain_text + re_list[0]
@@ -434,6 +432,7 @@ async def _(
     plain_text = event.get_message().extract_plain_text().strip()
     # 触发关键词  替换.。\/ 等前缀触发词
     plain_text = multiple_replace(plain_text, dict_prefix_replace)
+    plain_text = plain_text.replace("help", "帮助")
     logger.info("同义文本替换后触发词为:" + plain_text + "\n")
     # 判断是否满足进一步正则
     # 随机武器
@@ -477,6 +476,9 @@ async def _(
         img = get_save_temp_image(plain_text, func)
         # 发送图片
         await send_img(bot, event, img)
+        # 当优先帮助打开时，除qq平台以外的平台额外发送文档地址
+        if plugin_config.splatoon3_schedule_plugin_priority_mode and not isinstance(bot, QQ_Bot):
+            await send_msg(bot, event, "完整的nso相关操作命令可以查看:https://docs.qq.com/sheet/DUkZHRWtCUkR0d2Nr?tab=BB08J2")
     # elif re.search("^装备$", plain_text):
     #     img = await get_screenshot(shot_url="https://splatoon3.ink/gear")
     #     # 发送图片
