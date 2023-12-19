@@ -11,6 +11,7 @@ from ..db_sqlite import (
     write_top_player, clean_top_player, get_all_user, write_top_all, clean_top_all, get_top_all_by_top_type
 )
 
+cron_logger = logger.bind(cron=True)
 
 def parse_x_row(n, top_type, x_type, top_id):
     n = n['node']
@@ -125,7 +126,7 @@ async def parse_x_data(top_id, splt):
 
 
 async def get_x_player():
-    logger.info(f'get x player start')
+    cron_logger.info(f'get_x_player start')
     s = time.time()
 
     users = get_all_user()
@@ -137,7 +138,7 @@ async def get_x_player():
             break
 
     if not splt:
-        logger.info(f'no user login.')
+        cron_logger.info(f'no user login.')
         return
 
     # for top_id in ('WFJhbmtpbmdTZWFzb24tcDoy', 'WFJhbmtpbmdTZWFzb24tYToy'):  # season-2
@@ -147,7 +148,7 @@ async def get_x_player():
     for top_id in ('WFJhbmtpbmdTZWFzb24tcDo2', 'WFJhbmtpbmdTZWFzb24tYTo2'):  #season-6
         await parse_x_data(top_id, splt)
 
-    logger.info(f'get x player end. {time.time() - s}')
+    cron_logger.info(f'get_x_player end. {time.time() - s}')
 
 
 async def get_event_list(splt):

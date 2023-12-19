@@ -10,16 +10,20 @@ from ..splat import Splatoon
 from ..db_sqlite import get_all_user, get_user, set_db_info, model_add_report, model_get_report
 from ..utils import DIR_RESOURCE, os
 
-logger = logger.bind(report=True)
+cron_logger = logger.bind(cron=True)
 
 
-async def set_user_info(user_id, skip_report=False):
+async def set_user_info(user_id, skip_report=False, log=None):
+    if log is not None:
+        log = cron_logger
+    else:
+        log = logger
     try:
         u = get_user(user_id=user_id)
         if not u or not u.session_token:
             return
 
-        logger.debug(f'set_user_info: {user_id}, {u.user_id_qq or u.user_id_tg or u.user_id_wx or u.user_id_kk}, {u.username}')
+        log.debug(f'set_user_info: {user_id}, {u.user_id_qq or u.user_id_tg or u.user_id_wx or u.user_id_kk}, {u.username}')
         user_id = u.user_id_qq or u.user_id_tg or u.user_id_wx or u.user_id_kk or u.id
         splt = Splatoon(user_id, u.session_token)
 
@@ -64,7 +68,7 @@ async def set_user_info(user_id, skip_report=False):
             'gtoken': splt.gtoken,
             'bullettoken': splt.bullet_token,
         }
-        logger.debug(f'set_user_info: {_dict}')
+        log.debug(f'set_user_info: {_dict}')
 
         if skip_report:
             return _dict
@@ -78,7 +82,7 @@ async def set_user_info(user_id, skip_report=False):
             return _dict, _report, _user_id
 
     except Exception as ex:
-        logger.warning(f'set_user_info error: {user_id}, {ex}')
+        log.warning(f'set_user_info error: {user_id}, {ex}')
 
 
 async def set_user_report(u, res_summary, res_coop, last_play_time, splt, player_code):
@@ -151,6 +155,7 @@ async def set_user_report(u, res_summary, res_coop, last_play_time, splt, player
 
 
 async def update_user_info():
+    cron_logger.info(f'update_user_info start')
     t = dt.utcnow()
 
     users = [u for u in get_all_user() if u and u.session_token]
@@ -182,13 +187,14 @@ async def update_user_info():
                         with open(file_msg_path, 'a') as f:
                             f.write(msg)
             except Exception as ex:
-                logger.warning(f'update_user_info ex: {ex}')
+                cron_logger.warning(f'update_user_info ex: {ex}')
                 continue
 
-    logger.info(f'update_user_info_end: {dt.utcnow() - t}')
+    cron_logger.info(f'update_user_info_end: {dt.utcnow() - t}')
 
 
 async def update_user_info_first():
+    cron_logger.info(f'update_user_info_first start')
     t = dt.utcnow()
     users = [u for u in get_all_user() if u and u.session_token]
     users = sorted(users, key=lambda x: (-(x.report_type or 0), x.id))
@@ -204,7 +210,7 @@ async def update_user_info_first():
                 continue
             set_db_info(**r)
 
-    logger.info(f'update_user_info_first_end: {dt.utcnow() - t}')
+    cron_logger.info(f'update_user_info_first end: {dt.utcnow() - t}')
 
 
 def get_report(user_id, report_day=None):

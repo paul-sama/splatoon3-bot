@@ -17,7 +17,7 @@ from .scripts.user_friend import task_get_user_friend, update_qq_group_info, upd
 from .utils import bot_send, notify_tg_channel, get_event_info, Kook_Bot, Tg_Bot, V11_Bot, V12_Bot, QQ_Bot, V12_MsgSeg, \
     V12_ME, GLOBAL_LOGIN_STATUS_DICT
 
-logger = logger.bind(cron=True)
+cron_logger = logger.bind(cron=True)
 
 
 async def cron_job(bot: Bot):
@@ -43,6 +43,7 @@ async def cron_job(bot: Bot):
     # clean GLOBAL_LOGIN_STATUS_DICT
     if now.hour == 5 and now.minute == 0:
         GLOBAL_LOGIN_STATUS_DICT.clear()
+        cron_logger.info("登录状态字典清空完毕")
 
     # update gtoken at 7:00
     if now.hour == 7 and now.minute == 0:
@@ -73,7 +74,7 @@ async def cron_job(bot: Bot):
 
 def sync_stat_ink(u_id_lst):
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-        executor.map(thread_function, u_id_lst)
+        executor.map(sync_stat_ink_func, u_id_lst)
 
 
 async def send_user_msg(bot, users):
@@ -111,22 +112,22 @@ async def send_user_msg(bot, users):
                     ret = await bot.send_message(detail_type="private", user_id=u.user_id_wx, message=_msg)
                 elif isinstance(bot, Kook_Bot):
                     _text += f'#kk{u.user_id_kk}'
-                    logger.info(f'uuu {u.id}, {u.user_id_kk}')
+                    cron_logger.info(f'uuu {u.id}, {u.user_id_kk}')
                     ret = await bot.send_private_msg(user_id=u.user_id_kk, message=msg)
 
-                logger.debug(f"{u.id} send message: {ret}")
+                cron_logger.debug(f"{u.id} send message: {ret}")
 
             except Exception as e:
                 # logger.exception(f"{u.id}, send_user_msg: {e}, {msg}")
                 _text += ' failed!'
                 if isinstance(bot, V12_Bot):
-                    logger.warning(f"{u.id}, send_user_msg: {e}, {msg}")
+                    cron_logger.warning(f"{u.id}, send_user_msg: {e}, {msg}")
                 else:
-                    logger.exception(f"{u.id}, send_user_msg: {e}, {msg}")
+                    cron_logger.exception(f"{u.id}, send_user_msg: {e}, {msg}")
 
             finally:
-                logger.debug(f"{u.id} delete message file: {file_msg_path}")
-                logger.info(msg)
+                cron_logger.debug(f"{u.id} delete message file: {file_msg_path}")
+                cron_logger.info(msg)
                 if os.path.exists(file_msg_path):
                     os.remove(file_msg_path)
 
@@ -136,9 +137,10 @@ async def send_user_msg(bot, users):
                 await notify_tg_channel(_text + msg, _type='job')
 
 
-def thread_function(user_id):
+def sync_stat_ink_func(user_id):
+    """同步stat.ink"""
     u = get_or_set_user(user_id=user_id)
-    logger.debug(f"get user: {u.username}, have api_key: {u.api_key}")
+    cron_logger.debug(f"get user: {u.username}, have api_key: {u.api_key}")
 
     path_folder = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource/user_msg'
     if not os.path.exists(path_folder):
@@ -146,7 +148,7 @@ def thread_function(user_id):
 
     msg = get_post_stat_msg(u.id)
     if msg and u.api_notify:
-        logger.debug(f'{u.id}, {u.username}, {msg}')
+        cron_logger.debug(f'{u.id}, {u.username}, {msg}')
         file_msg_path = os.path.join(path_folder, f'msg_{u.id}.txt')
         with open(file_msg_path, 'a') as f:
             f.write(msg)
@@ -154,7 +156,7 @@ def thread_function(user_id):
 
 def update_s3si_ts():
     t = dt.now()
-    logger.debug(f'update_s3si_ts start')
+    cron_logger.debug(f'update_s3si_ts start')
 
     dir_plugin = os.path.abspath(os.path.join(__file__, os.pardir))
     path_folder = f'{dir_plugin}/resource'
@@ -167,34 +169,34 @@ def update_s3si_ts():
     if not os.path.exists(s3s_folder):
         cmd = f'git clone https://github.com/spacemeowx2/s3si.ts {s3s_folder}'
         rtn = subprocess.run(cmd.split(' '), stdout=subprocess.PIPE).stdout.decode('utf-8')
-        logger.debug(f'cli: {rtn}')
+        cron_logger.debug(f'cli: {rtn}')
         os.chdir(s3s_folder)
     else:
         os.chdir(s3s_folder)
         os.system('git restore .')
         cmd = f'git pull'
         rtn = subprocess.run(cmd.split(' '), stdout=subprocess.PIPE).stdout.decode('utf-8')
-        logger.debug(f'cli: {rtn}')
+        cron_logger.debug(f'cli: {rtn}')
 
     # edit agent
     cmd_list = [
         """sed -i "1,5s/s3si.ts/s3si.ts - t.me\/splatoon3_bot/g" ./src/constant.ts""",
     ]
     for cmd in cmd_list:
-        logger.debug(f'cli: {cmd}')
+        cron_logger.debug(f'cli: {cmd}')
         os.system(cmd)
 
     dir_user_configs = f'{s3s_folder}/user_configs'
     if not os.path.exists(dir_user_configs):
         os.mkdir(dir_user_configs)
 
-    logger.debug(f'update_s3si_ts end, {(dt.now() - t).seconds}s')
+    cron_logger.debug(f'update_s3si_ts end, {(dt.now() - t).seconds}s')
 
 
 def exported_to_stat_ink(user_id, session_token, api_key, user_lang):
-    logger.debug(f'exported_to_stat_ink: {user_id}')
-    logger.debug(f'session_token: {session_token}')
-    logger.debug(f'api_key: {api_key}')
+    cron_logger.debug(f'exported_to_stat_ink: {user_id}')
+    cron_logger.debug(f'session_token: {session_token}')
+    cron_logger.debug(f'api_key: {api_key}')
     user_lang = user_lang or 'zh-CN'
 
     dir_plugin = os.path.abspath(os.path.join(__file__, os.pardir))
@@ -218,19 +220,19 @@ def exported_to_stat_ink(user_id, session_token, api_key, user_lang):
                 f"""sed -i 's/sessionToken[^,]*,/sessionToken\": \"{session_token}\",/g' {path_config_file}""",
                 f"""sed -i 's/statInkApiKey[^,]*,/statInkApiKey\": \"{api_key}\",/g' {path_config_file}""",
         ):
-            logger.debug(f'cli: {cmd}')
+            cron_logger.debug(f'cli: {cmd}')
             os.system(cmd)
 
     configs = get_driver().config
     deno_path = getattr(configs, 'deno_path', None)
     if not deno_path or not os.path.exists(deno_path):
-        logger.info(f'deno_path not set: {deno_path or ""} '.center(120, '-'))
+        cron_logger.info(f'deno_path not set: {deno_path or ""} '.center(120, '-'))
         return
 
     cmd = f'{deno_path} run -Ar ./s3si.ts -n -p {path_config_file}'
-    logger.debug(cmd)
+    cron_logger.debug(cmd)
     rtn = subprocess.run(cmd.split(' '), stdout=subprocess.PIPE).stdout.decode('utf-8')
-    logger.debug(f'{user_id} cli: {rtn}')
+    cron_logger.debug(f'{user_id} cli: {rtn}')
 
     battle_cnt = 0
     coop_cnt = 0
@@ -246,14 +248,14 @@ def exported_to_stat_ink(user_id, session_token, api_key, user_lang):
                 battle_cnt += 1
             url = line.split('to ')[1].split('spl3')[0].split('salmon3')[0][:-1]
 
-    logger.debug(f'{user_id} result: {battle_cnt}, {coop_cnt}, {url}')
+    cron_logger.debug(f'{user_id} result: {battle_cnt}, {coop_cnt}, {url}')
     if battle_cnt or coop_cnt:
         return battle_cnt, coop_cnt, url
 
 
 def get_post_stat_msg(user_id):
     u = get_or_set_user(user_id=user_id)
-    logger.debug(f"get user: {u.username}, have api_key: {u.api_key}")
+    cron_logger.debug(f"get user: {u.username}, have api_key: {u.api_key}")
     if not (u and u.session_token and u.api_key):
         return
 
@@ -274,7 +276,7 @@ def get_post_stat_msg(user_id):
         url += '/salmon3'
     msg += f' to\n{url}\n'
 
-    logger.debug(f'{u.id}, {u.username}, {msg}')
+    cron_logger.debug(f'{u.id}, {u.username}, {msg}')
 
     db_user_info = defaultdict(str)
     if u.user_info:
