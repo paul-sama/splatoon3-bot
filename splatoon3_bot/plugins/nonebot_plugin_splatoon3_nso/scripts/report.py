@@ -154,7 +154,7 @@ async def update_user_info():
     t = dt.utcnow()
 
     users = [u for u in get_all_user() if u and u.session_token]
-    users = sorted(users, key=lambda x: (-x.report_type, x.id))
+    users = sorted(users, key=lambda x: (-(x.report_type or 0), x.id))
     u = [u.id for u in users]
 
     path_folder = f'{DIR_RESOURCE}/user_msg'
@@ -191,7 +191,7 @@ async def update_user_info():
 async def update_user_info_first():
     t = dt.utcnow()
     users = [u for u in get_all_user() if u and u.session_token]
-    users = sorted(users, key=lambda x: (-x.report_type, x.id))
+    users = sorted(users, key=lambda x: (-(x.report_type or 0), x.id))
     u = [u.id for u in users]
 
     _pool = 50
