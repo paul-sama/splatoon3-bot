@@ -55,6 +55,7 @@ async def _help(bot: Bot, event: Event):
 async def bot_on_start():
     version = utils.BOT_VERSION
     logger.info(f' bot start, version: {version} '.center(120, '-'))
+    await notify_tg_channel(f'bot start, version: {version}')
 
 
 @get_driver().on_shutdown
