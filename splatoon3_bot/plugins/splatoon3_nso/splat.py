@@ -68,7 +68,9 @@ class Splatoon:
             new_gtoken, acc_name, acc_lang, acc_country, _user_info = \
                 await iksm.get_gtoken(F_GEN_URL, self.session_token, A_VERSION)
         except Exception as e:
-            logger.warning(f'{self.user_id} set_gtoken_and_bullettoken error. {e}')
+            logger.warning(f'{self.user_id} set_gtoken_and_bullettoken error. {e}\n{self.session_token}')
+            if self.user:
+                logger.warning(f'invalid_user: {self.user.id}, {self.user.username}, {self.user.nickname}')
             if self.user and 'invalid_grant' in str(e):
                 logger.warning(f'invalid_grant_user: {self.user.id}, {self.user.username}, {self.user.nickname}')
                 get_or_set_user(user_id=self.user.id, session_token=None)

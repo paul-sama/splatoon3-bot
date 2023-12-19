@@ -33,6 +33,9 @@ def get_nsoapp_version():
 def get_gtoken(f_gen_url, session_token, ver):
 	"""Provided the session_token, returns a GameWebToken and account info."""
 
+	if not session_token:
+		raise ValueError('invalid_grant')
+
 	nsoapp_version = get_nsoapp_version()
 
 	global S3S_VERSION
