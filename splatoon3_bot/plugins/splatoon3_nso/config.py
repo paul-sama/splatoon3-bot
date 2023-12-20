@@ -21,7 +21,7 @@ class Config(BaseModel):
     splatoon3_cron_job_execute_bot_id: str = ""
     # Q群无法登陆时其他平台的服务器id
     splatoon3_kk_guild_id: str = ""
-    # bot掉线时通知到频道
+    # bot上线，掉线时通知到频道
     splatoon3_bot_disconnect_notify: bool = True
     # 日程插件优先模式(主要影响帮助菜单，该配置项与nso查询插件公用)
     splatoon3_schedule_plugin_priority_mode: bool = False

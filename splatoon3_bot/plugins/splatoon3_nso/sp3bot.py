@@ -230,7 +230,11 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
                 logger.info(f'{user.username}, {msg}')
                 await bot_send(bot, event, message=msg, parse_mode='Markdown', skip_log_cmd=True)
 
-                bot_type = 'tg' if isinstance(bot, Tg_Bot) else 'qq'
+                bot_type = 'tg'
+                if isinstance(bot, Kook_Bot):
+                    bot_type = 'kk'
+                elif isinstance(bot, QQ_Bot):
+                    bot_type = 'qq'
                 msg = f"#{bot_type}{user_id} {user.nickname or ''}\n 30分钟内没有游戏记录，停止推送。"
                 await notify_tg_channel(msg)
                 return

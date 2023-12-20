@@ -24,10 +24,8 @@ async def cron_job(bot: Bot):
     """定时任务， 每1分钟每个bot执行"""
     # logger.debug(f'cron_job {bot.self_id}')
 
-    users = get_all_user()
-
     now = dt.now()
-
+    users = get_all_user()
     await send_user_msg(bot, users)
 
     # 其他定时任务全在指定bot上执行
@@ -134,7 +132,8 @@ async def send_user_msg(bot, users):
                 _text += '\n'
                 msg = msg.replace('```', '').strip()
                 from .utils import notify_tg_channel
-                await notify_tg_channel(_text + msg, _type='job')
+                if not isinstance(bot, QQ_Bot):
+                    await notify_tg_channel(_text + msg, _type='job')
 
 
 def sync_stat_ink_func(user_id):
