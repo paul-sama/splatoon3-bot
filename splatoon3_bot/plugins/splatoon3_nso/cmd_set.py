@@ -323,7 +323,7 @@ async def set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     await bot_send(bot, event, message=msg)
 
 
-@on_regex("[A-Za-z0-9_-]+", priority=10, block=True).handle()
+@on_regex("[A-Za-z0-9_-]{30,}", priority=10, block=True).handle()
 async def get_set_api_key(bot: Bot, event: Event):
     """stat api key匹配"""
     if 'group' in event.get_event_name():
