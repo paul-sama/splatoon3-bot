@@ -505,7 +505,7 @@ def model_get_user_friend(nickname):
 
 
 def model_set_user_friend(data_lst):
-    _logger = logger.bind(report=True)
+    report_logger = logger.bind(report=True)
     session = DBSession_2()
     for r in data_lst:
         user = session.query(UserFriendTable).filter(UserFriendTable.friend_id == r[1]).first()
@@ -518,14 +518,14 @@ def model_set_user_friend(data_lst):
                 is_change = True
 
             if is_change:
-                _logger.debug(f'change {user.id:>5}, {user.player_name}, {user.nickname}, {user.game_name}')
-                _logger.debug(f'cha--> {user.id:>5}, {r[2]}, {r[3]}, {game_name}')
+                report_logger.debug(f'change {user.id:>5}, {user.player_name}, {user.nickname}, {user.game_name}')
+                report_logger.debug(f'cha--> {user.id:>5}, {r[2]}, {r[3]}, {game_name}')
                 user.player_name = r[2]
                 user.nickname = r[3]
                 user.user_icon = r[4]
                 user.game_name = game_name
                 session.commit()
-                _logger.debug(f'edit user_friend: {user.id:>5}, {r[1]}, {r[2]}, {r[3]}, {game_name}')
+                report_logger.debug(f'edit user_friend: {user.id:>5}, {r[1]}, {r[2]}, {r[3]}, {game_name}')
 
         else:
             _dict = {
@@ -539,7 +539,7 @@ def model_set_user_friend(data_lst):
             new_user = UserFriendTable(**_dict)
             session.add(new_user)
             session.commit()
-            _logger.debug(f'add user_friend: {r[1]}, {r[2]}, {r[3]}, {game_name}')
+            report_logger.debug(f'add user_friend: {r[1]}, {r[2]}, {r[3]}, {game_name}')
 
     session.close()
 

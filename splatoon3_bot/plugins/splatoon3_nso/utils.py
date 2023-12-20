@@ -57,6 +57,9 @@ from nonebot import require
 require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import md_to_pic
 
+require("nonebot_plugin_apscheduler")
+from nonebot_plugin_apscheduler import scheduler
+
 INTERVAL = 10
 BOT_VERSION = '1.5.2'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
@@ -263,18 +266,20 @@ async def notify_tg_channel(_msg, _type='msg', **kwargs):
     kk_channel_chat_id = plugin_config.splatoon3_kk_channel_msg_chat_id
     if _type == 'job':
         kk_channel_chat_id = plugin_config.splatoon3_kk_channel_job_chat_id
-
-    try:
-        for bot in get_bots().values():
-            if isinstance(bot, Tg_Bot):
+    for bot in get_bots().values():
+        if isinstance(bot, Tg_Bot):
+            try:
                 # 推送至tg
                 if notify_tg_bot_id and tg_channel_chat_id and (bot.self_id == notify_tg_bot_id):
                     await bot.send_message(tg_channel_chat_id, _msg)
+            except Exception as e:
+                    logger.warning(f'tg频道通知消息失败: {e}')
 
-            if isinstance(bot, Kook_Bot):
+        if isinstance(bot, Kook_Bot):
+            try:
                 # 推送至kook
                 if notify_kk_bot_id and kk_channel_chat_id and (bot.self_id == notify_kk_bot_id):
                     await bot.send_channel_msg(channel_id=kk_channel_chat_id,
                                                message=Kook_MsgSeg.KMarkdown(f"```\n{_msg}```"))
-    except Exception as e:
-        logger.warning(f'tg通知消息失败: {e}')
+            except Exception as e:
+                    logger.warning(f'kook频道通知消息失败: {e}')
