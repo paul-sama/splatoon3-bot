@@ -11,6 +11,8 @@
 
 ## 自己搭建指南
 
+服务器需要安装2.30版本以上git，deno引擎，deno安装参考https://www.denojs.cn/
+
 python >= 3.9
 1. python -m pip install --user pipx
 2. python -m pipx ensurepath

@@ -5,7 +5,7 @@ import secrets
 from collections import defaultdict
 from datetime import datetime as dt
 
-from nonebot import on_command, logger, get_driver, on_startswith
+from nonebot import on_command, logger, get_driver, on_startswith, on_regex
 from nonebot.adapters import Event, Bot
 from nonebot.internal.matcher import Matcher
 from nonebot.internal.params import Depends
@@ -323,12 +323,14 @@ async def set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     await bot_send(bot, event, message=msg)
 
 
-@matcher_set_api_key.receive('id')
-async def get_set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
+@on_regex("[A-Za-z0-9_-]+", priority=10, block=True).handle()
+async def get_set_api_key(bot: Bot, event: Event):
+    """stat api key匹配"""
+    if 'group' in event.get_event_name():
+        return
     api_key = event.get_plaintext().strip()
-
     if len(api_key) != 43:
-        await matcher_set_api_key.finish("错误信息")
+        await matcher_set_api_key.finish("key错误,请重新复制key后发送给我")
         return
 
     user_id = event.get_user_id()
