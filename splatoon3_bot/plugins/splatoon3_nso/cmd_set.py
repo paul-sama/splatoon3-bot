@@ -109,7 +109,7 @@ async def login_id(bot: Bot, event: Event, state: T_State):
     logger.info(f'session_token: {session_token}')
     user_id = event.get_user_id()
 
-    event_info = get_event_info(bot, event)
+    event_info = await get_event_info(bot, event)
     user_name = event_info.get('username')
     id_type = 'qq'
     if isinstance(bot, Tg_Bot):

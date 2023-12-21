@@ -61,7 +61,7 @@ require("nonebot_plugin_apscheduler")
 from nonebot_plugin_apscheduler import scheduler
 
 INTERVAL = 10
-BOT_VERSION = '1.5.2'
+BOT_VERSION = '1.5.3'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 GLOBAL_LOGIN_STATUS_DICT: dict = {}
 
@@ -160,7 +160,7 @@ async def _check_session_handler(bot: Bot, event: Event, matcher: Matcher):
         await matcher.finish(_msg)
 
 
-def get_event_info(bot, event):
+async def get_event_info(bot, event):
     data = {'user_id': event.get_user_id()}
     _event = event.dict() or {}
     if isinstance(bot, Tg_Bot):
@@ -186,9 +186,21 @@ def get_event_info(bot, event):
             'username': _event.get('event', {}).get('author', {}).get('username') or '',
         })
         if 'group' in event.get_event_name():
+            server_id = _event.get('event', {}).get('guild_id')
+            server_name = ''
+            channel_id = _event.get('target_id') or ''
+            channel_name = _event.get('event', {}).get('channel_name', '')
+            if server_id:
+                try:
+                    res = await bot.call_api(api="guild/view", guild_id=server_id)
+                    server_name = res.name
+                    if server_name:
+                        server_name += '-'
+                except Exception as ex:
+                    logger.warning(f'get guild ({server_id}) ex: {ex}')
             data.update({
-                'group_id': _event.get('target_id') or '',
-                'group_name': _event.get('event', {}).get('channel_name', ''),
+                'group_id': server_id or channel_id,
+                'group_name': f'{server_name}{channel_name}',
             })
     elif isinstance(bot, QQ_Bot):
         if _event.get('guild_id'):
@@ -220,7 +232,7 @@ async def log_cmd_to_db(bot, event, get_map=False):
 
         data = {'user_id': user_id, 'cmd': message}
         grp_cnt = ''
-        data.update(get_event_info(bot, event))
+        data.update(await get_event_info(bot, event))
 
         if get_map:
             data['map_cnt'] = 1

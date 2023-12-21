@@ -24,7 +24,7 @@ from .bot_comment import *
 @on_startswith(("/", "、"), priority=1, block=False).handle()
 async def all_command(bot: Bot, event: Event):
     data = {'user_id': event.get_user_id()}
-    data.update(get_event_info(bot, event))
+    data.update(await get_event_info(bot, event))
     set_db_info(**data)
 
 
