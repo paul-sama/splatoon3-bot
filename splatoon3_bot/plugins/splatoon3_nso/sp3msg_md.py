@@ -3,48 +3,105 @@ from datetime import timedelta, datetime as dt
 from .sp3msg import get_battle_msg_title, set_statics, logger, utils, get_top_str, defaultdict, fmt_sp3_state
 from .db_sqlite import (
     model_get_user_friend, model_get_login_user, get_top_all, get_top_all_row, get_weapon, model_get_report,
-    get_top_player_row
+    get_top_player_row, get_temp_image_path, UserFriendTable
 )
 
 
-def get_row_text(p, battle_show_type='1'):
+async def get_row_text(p, battle_show_type='1'):
+    """获取一行对战玩家信息
+    p:player的一个遍历对象
+    """
     a, b, c = 43, 30, 20
-    name = f"<img height='{a}' src='{p['headGear']['originalImage']['url']}'/>"
-    name += f"<img height='{b}' src='{p['headGear']['primaryGearPower']['image']['url']}'/>"
+
+    # 上衣
+    img_type = "battle_headGear"
+    img1 = await get_temp_image_path(img_type, p['headGear']['name'], p['headGear']['originalImage']['url'])
+    head_gear = f"<img height='{a}' src='{img1}'/>"
+
+    img_type = "battle_primaryGearPower"
+    img2 = await get_temp_image_path(img_type, p['headGear']['primaryGearPower']['name'],
+                                     p['headGear']['primaryGearPower']['image']['url'])
+    head_gear += f"<img height='{b}' src='{img2}'/>"
+
     for g in p['headGear']['additionalGearPowers']:
-        name += f"<img height='{c}' src='{g['image']['url']}'/>"
+        img_type = "battle_additionalGearPowers"
+        img3 = await get_temp_image_path(img_type, g['name'], g['image']['url'])
+        head_gear += f"<img height='{c}' src='{img3}'/>"
 
-    byname = f"<img height='{a}' src='{p['clothingGear']['originalImage']['url']}'/>"
-    byname += f"<img height='{b}' src='{p['clothingGear']['primaryGearPower']['image']['url']}'/>"
+    # 服装
+    img_type = "battle_clothingGear"
+    img1 = await get_temp_image_path(img_type, p['clothingGear']['name'], p['clothingGear']['originalImage']['url'])
+    clothing_gear = f"<img height='{a}' src='{img1}'/>"
+
+    img_type = "battle_primaryGearPower"
+    img2 = await get_temp_image_path(img_type, p['clothingGear']['primaryGearPower']['name'],
+                                     p['clothingGear']['primaryGearPower']['image']['url'])
+    clothing_gear += f"<img height='{b}' src='{img2}'/>"
+
     for g in p['clothingGear']['additionalGearPowers']:
-        byname += f"<img height='{c}' src='{g['image']['url']}'/>"
+        img_type = "battle_additionalGearPowers"
+        img3 = await get_temp_image_path(img_type, g['name'], g['image']['url'])
+        clothing_gear += f"<img height='{c}' src='{img3}'/>"
 
-    name_id = f"<img height='{a}' src='{p['shoesGear']['originalImage']['url']}'/>"
-    name_id += f"<img height='{b}' src='{p['shoesGear']['primaryGearPower']['image']['url']}'/>"
+    # 鞋子
+    img_type = "battle_shoesGear"
+    img1 = await get_temp_image_path(img_type, p['shoesGear']['name'], p['shoesGear']['originalImage']['url'])
+    shoes_gear = f"<img height='{a}' src='{img1}'/>"
+
+    img_type = "battle_primaryGearPower"
+    img2 = await get_temp_image_path(img_type, p['shoesGear']['primaryGearPower']['name'],
+                                     p['shoesGear']['primaryGearPower']['image']['url'])
+    shoes_gear += f"<img height='{b}' src='{img2}'/>"
+
     for g in p['shoesGear']['additionalGearPowers']:
-        name_id += f"<img height='{c}' src='{g['image']['url']}'/>"
+        img_type = "battle_additionalGearPowers"
+        img3 = await get_temp_image_path(img_type, g['name'], g['image']['url'])
+        shoes_gear += f"<img height='{c}' src='{img3}'/>"
 
+    # 武器
     weapon_img = ((p.get('weapon') or {}).get('image2d') or {}).get('url') or ''
-    weapon = f"<img height='{a}' src='{weapon_img}'/>"
-    weapon += f"<img height='{b}' src='{p['weapon']['subWeapon']['image']['url']}'/>"
-    weapon += f"<img height='{b}' src='{p['weapon']['specialWeapon']['image']['url']}'/>"
+    weapon_name = ((p.get('weapon') or {}).get('name') or '')
+    img_type = "battle_weapon_main"
+    img1 = await get_temp_image_path(img_type, weapon_name, weapon_img)
+    weapon = f"<img height='{a}' src='{img1}'/>"
 
-    r = model_get_user_friend(p['name'])
+    img_type = "battle_weapon_sub"
+    img2 = await get_temp_image_path(img_type, p['weapon']['subWeapon']['name'],
+                                     p['weapon']['subWeapon']['image']['url'])
+    weapon += f"<img height='{b}' src='{img2}'/>"
+
+    img_type = "battle_weapon_special"
+    img3 = await get_temp_image_path(img_type, p['weapon']['specialWeapon']['name'],
+                                     p['weapon']['specialWeapon']['image']['url'])
+    weapon += f"<img height='{b}' src='{img3}'/>"
+
+    # 获取好友数据库的步骤是通过好友列表实现的，但好友列表只提供了game_name，没有提供name_id，此处搜索只能粗略判断
+    r: UserFriendTable = model_get_user_friend(p['name'])
     if r:
-        weapon += f"<img height='{a}' style='position:absolute;left:10px' src='{r.user_icon}'/>"
+        img_type = "friend_icon"
+        # 储存名使用friend_id
+        img = await get_temp_image_path(img_type, r.friend_id, r.user_icon)
+        weapon += f"<img height='{a}' style='position:absolute;left:10px' src='{img}'/>"
+    # # 用户其他信息无需联动好友数据库，储存名改为 game_name + name_id 唯一标识    暂未使用
+    # game_name = f"{p['name']}#{p['nameId']}"
 
-    img_bg = (p.get('nameplate') or {}).get('background', {}).get('image', {}).get('url', '') or ''
-    name = f"{name}|{byname}|{name_id}|<img height='{a}' src='{img_bg}'/>|"
+    img_type = "user_nameplate_bg"
+    img_bg = await get_temp_image_path(img_type, p['nameplate']['background']['id'],
+                                       p['nameplate']['background']['image']['url'])
+    name = f"{head_gear}|{clothing_gear}|{shoes_gear}|<img height='{a}' src='{img_bg}'/>|"
     for b in (p.get('nameplate') or {}).get('badges') or []:
         if not b:
             continue
         badge_img = (b.get('image') or {}).get('url') or ''
-        name += f'<img height="{a}" src="{badge_img}"/>'
+        if badge_img != "":
+            img_type = "user_nameplate_badge"
+            img_badge = await get_temp_image_path(img_type, b['id'], badge_img)
+            name += f'<img height="{a}" src="{img_badge}"/>'
     t = f"| {weapon} | {name}|\n"
     return t
 
 
-def get_user_name_color(nick_name, player_code):
+async def get_user_name_color(nick_name, player_code):
     r_l = model_get_login_user(player_code)
     # 登录用户绿色
     if r_l:
@@ -54,12 +111,15 @@ def get_user_name_color(nick_name, player_code):
     r = model_get_user_friend(nick_name)
     # 用户好友蓝色
     if r:
-        img = f"<img height='36px' style='position:absolute;right:5px;margin-top:-6px' src='{r.user_icon}'/>"
+        img_type = "friend_icon"
+        # 储存名使用friend_id
+        user_icon = await get_temp_image_path(img_type, r.friend_id, r.user_icon)
+        img = f"<img height='36px' style='position:absolute;right:5px;margin-top:-6px' src='{user_icon}'/>"
         u_str = f'<span style="color:skyblue">{nick_name} {img}</span>'
     return u_str
 
 
-def get_top_all_name(name, player_code):
+async def get_top_all_name(name, player_code):
     top_all = get_top_all_row(player_code)
     if not top_all:
         return name
@@ -73,11 +133,13 @@ def get_top_all_name(name, player_code):
         weapon_id = str(row.weapon_id)
         weapon = get_weapon() or {}
         if weapon.get(weapon_id):
-            name += f"<img height='36px' style='position:absolute;right:5px;margin-top:-6px' src='{weapon[weapon_id]}'/>"
+            img_type = "weapon_main"
+            weapon_main_img = await get_temp_image_path(img_type, weapon[weapon_id]['name'], weapon[weapon_id]['url'])
+            name += f"<img height='36px' style='position:absolute;right:5px;margin-top:-6px' src='{weapon_main_img}'/>"
     return name
 
 
-def get_top_str_w(player_code):
+async def get_top_str_w(player_code):
     top_str = ''
     r = get_top_player_row(player_code)
     if r:
@@ -89,12 +151,14 @@ def get_top_str_w(player_code):
         weapon_id = str(r.weapon_id)
         weapon = get_weapon() or {}
         if weapon.get(weapon_id):
-            top_str += f"<img height='36px' style='position:absolute;right:5px;margin-top:-6px' src='{weapon[weapon_id]}'/>"
+            img_type = "weapon_main"
+            weapon_main_img = await get_temp_image_path(img_type, weapon[weapon_id]['name'], weapon[weapon_id]['url'])
+            top_str += f"<img height='36px' style='position:absolute;right:5px;margin-top:-6px' src='{weapon_main_img}'/>"
         return top_str
     return top_str
 
 
-def get_row_text_image(p, mask=False):
+async def get_row_text_image(p, mask=False):
     re = p['result']
     if not re:
         re = {"kill": 0, "death": 99, "assist": 0, "special": 0}
@@ -111,23 +175,26 @@ def get_row_text_image(p, mask=False):
 
     player_code = (base64.b64decode(p['id']).decode('utf-8') or '').split(':u-')[-1]
     if not p.get('isMyself'):
-        name = get_user_name_color(name, player_code)
+        name = await get_user_name_color(name, player_code)
 
-    top_str = get_top_str_w(player_code)
+    top_str = await get_top_str_w(player_code)
     if top_str:
         name = name.strip() + top_str
 
     elif not p.get('isMyself'):
-        name = get_top_all_name(name, player_code)
+        name = await get_top_all_name(name, player_code)
 
     weapon_img = ((p.get('weapon') or {}).get('image') or {}).get('url') or ''
-    w_str = f'<img height="40" src="{weapon_img}"/>'
+    img_type = "weapon_main"
+    weapon_main_img = await get_temp_image_path(img_type, p['weapon']['name'], weapon_img)
+    w_str = f'<img height="40" src="{weapon_main_img}"/>'
     name = f'{name}|'
     t = f"|{w_str}|{ak:>2}|{k_str:>5}k | {d:>2}d|{ration:>4.1f}|{re['special']:>3}sp| {p['paint']:>4}p| {name}|\n"
     return t
 
 
 async def get_battle_msg(b_info, battle_detail, **kwargs):
+    # logger.info(f'battle_detail: {battle_detail}')
     logger.debug(f'get_battle_msg kwargs: {kwargs}')
     mode = b_info['vsMode']['mode']
     judgement = b_info['judgement']
@@ -154,15 +221,15 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
     for team in sorted(teams, key=lambda x: x['order']):
         for p in team['players']:
             if get_image:
-                text_list.append(get_row_text_image(p, mask))
+                text_list.append(await get_row_text_image(p, mask))
             else:
-                text_list.append(get_row_text(p, mask))
+                text_list.append(await get_row_text(p, mask))
         ti = '||'
         if mode == 'FEST':
             _str_team = f"{(team.get('result') or {}).get('paintRatio') or 0:.2%}  {team.get('festTeamName')}"
             _c = team.get('color') or {}
             if _c and 'r' in _c:
-                _str_color = f"rgba({int(_c['r']*255)}, {int(_c['g']*255)}, {int(_c['b']*255)}, {_c['a']})"
+                _str_color = f"rgba({int(_c['r'] * 255)}, {int(_c['g'] * 255)}, {int(_c['b'] * 255)}, {_c['a']})"
                 _str_team = f"<span style='color:{_str_color}'>{_str_team}</span>"
             ti = f"||||||||{_str_team}|"
         text_list.append(f'{ti}\n')
@@ -208,7 +275,8 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
                     prev_info = await splt.get_battle_detail(prev_id)
                     if prev_info:
                         prev_detail = prev_info.get('data', {}).get('vsHistoryDetail') or {}
-                        prev_open_power = ((prev_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get('power') or 0
+                        prev_open_power = ((prev_detail.get('bankaraMatch') or {}).get('bankaraPower') or {}).get(
+                            'power') or 0
                         if prev_detail and not prev_open_power:
                             prev_open_power = (prev_detail.get('leagueMatch') or {}).get('myLeaguePower') or 0
                         if mode == 'FEST' and prev_detail and not prev_open_power:
@@ -283,30 +351,36 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
     return msg
 
 
-def coop_row(p, mask=False, is_myself=False):
+async def coop_row(p, mask=False, is_myself=False):
     try:
-        weapon = f"<img height='18' src='{p['specialWeapon']['image']['url']}'/> |"
+        img_type = "coop_special"
+        special_img = await get_temp_image_path(img_type, p['specialWeapon']['name'], p['specialWeapon']['image']['url'])
+        weapon = f"<img height='18' src='{special_img}'/> |"
         for w in p['weapons']:
-            weapon += f"<img height='18' src='{w['image']['url']}'/>"
+            img_type = "coop_weapon"
+            weapon_img = await get_temp_image_path(img_type, w['name'], w['image']['url'])
+            weapon += f"<img height='18' src='{weapon_img}'/>"
     except Exception as e:
         logger.warning(f'coop_row error: {e}')
         weapon = 'w|'
 
     p_name = p['player']['name']
-    img_str = f'<img height="18" src="{p["player"]["uniform"]["image"]["url"]}"/>'
+    img_type = "coop_uniform"
+    uniform_img = await get_temp_image_path(img_type, p["player"]["uniform"]['name'], p["player"]["uniform"]["image"]["url"])
+    img_str = f'<img height="18" src="{uniform_img}"/>'
 
     if mask:
         p_name = f'~~我是马赛克~~'
 
     if not is_myself:
         player_code = (base64.b64decode(p["player"]['id']).decode('utf-8') or '').split(':u-')[-1]
-        p_name = get_user_name_color(p_name, player_code)
+        p_name = await get_user_name_color(p_name, player_code)
 
     return f"|x{p['defeatEnemyCount']}| {p['goldenDeliverCount']} |{p['rescuedCount']}d |" \
            f"{p['deliverCount']} |{p['rescueCount']}r| {img_str} {p_name}|{weapon}|"
 
 
-def get_coop_msg(coop_info, data, **kwargs):
+async def get_coop_msg(coop_info, data, **kwargs):
     c_point = coop_info.get('coop_point')
     c_eggs = coop_info.get('coop_eggs')
     detail = data['data']['coopHistoryDetail']
@@ -325,7 +399,8 @@ def get_coop_msg(coop_info, data, **kwargs):
         event = (w.get('eventWave') or {}).get('name') or ''
         specs = ''
         for s in w.get('specialWeapons') or []:
-            img = s['image']['url']
+            img_type = "coop_special"
+            img = await get_temp_image_path(img_type, s['name'], s['image']['url'])
             specs += f'<img height="18" src="{img}"/>'
         wave_msg += f"|W{w['waveNumber']} | {w['teamDeliverCount']}/{w['deliverNorm']}({w['goldenPopCount']}) |" \
                     f"{d_w[w['waterLevel']]} {event}| {specs} |\n"
@@ -360,10 +435,10 @@ def get_coop_msg(coop_info, data, **kwargs):
 #### {total_deliver_cnt}
 |  |   ||  |||||
 | --: |--:|--:|--:|--|--|--|--|
-{coop_row(my, is_myself=True)}
+{await coop_row(my, is_myself=True)}
 """
     for p in detail['memberResults']:
-        msg += f"""{coop_row(p, mask=mask)}\n"""
+        msg += f"""{await coop_row(p, mask=mask)}\n"""
     msg += '''\n|        | ||
 |-------|--:|--|
 '''
@@ -375,8 +450,12 @@ def get_coop_msg(coop_info, data, **kwargs):
         boss_pop = e['popCount'] or ''
         if e.get('defeatCount'):
             boss_cnt = f'{boss_cnt}({e["defeatCount"]})'
-        img_str = f"<img height='18' src='{e['enemy']['image']['url']}'/>"
-        boss_name = f"{img_str} {(e.get('enemy') or {}).get('name') or ''}"
+        img_type = "coop_boss"
+        img_name = (e.get('enemy') or {}).get('name') or ''
+        img_url = e['enemy']['image']['url']
+        img = await get_temp_image_path(img_type, img_name, img_url)
+        img_str = f"<img height='18' src='{img}'/>"
+        boss_name = f"{img_str} {img_name}"
         if nice:
             boss_cnt = f'<span style="color: green">{boss_cnt}</span>'
             boss_pop = f'<span style="color: green">{boss_pop}</span>'
@@ -444,7 +523,8 @@ async def get_group_node_msg(g_node, splt, _type):
         battle_id = fst_battle['id']
         battle_t = base64.b64decode(battle_id).decode('utf-8').split('_')[0].split(':')[-1]
         b_t = dt.strptime(battle_t, '%Y%m%dT%H%M%S') + timedelta(hours=8)
-        msg = '#### ' + g_node['leagueMatchHistoryGroup']['leagueMatchEvent']['name'] + f' HKT {b_t:%Y-%m-%d %H:%M:%S}\n'
+        msg = '#### ' + g_node['leagueMatchHistoryGroup']['leagueMatchEvent'][
+            'name'] + f' HKT {b_t:%Y-%m-%d %H:%M:%S}\n'
     elif _type == 'open':
         fst_battle = g_node['historyDetails']['nodes'][0]
         battle_id = fst_battle['id']
@@ -534,7 +614,10 @@ async def get_group_node_msg(g_node, splt, _type):
 
         my_str = p.get('my_str') or ''
         weapon_img = (((n.get('player') or {}).get('weapon') or {}).get('image') or {}).get('url') or ''
-        weapon_str = f'<img height="20" src="{weapon_img}"/>'
+
+        img_type = "weapon_main"
+        weapon_main_img = await get_temp_image_path(img_type, n['player']['weapon']['name'], weapon_img)
+        weapon_str = f'<img height="20" src="{weapon_main_img}"/>'
         duration = p.get('duration') or ''
         score = p.get('score') or ''
         jud = n.get('judgement') or ''
@@ -614,7 +697,11 @@ async def get_friends(splt, lang='zh-CN'):
 
         _dict[_state] += 1
         n = f['playerName'] or f.get('nickname')
-        img = f'''<img height="40" src="{f['userIcon']['url']}"/>'''
+
+        img_type = "friend_icon"
+        # 储存名使用friend_id
+        icon_img = await get_temp_image_path(img_type, f['id'], f['userIcon']['url'])
+        img = f'''<img height="40" src="{icon_img}"/>'''
         if f['playerName'] and f['playerName'] != f['nickname']:
             nickname = f['nickname'].replace("|", "\|").replace('`', '')
             n = f'{f["playerName"]}|{img}|{nickname}'
@@ -672,7 +759,11 @@ async def get_ns_friends(splt):
             continue
         u_name = f.get('name') or ''
         u_name = u_name.replace("|", "\|")
-        img_str = f'''<img height="40" src="{f['imageUri']}"/>'''
+
+        img_type = "ns_friend_icon"
+        # 储存名使用friend_id
+        icon_img = await get_temp_image_path(img_type, f['nsaId'], f['imageUri'])
+        img_str = f'''<img height="40" src="{icon_img}"/>'''
         msg += f'|{u_name}|{img_str}'
         if (f.get('presence') or {}).get('state') == 'ONLINE':
             _game_name = f['presence']['game'].get('name') or ''
@@ -680,7 +771,7 @@ async def get_ns_friends(splt):
             msg += f"|{_game_name}"
             _dict[_game_name] += 1
             if f['presence']['game'].get('totalPlayTime'):
-                msg += f"({int(f['presence']['game'].get('totalPlayTime')/60)}h)|"
+                msg += f"({int(f['presence']['game'].get('totalPlayTime') / 60)}h)|"
             else:
                 msg += '|'
             if f.get('name') in dict_sp3:
@@ -718,7 +809,7 @@ async def get_ns_friends(splt):
     return msg
 
 
-def get_top_md(player_code):
+async def get_top_md(player_code):
     logger.info(f'get top md {player_code}')
     msg = ''
     dict_p = {}
@@ -773,7 +864,9 @@ def get_top_md(player_code):
         t_type = t_type.replace('LeagueMatchRankingTeam-', 'L-')
         _t = f"{i.play_time:%y-%m-%d %H}".replace(' 00', '')
         if weapon.get(str(i.weapon_id)):
-            str_w = f'<img height="40" src="{weapon.get(str(i.weapon_id))}"/>'
+            img_type = "weapon_main"
+            weapon_main_img = await get_temp_image_path(img_type, weapon[str(i.weapon_id)]['name'], weapon[str(i.weapon_id)]['url'])
+            str_w = f'<img height="40" src="{weapon_main_img}"/>'
         else:
             str_w = f'{i.weapon}'
         if i.player_code != p_code:

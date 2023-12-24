@@ -174,9 +174,9 @@ async def update_user_info():
         for r in res:
             if not r:
                 continue
+            # 每次循环强制睡眠0.5s，使一分钟内最多触发120次发信，避免超出阈值
+            time.sleep(0.5)
             try:
-                # 每次循环强制睡眠0.5s，使一分钟内最多触发120次发信，避免超出阈值
-                time.sleep(0.5)
                 _dict, _report, _uid = r
                 if _dict:
                     set_db_info(**_dict)

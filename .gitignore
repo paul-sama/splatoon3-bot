@@ -147,5 +147,6 @@ splatoon3_bot/plugins/ink_bot/temp/
 splatoon3_bot/plugins/splatoon3_nso/resource/s3sits_git/
 splatoon3_bot/plugins/splatoon3_nso/resource/msg_img/
 splatoon3_bot/plugins/splatoon3_nso/resource/*.txt
+splatoon3_bot/plugins/splatoon3_nso/resource/temp_image/
 
 # End of https://www.toptal.com/developers/gitignore/api/python

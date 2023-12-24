@@ -153,6 +153,7 @@ Login success! Bot now can get your splatoon3 data from SplatNet.
 https://docs.qq.com/sheet/DUkZHRWtCUkR0d2Nr?tab=BB08J2
 """
     await bot.send(event, message=msg)
+    GLOBAL_LOGIN_STATUS_DICT.pop(user_id)
 
     logger.info(f'login success:{user_name} {user_id}')
     user = get_user(user_id=user_id)
@@ -323,7 +324,7 @@ async def set_api_key(bot: Bot, event: Event, matcher: matcher_set_api_key):
     await bot_send(bot, event, message=msg)
 
 
-@on_regex("[A-Za-z0-9_-]{30,}", priority=10, block=True).handle()
+@on_regex("^[A-Za-z0-9_-]{30,}", priority=10, block=True).handle()
 async def get_set_api_key(bot: Bot, event: Event):
     """stat api key匹配"""
     if 'group' in event.get_event_name():

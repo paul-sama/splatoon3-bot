@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import copy
 import datetime
 import json
 import os
+
+import httpx
+from httpx import Response
 from loguru import logger
 from sqlalchemy import Column, String, create_engine, Integer, Boolean, Text, DateTime, func, Float
 from sqlalchemy.sql import text
@@ -14,8 +17,31 @@ dir_plugin = os.path.abspath(os.path.join(__file__, os.pardir))
 database_uri = f'sqlite:///{dir_plugin}/resource/data.sqlite'
 database_uri_2 = f'sqlite:///{dir_plugin}/resource/data_friend.sqlite'
 
+DIR_TEMP_IMAGE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource/temp_image'
+
 Base = declarative_base()
 Base_2 = declarative_base()
+
+
+async def async_http_get(url: str) -> Response:
+    """async http_get"""
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, timeout=5.0)
+        return response
+
+
+async def get_file_url(url):
+    """从网页读获取图片"""
+    resp = await async_http_get(url)
+    resp.read()
+    data = resp.content
+    return data
+
+
+def init_path(path_folder):
+    # 初始化文件夹路径
+    if not os.path.exists(path_folder):
+        os.mkdir(path_folder)
 
 
 # Table
@@ -172,20 +198,6 @@ class Report(Base):
     create_time = Column(DateTime(), default=func.now())
 
 
-class UserFriendTable(Base_2):
-    __tablename__ = 'user_friend'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(String(), nullable=False)
-    friend_id = Column(String(), nullable=False)
-    player_name = Column(String(), default='')
-    nickname = Column(String(), default='')
-    game_name = Column(String(), default='')
-    user_icon = Column(String(), default='')
-    create_time = Column(DateTime(), default=func.now())
-    update_time = Column(DateTime(), onupdate=func.now())
-
-
 class CommentTable(Base):
     __tablename__ = 'comment'
 
@@ -200,6 +212,98 @@ class CommentTable(Base):
     message = Column(Text(), default='')
     is_login = Column(Integer(), default=0)
     is_delete = Column(Integer(), default=0)
+    create_time = Column(DateTime(), default=func.now())
+    update_time = Column(DateTime(), onupdate=func.now())
+
+
+class TempImageTable(Base):
+    __tablename__ = 'temp_image'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    type = Column(String(), default='')
+    name = Column(String(), default='')
+    link = Column(String(), default='')
+    file_name = Column(String(), default='')
+    create_time = Column(DateTime(), default=func.now())
+    update_time = Column(DateTime(), onupdate=func.now())
+
+
+def GetInsertOrUpdateObj(cls, strFilter, **kw):
+    """
+    cls:            Model 类名
+    strFilter:      filter的参数.eg:"name='name-14'"
+    **kw:           【属性、值】字典,用于构建新实例，或修改存在的记录
+    """
+    session = DBSession()
+    row = session.query(cls).filter(text(strFilter)).first()
+    if not row:
+        res = cls()
+    else:
+        res = row
+    for k, v in kw.items():
+        if hasattr(res, k):
+            setattr(res, k, v)
+    return res
+
+
+async def model_get_or_set_temp_image(_type, name, link) -> TempImageTable:
+    """获取或设置缓存图片"""
+    session = DBSession()
+    row: TempImageTable = session.query(TempImageTable).filter(
+        (TempImageTable.type == _type) & (TempImageTable.name == name)).first()
+    download_flag: bool = False
+    temp_image = TempImageTable()
+    if row:
+        # 判断是否是用户图像缓存，并比对缓存数据是否需要更新
+        if (row.type == "friend_icon" and row.link != link) or (row.type == "ns_friend_icon" and row.link != link):
+            download_flag = True
+        else:
+            temp_image = row
+    else:
+        download_flag = True
+    if download_flag:
+        # 通过url下载图片储存至本地
+        image_data = await get_file_url(link)
+        file_name = ""
+        if len(image_data) > 0:
+            # 创建文件夹
+            init_path(f"{DIR_TEMP_IMAGE}")
+            init_path(f"{DIR_TEMP_IMAGE}/{_type}")
+
+            file_name = f'{name}.png'
+            with open(f"{DIR_TEMP_IMAGE}/{_type}/{file_name}", "wb") as f:
+                f.write(image_data)
+        temp_image = TempImageTable(
+            type=_type,
+            name=name,
+            link=link,
+            file_name=file_name
+        )
+        # 将复制值传给orm
+        session.add(copy.deepcopy(temp_image))
+        session.commit()
+    session.close()
+    return temp_image
+
+
+async def get_temp_image_path(_type, name, link) -> str:
+    """获取缓存文件路径"""
+    row = await model_get_or_set_temp_image(_type, name, link)
+    # logger.info(f"row为{row.__dict__}")
+    file_name = row.file_name
+    return f"{DIR_TEMP_IMAGE}/{_type}/{file_name}"
+
+
+class UserFriendTable(Base_2):
+    __tablename__ = 'user_friend'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(), nullable=False)
+    friend_id = Column(String(), nullable=False)
+    player_name = Column(String(), default='')
+    nickname = Column(String(), default='')
+    game_name = Column(String(), default='')
+    user_icon = Column(String(), default='')
     create_time = Column(DateTime(), default=func.now())
     update_time = Column(DateTime(), onupdate=func.now())
 
@@ -462,8 +566,8 @@ def model_get_report(**kwargs):
         return None
     session = DBSession()
 
-#     query = [Report.user_id_sp == user_id_sp]
-#     report = session.query(Report).filter(*query).order_by(Report.create_time.desc()).all()
+    #     query = [Report.user_id_sp == user_id_sp]
+    #     report = session.query(Report).filter(*query).order_by(Report.create_time.desc()).all()
 
     report = session.query(Report).from_statement(text("""
         SELECT *
@@ -473,7 +577,7 @@ def model_get_report(**kwargs):
           GROUP BY user_id_sp, last_play_time)
         and user_id_sp=:user_id_sp
         order by create_time desc""")
-    ).params(user_id_sp=user_id_sp).all()
+                                                  ).params(user_id_sp=user_id_sp).all()
 
     session.close()
     return report
@@ -495,7 +599,7 @@ def model_get_login_user(player_code):
     return user
 
 
-def model_get_user_friend(nickname):
+def model_get_user_friend(nickname) -> UserFriendTable:
     session = DBSession_2()
     user = session.query(UserFriendTable).filter(
         UserFriendTable.game_name == nickname
@@ -609,7 +713,7 @@ def get_top_all(player_code):
     return user
 
 
-def get_top_all_row(player_code):
+def get_top_all_row(player_code) -> TopAll:
     session = DBSession()
     user = session.query(TopAll).filter(
         TopAll.player_code == player_code).order_by(TopAll.power.desc()).first()
@@ -624,9 +728,9 @@ def get_top_all_by_top_type(top_type):
     return top
 
 
-def get_weapon():
+def get_weapon() -> Weapon:
     session = DBSession()
     weapon = session.query(Weapon).all()
     session.close()
-    _dict = dict((str(i.weapon_id), i.image2d_thumb) for i in weapon)
+    _dict = dict((str(i.weapon_id), dict(name=i.weapon_name, url=i.image2d_thumb)) for i in weapon)
     return _dict
