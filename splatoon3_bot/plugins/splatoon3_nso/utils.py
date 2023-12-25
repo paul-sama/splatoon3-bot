@@ -61,7 +61,7 @@ require("nonebot_plugin_apscheduler")
 from nonebot_plugin_apscheduler import scheduler
 
 INTERVAL = 10
-BOT_VERSION = '1.5.3'
+BOT_VERSION = '1.5.4'
 DIR_RESOURCE = f'{os.path.abspath(os.path.join(__file__, os.pardir))}/resource'
 GLOBAL_LOGIN_STATUS_DICT: dict = {}
 

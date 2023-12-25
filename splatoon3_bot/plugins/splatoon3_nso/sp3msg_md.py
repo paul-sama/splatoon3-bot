@@ -879,3 +879,92 @@ async def get_top_md(player_code):
 
     msg += '||\n\n说明: /top [1-50] [a-h] [last]. 对战数字, 玩家排序, 全部查询\n'
     return msg
+
+
+def get_summary_md(data, all_data, coop, from_group=False):
+
+    player = data['data']['currentPlayer']
+    history = data['data']['playHistory']
+    start_time = history['gameStartTime']
+    s_time = dt.strptime(start_time, '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=8)
+    c_time = dt.strptime(history['currentTime'], '%Y-%m-%dT%H:%M:%SZ') + timedelta(hours=8)
+
+    all_cnt = ''
+    r = ''
+    if all_data:
+        total_cnt = all_data['data']['playHistory']['battleNumTotal']
+        all_cnt = f"/{total_cnt}"
+        if total_cnt:
+            r = f"{history['winCountTotal'] / total_cnt:.2%}"
+
+    coop_msg = ''
+    if coop:
+        coop = coop['data']['coopResult']
+        card = coop['pointCard']
+        p = coop['scale']
+        name = f"{coop['regularGrade']['name']} {coop['regularGradePoint']}"
+        boss_per_cnt = ''
+        if card['defeatBossCount']:
+            boss_per_cnt = f"({card['playCount'] / card['defeatBossCount']:.2f})"
+        gdpc = ''
+        dpc = ''
+        rpc = ''
+        ppc = ''
+        if card['playCount']:
+            gdpc = f"({card['goldenDeliverCount'] / card['playCount']:.2f})"
+            dpc = f"({card['deliverCount'] / card['playCount']:.2f})"
+            rpc = f"({card['rescueCount'] / card['playCount']:.2f})"
+            ppc = f"({card['totalPoint'] / card['playCount']:.2f})"
+        coop_msg = f"""&nbsp; | {name}
+现有点数 | {card['regularPoint']}
+打工次数 | {card['playCount']}
+金鲑鱼卵 | {card['goldenDeliverCount']} {gdpc}
+鲑鱼卵 | {card['deliverCount']} {dpc}
+头目鲑鱼 | {card['defeatBossCount']} {boss_per_cnt}
+救援次数 | {card['rescueCount']} {rpc}
+累计点数 | {card['totalPoint']} {ppc}
+鳞片 | 🥉{p['bronze']} 🥈{p['silver']} 🏅️{p['gold']}"""
+        if from_group:
+            coop_msg = f"""打工次数 | {card['playCount']}
+头目鲑鱼 | {card['defeatBossCount']} {boss_per_cnt}"""
+
+    ar = (history.get('xMatchMaxAr') or {}).get('power') or 0
+    lf = (history.get('xMatchMaxLf') or {}).get('power') or 0
+    gl = (history.get('xMatchMaxGl') or {}).get('power') or 0
+    cl = (history.get('xMatchMaxCl') or {}).get('power') or 0
+    x_msg = '||'
+    if any([ar, lf, gl, cl]) and not from_group:
+        x_msg = f"X | {ar:>7.2f}, {lf:>7.2f}, {gl:>7.2f}, {cl:>7.2f}\n||"
+
+    _league = ''
+    _open = ''
+    if history.get('leagueMatchPlayHistory'):
+        _l = history['leagueMatchPlayHistory']
+        _n = _l['attend'] - _l['gold'] - _l['silver'] - _l['bronze']
+        _league = f"🏅️{_l['gold']:>3} 🥈{_l['silver']:>3} 🥉{_l['bronze']:>3} &nbsp; {_n:>3} ({_l['attend']})"
+    if history.get('bankaraMatchOpenPlayHistory'):
+        _o = history['bankaraMatchOpenPlayHistory']
+        _n = _o['attend'] - _o['gold'] - _o['silver'] - _o['bronze']
+        _open = f"🏅️{_o['gold']:>3} 🥈{_o['silver']:>3} 🥉{_o['bronze']:>3} &nbsp; {_n:>3} ({_o['attend']})"
+
+    player_name = player['name'].replace('`', '&#96;').replace('|', '&#124;')
+    msg = f"""####
+|||
+|---:|---|
+&nbsp; |{player_name} #{player['nameId']}
+&nbsp; |{player['byname']}
+等级 | {history['rank']}
+技术 | {history['udemae']}
+最高技术 | {history['udemaeMax']}
+总胜利数 | {history['winCountTotal']}{all_cnt} {r}
+涂墨面积 | {history['paintPointTotal']:,}p
+徽章 | {len(history['badges'])}
+活动 | {_league}
+开放 | {_open}
+首次游玩 | {s_time:%Y-%m-%d %H:%M:%S} +08:00
+当前时间 | {c_time:%Y-%m-%d %H:%M:%S} +08:00
+{x_msg}
+{coop_msg}
+|||
+"""
+    return msg

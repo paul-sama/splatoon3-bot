@@ -13,7 +13,7 @@ from .sp3msg import (
 )
 from .sp3msg_md import (
     get_battle_msg as get_battle_msg_md, get_coop_msg as get_coop_msg_md, get_history, get_friends as get_friends_md,
-    get_ns_friends, get_top_md
+    get_ns_friends, get_top_md, get_summary_md
 )
 from .splatnet_image import get_app_screenshot
 from .utils import bot_send, INTERVAL, notify_tg_channel, Tg_Bot, V11_Bot, V12_Bot, QQ_Bot, Kook_Bot, scheduler
@@ -166,14 +166,15 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
         return msg
 
 
-async def get_me(user_id):
+async def get_me(user_id, from_group):
     user = get_user(user_id=user_id)
     splt = Splatoon(user.id, user.session_token)
     res = await splt.get_summary()
     all_res = await splt.get_all_res()
     coop = await splt.get_coop_summary()
+
     try:
-        msg = get_summary(res, all_res, coop, lang=user.acc_loc)
+        msg = get_summary_md(res, all_res, coop, from_group)
     except Exception as e:
         logger.exception(e)
         msg = f'获取数据失败，请稍后再试或重新登录 /login'

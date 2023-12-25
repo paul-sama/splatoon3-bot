@@ -96,8 +96,12 @@ async def last(bot: Bot, event: Event):
 async def me(bot: Bot, event: Event):
     user_id = event.get_user_id()
 
-    msg = await get_me(user_id)
-    await bot_send(bot, event, msg, parse_mode='Markdown')
+    from_group = False
+    if 'group' in event.get_event_name() or isinstance(bot, QQ_Bot):
+        from_group = True
+
+    msg = await get_me(user_id, from_group)
+    await bot_send(bot, event, msg, parse_mode='Markdown', image_width=450)
 
 
 @on_command("friends", aliases={'fr'}, priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])
