@@ -2,6 +2,7 @@ import nonebot
 import sys
 
 from nonebot import logger
+from nonebot.adapters.kaiheila import Adapter as KaiheilaAdapter
 from nonebot.adapters.telegram import Adapter as TelegramAdapter
 from nonebot.adapters.onebot.v11 import Adapter as QQAdapter
 from nonebot.adapters.onebot.v12 import Adapter as WXAdapter
@@ -29,6 +30,7 @@ driver = nonebot.get_driver()
 driver.register_adapter(TelegramAdapter)
 driver.register_adapter(QQAdapter)
 driver.register_adapter(WXAdapter)
+driver.register_adapter(KaiheilaAdapter)
 
 
 # 在这里加载插件
