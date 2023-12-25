@@ -133,7 +133,7 @@ async def get_top_all_name(name, player_code):
         weapon_id = str(row.weapon_id)
         weapon = get_weapon() or {}
         if weapon.get(weapon_id):
-            img_type = "weapon_main"
+            img_type = "battle_weapon_main"
             weapon_main_img = await get_temp_image_path(img_type, weapon[weapon_id]['name'], weapon[weapon_id]['url'])
             name += f"<img height='36px' style='position:absolute;right:5px;margin-top:-6px' src='{weapon_main_img}'/>"
     return name
@@ -151,7 +151,7 @@ async def get_top_str_w(player_code):
         weapon_id = str(r.weapon_id)
         weapon = get_weapon() or {}
         if weapon.get(weapon_id):
-            img_type = "weapon_main"
+            img_type = "battle_weapon_main"
             weapon_main_img = await get_temp_image_path(img_type, weapon[weapon_id]['name'], weapon[weapon_id]['url'])
             top_str += f"<img height='36px' style='position:absolute;right:5px;margin-top:-6px' src='{weapon_main_img}'/>"
         return top_str
@@ -185,7 +185,7 @@ async def get_row_text_image(p, mask=False):
         name = await get_top_all_name(name, player_code)
 
     weapon_img = ((p.get('weapon') or {}).get('image') or {}).get('url') or ''
-    img_type = "weapon_main"
+    img_type = "battle_weapon_main"
     weapon_main_img = await get_temp_image_path(img_type, p['weapon']['name'], weapon_img)
     w_str = f'<img height="40" src="{weapon_main_img}"/>'
     name = f'{name}|'
@@ -615,7 +615,7 @@ async def get_group_node_msg(g_node, splt, _type):
         my_str = p.get('my_str') or ''
         weapon_img = (((n.get('player') or {}).get('weapon') or {}).get('image') or {}).get('url') or ''
 
-        img_type = "weapon_main"
+        img_type = "battle_weapon_main"
         weapon_main_img = await get_temp_image_path(img_type, n['player']['weapon']['name'], weapon_img)
         weapon_str = f'<img height="20" src="{weapon_main_img}"/>'
         duration = p.get('duration') or ''
@@ -865,7 +865,7 @@ async def get_top_md(player_code):
         t_type = t_type.replace('LeagueMatchRankingTeam-', 'L-')
         _t = f"{i.play_time:%y-%m-%d %H}".replace(' 00', '')
         if weapon.get(str(i.weapon_id)):
-            img_type = "weapon_main"
+            img_type = "battle_weapon_main"
             weapon_main_img = await get_temp_image_path(img_type, weapon[str(i.weapon_id)]['name'], weapon[str(i.weapon_id)]['url'])
             str_w = f'<img height="40" src="{weapon_main_img}"/>'
         else:

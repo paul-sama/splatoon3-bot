@@ -258,7 +258,7 @@ async def model_get_or_set_temp_image(_type, name, link) -> TempImageTable:
         if (row.type == "friend_icon" and row.link != link) or (row.type == "ns_friend_icon" and row.link != link):
             download_flag = True
         else:
-            temp_image = row
+            temp_image = copy.deepcopy(row)
     else:
         download_flag = True
     if download_flag:
@@ -281,7 +281,7 @@ async def model_get_or_set_temp_image(_type, name, link) -> TempImageTable:
         )
         # 将复制值传给orm
         session.add(copy.deepcopy(temp_image))
-        session.commit()
+    session.commit()
     session.close()
     return temp_image
 
@@ -308,11 +308,11 @@ class UserFriendTable(Base_2):
     update_time = Column(DateTime(), onupdate=func.now())
 
 
-engine = create_engine(database_uri, connect_args={"check_same_thread": False})
+engine = create_engine(database_uri)
 Base.metadata.create_all(engine)
 DBSession = sessionmaker(bind=engine)
 
-engine_2 = create_engine(database_uri_2, connect_args={"check_same_thread": False})
+engine_2 = create_engine(database_uri_2)
 Base_2.metadata.create_all(engine_2)
 DBSession_2 = sessionmaker(bind=engine_2)
 
@@ -347,6 +347,7 @@ def get_or_set_user(**kwargs):
             session.close()
             return user
         else:
+            session.close()
             logger.info('no user in db')
 
     except Exception as e:
@@ -490,6 +491,9 @@ def get_user(**kwargs):
             logger.debug(f'get user from db: {user.id}, {user.username}, {kwargs}')
             session.close()
             return user
+        else:
+            session.close()
+            return UserTable()
 
     except Exception as e:
         logger.error(f'get_user error: {e}')
@@ -617,6 +621,7 @@ def model_get_map_group_id_list():
     group_id_list = session.query(GroupTable.group_id).filter(*query).all()
     session.close()
     id_lst = [i[0] for i in group_id_list]
+    session.close()
     return id_lst
 
 
