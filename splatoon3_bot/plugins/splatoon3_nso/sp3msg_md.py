@@ -3,7 +3,7 @@ from datetime import timedelta, datetime as dt
 from .sp3msg import get_battle_msg_title, set_statics, logger, utils, get_top_str, defaultdict, fmt_sp3_state
 from .db_sqlite import (
     model_get_user_friend, model_get_login_user, get_top_all, get_top_all_row, get_weapon, model_get_report,
-    get_top_player_row, get_temp_image_path, UserFriendTable
+    get_top_player_row, get_temp_image_path, UserFriendTable, model_get_report_all
 )
 
 
@@ -968,4 +968,24 @@ def get_summary_md(data, all_data, coop, from_group=False):
 {coop_msg}
 |||
 """
+    return msg
+
+
+def get_report_all_md(player_code):
+    res = model_get_report_all(player_code)
+    if not res:
+        return '数据准备中'
+    text = ''
+    for r in res[-30:]:
+        logger.info(f'rrr {r.__dict__}')
+        _d = r.__dict__
+        text += (f"{_d.get('last_play_time')}|{_d.get('total_cnt')}|{_d.get('user_id_sp')}|{_d.get('win_cnt')}|"
+                 f"{_d.get('win_rate')}|{_d.get('nickname')}|{_d.get('coop_cnt')}|{_d.get('name_id')}|"
+                 f"{_d.get('coop_boss_cnt')}|{_d.get('by_name') or ''}|{_d.get('badges')}|{_d.get('rank')}|"
+                 f"{_d.get('udemae')}\n")
+    msg = f'''####
+||||||||||||||
+|---|---|---:|---|---|---:|---|---|---|---|---:|---|---|
+{text}|||
+    '''
     return msg

@@ -13,7 +13,7 @@ from .sp3msg import (
 )
 from .sp3msg_md import (
     get_battle_msg as get_battle_msg_md, get_coop_msg as get_coop_msg_md, get_history, get_friends as get_friends_md,
-    get_ns_friends, get_top_md, get_summary_md
+    get_ns_friends, get_top_md, get_summary_md, get_report_all_md
 )
 from .splatnet_image import get_app_screenshot
 from .utils import bot_send, INTERVAL, notify_tg_channel, Tg_Bot, V11_Bot, V12_Bot, QQ_Bot, Kook_Bot, scheduler
@@ -360,5 +360,12 @@ async def get_top(user_id, battle=None, player=None):
                     p_lst.append(f"{p[0]}_{chr(_i)}")
             player_code = p_lst
 
-    photo =await  get_top_md(player_code)
+    photo =await get_top_md(player_code)
     return photo or player_name
+
+
+def get_report_all(user_id):
+    user = get_or_set_user(user_id=user_id)
+    msg = get_report_all_md(user.user_id_sp)
+    logger.debug(msg)
+    return msg
