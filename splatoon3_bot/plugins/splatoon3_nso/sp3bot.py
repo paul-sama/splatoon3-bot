@@ -166,7 +166,7 @@ async def get_last_battle_or_coop(user_id, for_push=False, get_battle=False, get
         return msg
 
 
-async def get_me(user_id, from_group):
+async def get_me(user_id, from_group, get_image):
     user = get_user(user_id=user_id)
     splt = Splatoon(user.id, user.session_token)
     res = await splt.get_summary()
@@ -174,7 +174,10 @@ async def get_me(user_id, from_group):
     coop = await splt.get_coop_summary()
 
     try:
-        msg = get_summary_md(res, all_res, coop, from_group)
+        if get_image:
+            msg = get_summary_md(res, all_res, coop, from_group)
+        else:
+            msg = get_summary(res, all_res, coop)
     except Exception as e:
         logger.exception(e)
         msg = f'获取数据失败，请稍后再试或重新登录 /login'

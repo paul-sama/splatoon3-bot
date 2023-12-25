@@ -100,7 +100,12 @@ async def me(bot: Bot, event: Event):
     if 'group' in event.get_event_name() or isinstance(bot, QQ_Bot):
         from_group = True
 
-    msg = await get_me(user_id, from_group)
+    get_image = False
+    cmd_lst = event.get_plaintext().strip().split()
+    if 'i' in cmd_lst or 'image' in cmd_lst:
+        get_image = True
+
+    msg = await get_me(user_id, from_group, get_image)
     await bot_send(bot, event, msg, parse_mode='Markdown', image_width=450)
 
 
