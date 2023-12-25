@@ -977,7 +977,7 @@ def get_report_all_md(player_code):
         return '数据准备中'
     text = ''
     for r in res[-30:]:
-        logger.info(f'rrr {r.__dict__}')
+        # logger.info(f'rrr {r.__dict__}')
         _d = r.__dict__
         text += (f"{_d.get('last_play_time')}|{_d.get('total_cnt')}|{_d.get('user_id_sp')}|{_d.get('win_cnt')}|"
                  f"{_d.get('win_rate')}|{_d.get('nickname')}|{_d.get('coop_cnt')}|{_d.get('name_id')}|"
