@@ -74,7 +74,7 @@ async def get_last_msg(splt, _id, extra_info, is_battle=True, **kwargs):
         else:
             coo_detail = await splt.get_coop_detail(_id)
             if kwargs.get('get_pic') or kwargs.get('get_image'):
-                msg = get_coop_msg_md(extra_info, coo_detail, **kwargs)
+                msg = await get_coop_msg_md(extra_info, coo_detail, **kwargs)
             else:
                 msg = get_coop_msg(extra_info, coo_detail)
     except Exception as e:
@@ -356,5 +356,5 @@ async def get_top(user_id, battle=None, player=None):
                     p_lst.append(f"{p[0]}_{chr(_i)}")
             player_code = p_lst
 
-    photo = get_top_md(player_code)
+    photo =await  get_top_md(player_code)
     return photo or player_name
