@@ -167,7 +167,7 @@ async def get_row_text_image(p, mask=False):
     k_str = f'{k}+{re["assist"]}'
     d = re['death']
     ration = k / d if d else 99
-    name = p['name']
+    name = p['name'].replace('`', '&#96;').replace('|', '&#124;')
     if p.get('isMyself'):
         name = f'<b>{name}</b>'
     elif mask:
@@ -697,13 +697,14 @@ async def get_friends(splt, lang='zh-CN'):
 
         _dict[_state] += 1
         n = f['playerName'] or f.get('nickname')
+        n = n.replace('`', '&#96;').replace('|', '&#124;')
 
         img_type = "friend_icon"
         # 储存名使用friend_id
         icon_img = await get_temp_image_path(img_type, f['id'], f['userIcon']['url'])
         img = f'''<img height="40" src="{icon_img}"/>'''
         if f['playerName'] and f['playerName'] != f['nickname']:
-            nickname = f['nickname'].replace("|", "\|").replace('`', '')
+            nickname = f['nickname'].replace('`', '&#96;').replace('|', '&#124;')
             n = f'{f["playerName"]}|{img}|{nickname}'
         else:
             n = f'{n}|{img}|'
@@ -758,7 +759,7 @@ async def get_ns_friends(splt):
         if (f.get('presence') or {}).get('state') != 'ONLINE' and f.get('isFavoriteFriend') is False:
             continue
         u_name = f.get('name') or ''
-        u_name = u_name.replace("|", "\|")
+        u_name = u_name.replace('`', '&#96;').replace('|', '&#124;')
 
         img_type = "ns_friend_icon"
         # 储存名使用friend_id
