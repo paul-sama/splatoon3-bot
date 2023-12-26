@@ -8,7 +8,7 @@ from nonebot.message import event_preprocessor
 from nonebot.permission import SUPERUSER
 
 from .config import plugin_config
-from .db_sqlite import set_db_info
+from .db_sqlite import set_db_info, clean_db_cache
 from .scripts.report import update_user_info_first, update_user_info
 from .sp3msg import MSG_HELP, MSG_HELP_QQ, MSG_HELP_CN
 from .sp3job import cron_job, sync_stat_ink
@@ -279,3 +279,7 @@ async def admin_cmd(bot: Bot, event: Event):
     elif plain_text == 'thread_count':
         thread_num = len(threading.enumerate())
         await bot_send(bot, event, message=f'当前线程数量为{str(thread_num)}', parse_mode='Markdown')
+
+    elif plain_text == 'clean_db_cache':
+        clean_db_cache()
+        await bot_send(bot, event, message="数据库缓存已清空", parse_mode='Markdown')

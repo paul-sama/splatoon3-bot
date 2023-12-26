@@ -150,3 +150,4 @@ splatoon3_bot/plugins/splatoon3_nso/resource/*.txt
 splatoon3_bot/plugins/splatoon3_nso/resource/temp_image/
 
 # End of https://www.toptal.com/developers/gitignore/api/python
+/splatoon3_bot/plugins/splatoon3_nso/数据结构/
