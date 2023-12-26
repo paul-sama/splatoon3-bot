@@ -175,7 +175,7 @@ async def get_me(user_id, from_group, get_image):
 
     try:
         if get_image:
-            msg = get_summary_md(res, all_res, coop, from_group)
+            msg = await get_summary_md(res, all_res, coop, from_group)
         else:
             msg = get_summary(res, all_res, coop)
     except Exception as e:

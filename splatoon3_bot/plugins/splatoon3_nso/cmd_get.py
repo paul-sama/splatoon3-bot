@@ -102,7 +102,7 @@ async def me(bot: Bot, event: Event):
 
     get_image = False
     cmd_lst = event.get_plaintext().strip().split()
-    if 'i' in cmd_lst or 'image' in cmd_lst:
+    if 'i' in cmd_lst or 'image' in cmd_lst or isinstance(bot, QQ_Bot):
         get_image = True
 
     msg = await get_me(user_id, from_group, get_image)

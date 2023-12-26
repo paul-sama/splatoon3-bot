@@ -882,7 +882,7 @@ async def get_top_md(player_code):
     return msg
 
 
-def get_summary_md(data, all_data, coop, from_group=False):
+async def get_summary_md(data, all_data, coop, from_group=False):
 
     player = data['data']['currentPlayer']
     history = data['data']['playHistory']
@@ -949,11 +949,20 @@ def get_summary_md(data, all_data, coop, from_group=False):
         _open = f"🏅️{_o['gold']:>3} 🥈{_o['silver']:>3} 🥉{_o['bronze']:>3} &nbsp; {_n:>3} ({_o['attend']})"
 
     player_name = player['name'].replace('`', '&#96;').replace('|', '&#124;')
+
+    icon_img = await get_temp_image_path('friend_icon', 'myself', player['userIcon']['url'])
+    img = f'''<img height="30" src="{icon_img}"/>'''
+
+    weapon_img = await get_temp_image_path('battle_weapon_main',
+                                           player['weapon']['name'],
+                                           player['weapon']['image']['url'])
+    w_img = f'''<img height="40" src="{weapon_img}"/>'''
+
     msg = f"""####
 |||
 |---:|---|
-&nbsp; |{player_name} #{player['nameId']}
-&nbsp; |{player['byname']}
+{w_img} |{player_name} #{player['nameId']}
+{img} |{player['byname']}
 等级 | {history['rank']}
 技术 | {history['udemae']}
 最高技术 | {history['udemaeMax']}
