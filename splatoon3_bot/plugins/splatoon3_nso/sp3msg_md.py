@@ -949,8 +949,10 @@ async def get_summary_md(data, all_data, coop, from_group=False):
         _open = f"🏅️{_o['gold']:>3} 🥈{_o['silver']:>3} 🥉{_o['bronze']:>3} &nbsp; {_n:>3} ({_o['attend']})"
 
     player_name = player['name'].replace('`', '&#96;').replace('|', '&#124;')
+    name_id = player['nameId']
+    user_name = f'{player_name} #{name_id}'
 
-    icon_img = await get_temp_image_path('friend_icon', 'myself', player['userIcon']['url'])
+    icon_img = await get_temp_image_path('my_icon', user_name, player['userIcon']['url'])
     img = f'''<img height="30" src="{icon_img}"/>'''
 
     weapon_img = await get_temp_image_path('battle_weapon_main',
@@ -961,7 +963,7 @@ async def get_summary_md(data, all_data, coop, from_group=False):
     msg = f"""####
 |||
 |---:|---|
-{w_img} |{player_name} #{player['nameId']}
+{w_img} |{user_name}
 {img} |{player['byname']}
 等级 | {history['rank']}
 技术 | {history['udemae']}
