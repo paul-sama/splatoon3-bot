@@ -255,7 +255,7 @@ async def model_get_or_set_temp_image(_type, name, link) -> TempImageTable:
     temp_image = TempImageTable()
     if row:
         # 判断是否是用户图像缓存，并比对缓存数据是否需要更新
-        if (row.type == "friend_icon" and row.link != link) or (row.type == "ns_friend_icon" and row.link != link):
+        if (row.type == "friend_icon" and row.link != link) or (row.type == "ns_friend_icon" and row.link != link) or (row.type == "my_icon" and row.link != link):
             download_flag = True
         else:
             temp_image = copy.deepcopy(row)
