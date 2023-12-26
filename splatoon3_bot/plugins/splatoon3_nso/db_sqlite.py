@@ -317,6 +317,13 @@ Base_2.metadata.create_all(engine_2)
 DBSession_2 = sessionmaker(bind=engine_2)
 
 
+def clean_db_cache():
+    session = DBSession()
+    session.execute(text("VACUUM"))
+    session.commit()
+    session.close()
+
+
 def get_or_set_user(**kwargs):
     logger.debug(f'get_or_set_user: {kwargs}')
     try:
@@ -344,9 +351,12 @@ def get_or_set_user(**kwargs):
                 (UserTable.id == user_id) | (UserTable.user_id_qq == user_id) |
                 (UserTable.user_id_tg == user_id) | (UserTable.user_id_wx == user_id) |
                 (UserTable.user_id_kk == user_id)).first()
+            new_user = copy.deepcopy(user)
+            session.commit()
             session.close()
-            return user
+            return new_user
         else:
+            session.commit()
             session.close()
             logger.info('no user in db')
 
@@ -357,15 +367,19 @@ def get_or_set_user(**kwargs):
 def get_all_user():
     session = DBSession()
     users = session.query(UserTable).all()
+    new_users = copy.deepcopy(users)
+    session.commit()
     session.close()
-    return users
+    return new_users
 
 
 def get_all_group():
     session = DBSession()
     users = session.query(GroupTable).all()
+    new_users = copy.deepcopy(users)
+    session.commit()
     session.close()
-    return users
+    return new_users
 
 
 def set_db_info(**kwargs):
@@ -489,9 +503,12 @@ def get_user(**kwargs):
         ).first()
         if user:
             logger.debug(f'get user from db: {user.id}, {user.username}, {kwargs}')
+            new_user = copy.deepcopy(user)
+            session.commit()
             session.close()
-            return user
+            return new_user
         else:
+            session.commit()
             session.close()
             return UserTable()
 
@@ -532,16 +549,20 @@ def get_top_player(player_code):
     session = DBSession()
     user = session.query(func.min(TopPlayer.rank), func.max(TopPlayer.power)
                          ).filter(TopPlayer.player_code == player_code).first()
+    new_user = copy.deepcopy(user)
+    session.commit()
     session.close()
-    return user
+    return new_user
 
 
 def get_top_player_row(player_code):
     session = DBSession()
     user = session.query(TopPlayer).filter(
         TopPlayer.player_code == player_code).order_by(TopPlayer.power.desc()).first()
+    new_user = copy.deepcopy(user)
+    session.commit()
     session.close()
-    return user
+    return new_user
 
 
 def model_add_report(**kwargs):
@@ -583,8 +604,10 @@ def model_get_report(**kwargs):
         order by create_time desc""")
                                                   ).params(user_id_sp=user_id_sp).all()
 
+    new_report = copy.deepcopy(report)
+    session.commit()
     session.close()
-    return report
+    return new_report
 
 
 def model_get_report_all(user_id_sp):
@@ -621,6 +644,7 @@ def model_get_map_group_id_list():
     group_id_list = session.query(GroupTable.group_id).filter(*query).all()
     session.close()
     id_lst = [i[0] for i in group_id_list]
+    session.commit()
     session.close()
     return id_lst
 
@@ -628,8 +652,10 @@ def model_get_map_group_id_list():
 def model_get_login_user(player_code):
     session = DBSession()
     user = session.query(UserTable).filter(UserTable.user_id_sp == player_code).first()
+    new_user = copy.deepcopy(user)
+    session.commit()
     session.close()
-    return user
+    return new_user
 
 
 def model_get_user_friend(nickname) -> UserFriendTable:
@@ -637,8 +663,10 @@ def model_get_user_friend(nickname) -> UserFriendTable:
     user = session.query(UserFriendTable).filter(
         UserFriendTable.game_name == nickname
     ).order_by(UserFriendTable.create_time.desc()).first()
+    new_user = copy.deepcopy(user)
+    session.commit()
     session.close()
-    return user
+    return new_user
 
 
 def model_set_user_friend(data_lst):
@@ -705,8 +733,10 @@ def model_get_comment():
     session = DBSession()
     query = [CommentTable.is_delete != 1]
     comment = session.query(CommentTable).filter(*query).order_by(CommentTable.create_time).all()
+    new_comment = copy.deepcopy(comment)
+    session.commit()
     session.close()
-    return comment
+    return new_comment
 
 
 def write_top_all(row):
@@ -742,28 +772,35 @@ def clean_top_all(top_id):
 def get_top_all(player_code):
     session = DBSession()
     user = session.query(TopAll).filter(TopAll.player_code == player_code).all()
+    new_user = copy.deepcopy(user)
+    session.commit()
     session.close()
-    return user
+    return new_user
 
 
 def get_top_all_row(player_code) -> TopAll:
     session = DBSession()
     user = session.query(TopAll).filter(
         TopAll.player_code == player_code).order_by(TopAll.power.desc()).first()
+    new_user = copy.deepcopy(user)
+    session.commit()
     session.close()
-    return user
+    return new_user
 
 
 def get_top_all_by_top_type(top_type):
     session = DBSession()
     top = session.query(TopAll).where(TopAll.top_type.contains(top_type)).all()
+    new_top = copy.deepcopy(top)
+    session.commit()
     session.close()
-    return top
+    return new_top
 
 
 def get_weapon() -> Weapon:
     session = DBSession()
     weapon = session.query(Weapon).all()
-    session.close()
     _dict = dict((str(i.weapon_id), dict(name=i.weapon_name, url=i.image2d_thumb)) for i in weapon)
+    session.commit()
+    session.close()
     return _dict
