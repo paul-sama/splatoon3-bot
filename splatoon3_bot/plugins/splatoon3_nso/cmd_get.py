@@ -4,7 +4,7 @@ from nonebot.internal.params import Depends
 
 from .sp3bot import (
     get_user_db_info, get_last_battle_or_coop, get_me, get_friends_msg, get_ns_friends_msg, get_x_top_msg,
-    get_my_schedule_msg, get_screenshot_image, get_history_msg, get_friend_code, get_top, get_user
+    get_my_schedule_msg, get_screenshot_image, get_history_msg, get_friend_code, get_top, get_user, get_report_all
 )
 from .utils import bot_send, _check_session_handler, QQ_Bot
 
@@ -102,7 +102,7 @@ async def me(bot: Bot, event: Event):
 
     get_image = False
     cmd_lst = event.get_plaintext().strip().split()
-    if 'i' in cmd_lst or 'image' in cmd_lst:
+    if 'i' in cmd_lst or 'image' in cmd_lst or isinstance(bot, QQ_Bot):
         get_image = True
 
     msg = await get_me(user_id, from_group, get_image)
@@ -219,3 +219,9 @@ async def _top(bot: Bot, event: Event):
         else:
             _msg = photo
     await bot_send(bot, event, _msg)
+
+
+@on_command("report_all", priority=10, block=True).handle(parameterless=[Depends(_check_session_handler)])
+async def func_report_all(bot: Bot, event: Event):
+    msg = get_report_all(event.get_user_id())
+    await bot_send(bot, event, msg, parse_mode='Markdown')
