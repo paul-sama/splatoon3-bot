@@ -953,19 +953,31 @@ async def get_summary_md(data, all_data, coop, from_group=False):
     user_name = f'{player_name} #{name_id}'
 
     icon_img = await get_temp_image_path('my_icon', user_name, player['userIcon']['url'])
-    img = f'''<img height="30" src="{icon_img}"/>'''
+    img = f'''<img height='30px' style='position:absolute;margin-left:-30px;margin-top:-15px' src="{icon_img}"/>'''
 
     weapon_img = await get_temp_image_path('battle_weapon_main',
                                            player['weapon']['name'],
                                            player['weapon']['image']['url'])
-    w_img = f'''<img height="40" src="{weapon_img}"/>'''
+    w_img = f'''<img height='30px' style='position:absolute;margin-left:-30px;margin-top:-15px' src="{weapon_img}"/>'''
+
+    badges_str = ''
+    _idx = 1
+    for b in (player.get('nameplate') or {}).get('badges') or []:
+        if b:
+            _b_id = b.get('id')
+            _b_url = (b.get('image') or {}).get('url')
+            if _b_url:
+                b_img = await get_temp_image_path('badges', _b_id, _b_url)
+                _style = f'position:absolute;margin-top:-4px;margin-left:{_idx*30}px'
+                badges_str += f'''<img height='30px' style='{_style}' src="{b_img}"/>'''
+        _idx += 1
 
     msg = f"""####
 |||
 |---:|---|
 {w_img} |{user_name}
 {img} |{player['byname']}
-等级 | {history['rank']}
+等级 | {history['rank']} {badges_str}
 技术 | {history['udemae']}
 最高技术 | {history['udemaeMax']}
 总胜利数 | {history['winCountTotal']}{all_cnt} {r}
