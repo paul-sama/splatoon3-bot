@@ -77,10 +77,10 @@ async def last(bot: Bot, event: Event):
     await bot_send(bot, event, msg, parse_mode='Markdown', photo=photo, image_width=image_width)
 
     user = get_user(user_id=user_id)
-    if user.push_cnt < 3:
+    if user.push_cnt < 3 and (not isinstance(bot, QQ_Bot)):
         is_playing = await get_last_battle_or_coop(user_id, idx=idx, is_playing=True)
         logger.info(f'is_playing: {is_playing}')
-        if is_playing and (not isinstance(bot, QQ_Bot)):
+        if is_playing:
             msg = ''
             if 'group' in event.get_event_name():
                 if not user.push_cnt:
