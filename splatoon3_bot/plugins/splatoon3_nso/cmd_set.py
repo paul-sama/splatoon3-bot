@@ -242,7 +242,7 @@ async def func_set_login(bot: QQ_Bot, event: Event):
 /last - 显示最近一场对战或打工
 /report - 喷喷早报
 """
-    await bot.send(event, message=msg)
+    await bot_send(bot, event, msg)
 
     logger.info(f'login success: {user_id}\n{msg}')
     user = get_user(user_id=user_id)
@@ -253,6 +253,8 @@ async def func_set_login(bot: QQ_Bot, event: Event):
     b_info = res_battle['data']['latestBattleHistories']['historyGroups']['nodes'][0]['historyDetails']['nodes'][0]
     player_code = base64.b64decode(b_info['player']['id']).decode('utf-8').split(':')[-1][2:]
     set_db_info(user_id=user_id, id_type='qq', user_id_sp=player_code)
+
+    await notify_tg_channel(f'绑定QQ成功: {user_id}, {player_code}')
 
 
 matcher_set_battle_info = on_command("set_battle_info", aliases={'sbi'}, priority=10, block=True)
