@@ -249,7 +249,8 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
     get_or_set_user(user_id=user.id, user_info=json.dumps(db_user_info))
     job_data['push_cnt'] = 0
     splt = Splatoon(user_id, user.session_token)
-    msg = await get_last_msg(splt, battle_id, _info, is_battle, battle_show_type=db_user_info.get('battle_show_type'), **data)
+    msg = await get_last_msg(splt, battle_id, _info, is_battle, battle_show_type=db_user_info.get('battle_show_type'),
+                             **data)
 
     image_width = 630 if get_image else 1000
     r = await bot_send(bot, event, message=msg, parse_mode='Markdown',
@@ -259,7 +260,7 @@ async def push_latest_battle(bot: Bot, event: Event, job_data: dict):
         if isinstance(bot, Tg_Bot):
             message_id = r.message_id
             if data.get('last_group_msg_id'):
-               await bot.call_api('delete_message', message_id=data['last_group_msg_id'], chat_id=r.chat.id)
+                await bot.call_api('delete_message', message_id=data['last_group_msg_id'], chat_id=r.chat.id)
         data['last_group_msg_id'] = message_id
 
 
@@ -304,7 +305,6 @@ async def get_my_schedule_msg(user_id):
 
 
 async def get_screenshot_image(user_id, key=None):
-
     user = get_or_set_user(user_id=user_id)
     splt = Splatoon(user_id, user.session_token)
     await splt.test_page()
@@ -360,7 +360,7 @@ async def get_top(user_id, battle=None, player=None):
                     p_lst.append(f"{p[0]}_{chr(_i)}")
             player_code = p_lst
 
-    photo =await get_top_md(player_code)
+    photo = await get_top_md(player_code)
     return photo or player_name
 
 
