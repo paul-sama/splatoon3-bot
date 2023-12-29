@@ -246,16 +246,18 @@ def GetInsertOrUpdateObj(cls, strFilter, **kw):
     return res
 
 
-async def model_get_or_set_temp_image(_type, name, link) -> TempImageTable:
+async def model_get_or_set_temp_image(_type, name: str, link) -> TempImageTable:
     """获取或设置缓存图片"""
     session = DBSession()
+    name = name.replace("/", "-")
     row: TempImageTable = session.query(TempImageTable).filter(
         (TempImageTable.type == _type) & (TempImageTable.name == name)).first()
     download_flag: bool = False
     temp_image = TempImageTable()
     if row:
         # 判断是否是用户图像缓存，并比对缓存数据是否需要更新
-        if (row.type == "friend_icon" and row.link != link) or (row.type == "ns_friend_icon" and row.link != link) or (row.type == "my_icon" and row.link != link):
+        if (row.type == "friend_icon" and row.link != link) or (row.type == "ns_friend_icon" and row.link != link) or (
+                row.type == "my_icon" and row.link != link):
             download_flag = True
         else:
             temp_image = copy.deepcopy(row)
@@ -633,9 +635,10 @@ FROM report WHERE (user_id_sp, last_play_time, create_time) IN
   GROUP BY user_id_sp, last_play_time)
 and user_id_sp=:user_id_sp
 order by create_time""")).params(user_id_sp=user_id_sp).all()
-
+    new_report = copy.deepcopy(report)
+    session.commit()
     session.close()
-    return report
+    return new_report
 
 
 def model_get_map_group_id_list():
@@ -673,8 +676,10 @@ def model_set_user_friend(data_lst):
     report_logger = logger.bind(report=True)
     session = DBSession_2()
     for r in data_lst:
-        user = session.query(UserFriendTable).filter(UserFriendTable.friend_id == r[1]).first()
+        u = session.query(UserFriendTable).filter(UserFriendTable.friend_id == r[1]).first()
         game_name = r[2] or r[3]
+        user = copy.deepcopy(u)
+        session.commit()
         if user:
             is_change = False
             if r[2] and user.game_name != game_name:
