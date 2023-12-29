@@ -635,9 +635,10 @@ FROM report WHERE (user_id_sp, last_play_time, create_time) IN
   GROUP BY user_id_sp, last_play_time)
 and user_id_sp=:user_id_sp
 order by create_time""")).params(user_id_sp=user_id_sp).all()
-
+    new_report = copy.deepcopy(report)
+    session.commit()
     session.close()
-    return report
+    return new_report
 
 
 def model_get_map_group_id_list():
@@ -675,8 +676,10 @@ def model_set_user_friend(data_lst):
     report_logger = logger.bind(report=True)
     session = DBSession_2()
     for r in data_lst:
-        user = session.query(UserFriendTable).filter(UserFriendTable.friend_id == r[1]).first()
+        u = session.query(UserFriendTable).filter(UserFriendTable.friend_id == r[1]).first()
         game_name = r[2] or r[3]
+        user = copy.deepcopy(u)
+        session.commit()
         if user:
             is_change = False
             if r[2] and user.game_name != game_name:

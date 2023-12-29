@@ -952,7 +952,7 @@ async def get_summary_md(data, all_data, coop, from_group=False):
     name_id = player['nameId']
     user_name = f'{player_name} #{name_id}'
 
-    icon_img = await get_temp_image_path('my_icon', str(name_id), player['userIcon']['url'])
+    icon_img = await get_temp_image_path('my_icon', f'{player_name}_{name_id}', player['userIcon']['url'])
     img = f'''<img height='30px' style='position:absolute;margin-left:-30px;margin-top:-15px' src="{icon_img}"/>'''
 
     weapon_img = await get_temp_image_path('battle_weapon_main',
