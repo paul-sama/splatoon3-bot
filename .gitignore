@@ -140,8 +140,9 @@ dmypy.json
 .pytype/
 
 .idea/
-*.sqlite
-*.db
+splatoon3_bot/plugins/splatoon3_nso/resource/data.sqlite
+splatoon3_bot/plugins/splatoon3_nso/resource/data_friend.sqlite
+splatoon3_bot/plugins/splatoon3_schedule/data/db/control.db
 
 splatoon3_bot/plugins/ink_bot/temp/
 splatoon3_bot/plugins/splatoon3_nso/resource/s3sits_git/
