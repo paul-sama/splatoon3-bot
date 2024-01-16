@@ -122,7 +122,7 @@ async def get_user_name_color(nick_name, player_code):
 async def get_top_all_name(name, player_code):
     top_all = get_top_all_row(player_code)
     if not top_all:
-        return name
+        return name, 0
 
     # 有分数记录，去掉好友头像, 高优先级显示分数的武器而不是头像
     if '<img' in name:
@@ -141,10 +141,11 @@ async def get_top_all_name(name, player_code):
             img_type = "battle_weapon_main"
             weapon_main_img = await get_temp_image_path(img_type, weapon[weapon_id]['name'], weapon[weapon_id]['url'])
             name += f"<img height='36px' style='position:absolute;right:5px;margin-top:-6px' src='{weapon_main_img}'/>"
-    return name
+    return name, float(max_power or 0)
 
 
 async def get_top_str_w(player_code):
+    _power = 0
     top_str = ''
     r = get_top_player_row(player_code)
     if r:
@@ -159,11 +160,11 @@ async def get_top_str_w(player_code):
             img_type = "battle_weapon_main"
             weapon_main_img = await get_temp_image_path(img_type, weapon[weapon_id]['name'], weapon[weapon_id]['url'])
             top_str += f"<img height='36px' style='position:absolute;right:5px;margin-top:-6px' src='{weapon_main_img}'/>"
-        return top_str
-    return top_str
+        return top_str, float(r.power or 0)
+    return top_str, _power
 
 
-async def get_row_text_image(p, mask=False):
+async def get_row_text_image(p, mask=False, is_last_player=False, team_power=None):
     re = p['result']
     if not re:
         re = {"kill": 0, "death": 99, "assist": 0, "special": 0}
@@ -182,12 +183,21 @@ async def get_row_text_image(p, mask=False):
     if not p.get('isMyself'):
         name = await get_user_name_color(name, player_code)
 
-    top_str = await get_top_str_w(player_code)
+    # X 五百强分数
+    top_str, power = await get_top_str_w(player_code)
     if top_str:
         name = name.strip() + top_str
 
+    # 其他排行榜分数
     elif not p.get('isMyself'):
-        name = await get_top_all_name(name, player_code)
+        name, power = await get_top_all_name(name, player_code)
+
+    if power and isinstance(team_power, list):
+        team_power.append(power)
+
+    if is_last_player and team_power:
+        _power = f'{sum(team_power)/len(team_power):.1f}'
+        name += f'<span style="position:absolute;margin-top:28px;color:#1e96d2;right:40px">{_power}</span>'
 
     weapon_img = ((p.get('weapon') or {}).get('image') or {}).get('url') or ''
     img_type = "battle_weapon_main"
@@ -224,9 +234,11 @@ async def get_battle_msg(b_info, battle_detail, **kwargs):
     text_list = []
     teams = [battle_detail['myTeam']] + battle_detail['otherTeams']
     for team in sorted(teams, key=lambda x: x['order']):
+        team_power = []
         for p in team['players']:
+            is_last_p = True if p == team['players'][-1] else False
             if get_image:
-                text_list.append(await get_row_text_image(p, mask))
+                text_list.append(await get_row_text_image(p, mask, is_last_p, team_power))
             else:
                 text_list.append(await get_row_text(p, mask))
         ti = '||'
