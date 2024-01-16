@@ -124,6 +124,11 @@ async def get_top_all_name(name, player_code):
     if not top_all:
         return name
 
+    # 有分数记录，去掉好友头像, 高优先级显示分数的武器而不是头像
+    if '<img' in name:
+        origin_name = name.split('style="color:skyblue">')[-1].split(" <img height='36px'")[0]
+        name = f'<span style="color:skyblue">{origin_name}</span>'
+
     row = top_all
     max_power = row.power
     top_str = f'F({max_power})' if row.top_type.startswith('Fest') else f'E({max_power})'
