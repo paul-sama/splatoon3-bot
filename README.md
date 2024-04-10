@@ -6,6 +6,7 @@
     <img src="https://img.shields.io/badge/telegram-splatoon3bot-blue?style=flat-square" alt="Telegram">
   </a>
 
+[![Discord](https://img.shields.io/discord/1222804919325556828?color=5865f2&label=Discord)](https://discord.gg/r5s5VH8Way)
 
 ## 机器人[使用文档](https://docs.qq.com/sheet/DUkZHRWtCUkR0d2Nr?tab=BB08J2)
 
